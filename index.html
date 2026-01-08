@@ -1,0 +1,2950 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- เพิ่ม Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+        .tooltip.show {
+            opacity: 1;
+        }
+        /* ทำให้ Canvas ตอบสนองตามขนาด Container */
+        .chart-container {
+            position: relative;
+            height: 500px;
+            width: 100%;
+        }
+        .pie-chart-container {
+            position: relative;
+            width: 192px;
+            height: 192px;
+            margin-bottom: 1rem;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'thai': ['Prompt', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-thai">
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden"></div>
+    
+    <!-- Tooltip (Chart.js has built-in tooltips) -->
+    <div id="tooltip" class="tooltip"></div>
+    
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div id="sidebar" class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white shadow-xl transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+            <div class="p-6 border-b border-blue-700">
+                <h1 class="text-2xl font-bold flex items-center">
+                    <i class="fas fa-chart-line mr-3"></i>
+                    Dashboard
+                </h1>
+            </div>
+            
+            <nav class="mt-6">
+                <div class="px-4 space-y-2">
+                    <a href="#" onclick="showContent('overview', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 bg-blue-700">
+                        <i class="fas fa-home mr-3"></i>
+                        ส่วนกำหนดสิทธิในที่ดิน
+                    </a>
+                    <div class="menu-group">
+                        <a href="#" onclick="toggleSubmenu('land-rights', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                            <i class="fas fa-chart-bar mr-3"></i>
+                            กลุ่มกำหนดสิทธิในที่ดิน
+                            <i class="fas fa-chevron-down ml-auto transition-transform duration-200" id="land-rights-arrow"></i>
+                        </a>
+                        <div id="land-rights-submenu" class="submenu hidden ml-6 mt-2 space-y-1">
+                            <a href="#" onclick="showContent('foreigners', event)" class="submenu-item flex items-center px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm">
+                                <i class="fas fa-user-friends mr-3"></i>
+                                คนต่างด้าว
+                            </a>
+                            <a href="#" onclick="showContent('religious', event)" class="submenu-item flex items-center px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm">
+                                <i class="fas fa-place-of-worship mr-3"></i>
+                                นิติบุคคลเพื่อการศาสนา
+                            </a>
+                            <a href="#" onclick="showContent('abandoned', event)" class="submenu-item flex items-center px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm">
+                                <i class="fas fa-exclamation-triangle mr-3"></i>
+                                ที่ดินทอดทิ้ง
+                            </a>
+                        </div>
+                    </div>
+                    <a href="#" onclick="showContent('users', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                        <i class="fas fa-users mr-3"></i>
+                        ฝ่ายควบคุมทะเบียนที่ดิน
+                    </a>
+                    <a href="#" onclick="showContent('settings', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                        <i class="fas fa-cog mr-3"></i>
+                        ตั้งค่า
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="absolute bottom-0 w-64 p-4 border-t border-blue-700">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="font-medium">ผู้ดูแลระบบ</p>
+                        <p class="text-sm text-blue-200">admin@example.com</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden lg:ml-0">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b border-gray-200">
+                <div class="flex items-center justify-between px-4 lg:px-6 py-4">
+                    <div class="flex items-center">
+                        <button id="mobile-menu-button" class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 mr-3">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h2 id="page-title" class="text-xl lg:text-2xl font-semibold text-gray-800">ส่วนกำหนดสิทธิในที่ดิน</h2>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                            <i class="fas fa-bell text-xl"></i>
+                        </button>
+                        <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                            <i class="fas fa-search text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <main class="flex-1 overflow-y-auto p-4 lg:p-6">
+                <!-- Overview Content -->
+                <div id="overview-content" class="content-section">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">ส่วนกำหนดสิทธิในที่ดินและควบคุมทะเบียนที่ดิน</h3>
+                        <p class="text-gray-600">ยินดีต้อนรับสู่ระบบจัดการข้อมูลที่ดิน กรุณาเลือกเมนูที่ต้องการจากแถบด้านซ้าย</p>
+                    </div>
+                </div>
+
+                <!-- Foreigners Content -->
+                <div id="foreigners-content" class="content-section hidden">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <!-- Tab Navigation -->
+                        <div class="border-b border-gray-200">
+                            <nav class="flex space-x-4 lg:space-x-8 px-4 lg:px-6 pt-4 lg:pt-6 overflow-x-auto">
+                                <button onclick="showTab('section93', event)" class="tab-button py-2 px-2 lg:px-1 border-b-2 font-medium text-xs lg:text-sm transition-colors duration-200 border-blue-500 text-blue-600 whitespace-nowrap">
+                                    มาตรา 93
+                                </button>
+                                <button onclick="showTab('section96', event)" class="tab-button py-2 px-2 lg:px-1 border-b-2 font-medium text-xs lg:text-sm transition-colors duration-200 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                                    มาตรา 96 ทวิ
+                                </button>
+                                <button onclick="showTab('boi', event)" class="tab-button py-2 px-2 lg:px-1 border-b-2 font-medium text-xs lg:text-sm transition-colors duration-200 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                                    BOI
+                                </button>
+                                <button onclick="showTab('commercial', event)" class="tab-button py-2 px-2 lg:px-1 border-b-2 font-medium text-xs lg:text-sm transition-colors duration-200 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                                    เช่าเพื่อพาณิชยกรรมฯ
+                                </button>
+                            </nav>
+                        </div>
+                        
+                        <!-- Tab Content -->
+                        <div class="p-6">
+                            <div id="section93-tab" class="tab-content">
+                                <h3 class="text-xl font-semibold text-gray-900 mb-4">มาตรา 93 การรับมรดกในฐานะทายาทโดยธรรม</h3>
+                                
+                                <!-- Statistics Cards -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนราย</p>
+                                                <p id="s93-total-records" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-users text-blue-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนแปลง</p>
+                                                <p id="s93-total-plots" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-map text-green-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนเนื้อที่</p>
+                                                <p id="s93-total-area" class="text-lg font-bold text-gray-900">0-0-0</p>
+                                                <p class="text-sm text-gray-500">ไร่</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-ruler-combined text-purple-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Pie Charts Section -->
+                                <div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 mb-6">
+                                    <!-- Nationality Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนรายตามสัญชาติ</h4>
+                                        <div class="flex flex-col items-center justify-center">
+                                            <div class="pie-chart-container">
+                                                <canvas id="nationalityChart"></canvas>
+                                            </div>
+                                            <div id="nationality-legend" class="w-full space-y-2">
+                                                <!-- Legend will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Land Use by Area Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนเนื้อที่ตามประเภทการใช้ประโยชน์ที่ดิน</h4>
+                                        <div class="flex flex-col items-center justify-center">
+                                            <div class="pie-chart-container">
+                                                <canvas id="landUseAreaChart"></canvas>
+                                            </div>
+                                            <div id="landuse-area-legend" class="w-full space-y-2">
+                                                <!-- Legend will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Land Use by Plot Count Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนแปลงตามประเภทการใช้ประโยชน์ที่ดิน</h4>
+                                        <div class="flex flex-col items-center justify-center">
+                                            <div class="pie-chart-container">
+                                                <canvas id="landUsePlotChart"></canvas>
+                                            </div>
+                                             <div id="landuse-plot-legend" class="w-full space-y-2">
+                                                <!-- Legend will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bar Charts Section -->
+                                <div class="grid grid-cols-1 gap-8 mb-6">
+                                    <!-- Stacked Column Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนเนื้อที่ (ไร่) ตามสัญชาติและประเภทการใช้ประโยชน์</h4>
+                                        <div class="chart-container">
+                                            <canvas id="stackedColumnChart"></canvas>
+                                        </div>
+                                    </div>
+                                    <!-- Combined Province Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนเนื้อที่ (ไร่) และจำนวนแปลง แยกตามจังหวัด</h4>
+                                        <div class="chart-container">
+                                            <canvas id="section93ProvinceChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Data Table Section -->
+                                <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 mb-6">
+                                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-2 lg:mb-0">รายละเอียดข้อมูลมาตรา 93</h4>
+                                        <div class="flex flex-col sm:flex-row gap-2">
+                                            <input type="text" id="searchInput" placeholder="ค้นหา..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <select id="nationalityFilter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <option value="">ทุกสัญชาติ</option>
+                                                <!-- Options will be populated by JavaScript -->
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Table -->
+                                    <div class="overflow-x-auto">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับที่</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อผู้ขอ</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สัญชาติ</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนแปลง</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เนื้อที่</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภทการใช้ประโยชน์</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="dataTableBody" class="bg-white divide-y divide-gray-200">
+                                                <!-- Table rows will be populated by JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <!-- Pagination -->
+                                    <div class="flex flex-col sm:flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                                        <div class="text-sm text-gray-700 mb-2 sm:mb-0">
+                                            แสดง <span id="showingStart">1</span> ถึง <span id="showingEnd">10</span> จาก <span id="totalRecords">0</span> รายการ
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <button id="prevPage" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <i class="fas fa-chevron-left mr-1"></i>ก่อนหน้า
+                                            </button>
+                                            <div id="pageNumbers" class="flex space-x-1">
+                                                <!-- Page numbers will be populated by JavaScript -->
+                                            </div>
+                                            <button id="nextPage" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                ถัดไป<i class="fas fa-chevron-right ml-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="section96-tab" class="tab-content hidden">
+                                <h3 class="text-xl font-semibold text-gray-900 mb-4">มาตรา 96 ทวิ การซื้อที่ดินเพื่ออยู่อาศัย โดยนำเงินมาลงทุน 40 ล้านบาท</h3>
+                                
+                                <!-- Statistics Cards -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนราย</p>
+                                                <p id="s96-total-records" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-users text-green-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนแปลง</p>
+                                                <p id="s96-total-plots" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-map text-green-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนเนื้อที่</p>
+                                                <p id="s96-total-area" class="text-lg font-bold text-gray-900">0-0-0</p>
+                                                <p class="text-sm text-gray-500">ไร่</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-ruler-combined text-green-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Pie Charts Section -->
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                    <!-- Section 96 Nationality Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนรายตามสัญชาติ</h4>
+                                        <div class="flex flex-col items-center justify-center">
+                                            <div class="pie-chart-container">
+                                                <canvas id="section96NationalityChart"></canvas>
+                                            </div>
+                                            <div id="s96-nationality-legend" class="w-full space-y-2">
+                                                <!-- Legend will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Investment Type Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนรายตามประเภทการลงทุน</h4>
+                                        <div class="flex flex-col items-center justify-center">
+                                            <div class="pie-chart-container">
+                                                <canvas id="section96InvestmentChart"></canvas>
+                                            </div>
+                                            <div id="s96-investment-legend" class="w-full space-y-2">
+                                                <!-- Legend will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Bar Charts Section -->
+                                <div class="grid grid-cols-1 gap-8 mb-6">
+                                    <!-- Province Bar Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">ข้อมูลจำนวนแปลงและเนื้อที่ตามจังหวัด</h4>
+                                        <div class="chart-container">
+                                            <canvas id="section96ProvinceBarChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Data Table Section for Section 96 -->
+                                <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 mb-6">
+                                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-2 lg:mb-0">รายละเอียดข้อมูลมาตรา 96 ทวิ</h4>
+                                        <div class="flex flex-col sm:flex-row gap-2">
+                                            <input type="text" id="searchInput96" placeholder="ค้นหา..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <select id="nationalityFilter96" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <option value="">ทุกสัญชาติ</option>
+                                                <!-- Options will be populated by JavaScript -->
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Table -->
+                                    <div class="overflow-x-auto">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับที่</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อผู้ขอ</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สัญชาติ</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนแปลง</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เนื้อที่</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภทการลงทุน</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="dataTableBody96" class="bg-white divide-y divide-gray-200">
+                                                <!-- Table rows will be populated by JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <!-- Pagination -->
+                                    <div class="flex flex-col sm:flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                                        <div class="text-sm text-gray-700 mb-2 sm:mb-0">
+                                            แสดง <span id="showingStart96">1</span> ถึง <span id="showingEnd96">10</span> จาก <span id="totalRecords96">0</span> รายการ
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <button id="prevPage96" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <i class="fas fa-chevron-left mr-1"></i>ก่อนหน้า
+                                            </button>
+                                            <div id="pageNumbers96" class="flex space-x-1">
+                                                <!-- Page numbers will be populated by JavaScript -->
+                                            </div>
+                                            <button id="nextPage96" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                ถัดไป<i class="fas fa-chevron-right ml-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="boi-tab" class="tab-content hidden">
+                                <h3 class="text-xl font-semibold text-gray-900 mb-4">การได้มาตามกฎหมายว่าด้วยการส่งเสริมการลงทุน</h3>
+                                
+                                <!-- Statistics Cards -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนราย</p>
+                                                <p id="boi-total-records" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-users text-purple-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนแปลง</p>
+                                                <p id="boi-total-plots" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-map text-purple-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนเนื้อที่</p>
+                                                <p id="boi-total-area" class="text-lg font-bold text-gray-900">0-0-0</p>
+                                                <p class="text-sm text-gray-500">ไร่</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-ruler-combined text-purple-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Bar Charts Section for BOI -->
+                                <div class="grid grid-cols-1 gap-8 mt-8">
+                                    <!-- BOI Province Plot Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนรายและแปลง ตามจังหวัด (BOI)</h4>
+                                        <div class="chart-container">
+                                            <canvas id="boiProvincePlotChart"></canvas>
+                                        </div>
+                                    </div>
+                                    <!-- BOI Province Area Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนรายและเนื้อที่ ตามจังหวัด (BOI)</h4>
+                                        <div class="chart-container">
+                                            <canvas id="boiProvinceAreaChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Data Table Section for BOI -->
+                                <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 mt-8">
+                                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-2 lg:mb-0">รายละเอียดข้อมูล BOI</h4>
+                                        <div class="flex flex-col sm:flex-row gap-2">
+                                            <input type="text" id="searchInputBoi" placeholder="ค้นหา..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <select id="nationalityFilterBoi" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <option value="">ทุกสัญชาติ</option>
+                                                <!-- Options will be populated by JavaScript -->
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Table -->
+                                    <div class="overflow-x-auto">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับที่</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อผู้ขอ</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สัญชาติ</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนแปลง</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เนื้อที่</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภทการใช้ประโยชน์</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="dataTableBodyBoi" class="bg-white divide-y divide-gray-200">
+                                                <!-- Table rows will be populated by JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <!-- Pagination -->
+                                    <div class="flex flex-col sm:flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                                        <div class="text-sm text-gray-700 mb-2 sm:mb-0">
+                                            แสดง <span id="showingStartBoi">1</span> ถึง <span id="showingEndBoi">10</span> จาก <span id="totalRecordsBoi">0</span> รายการ
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <button id="prevPageBoi" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <i class="fas fa-chevron-left mr-1"></i>ก่อนหน้า
+                                            </button>
+                                            <div id="pageNumbersBoi" class="flex space-x-1">
+                                                <!-- Page numbers will be populated by JavaScript -->
+                                            </div>
+                                            <button id="nextPageBoi" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                ถัดไป<i class="fas fa-chevron-right ml-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                            
+                            <div id="commercial-tab" class="tab-content hidden">
+                                <h3 class="text-xl font-semibold text-gray-900 mb-4">เช่าเพื่อพาณิชยกรรมฯ</h3>
+                                
+                                <!-- Statistics Cards -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนราย</p>
+                                                <p id="commercial-total-records" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-users text-orange-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนแปลง</p>
+                                                <p id="commercial-total-plots" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-map text-orange-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนเนื้อที่</p>
+                                                <p id="commercial-total-area" class="text-lg font-bold text-gray-900">0-0-0</p>
+                                                <p class="text-sm text-gray-500">ไร่</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-ruler-combined text-orange-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Pie Charts Section for Commercial -->
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+                                    <!-- Commercial Area Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">เนื้อที่ตามประเภทการใช้ประโยชน์ที่ดิน</h4>
+                                        <div class="flex flex-col items-center justify-center">
+                                            <div class="pie-chart-container">
+                                                <canvas id="commercialAreaChart"></canvas>
+                                            </div>
+                                            <div id="commercial-area-legend" class="w-full space-y-2">
+                                                <!-- Legend will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Commercial Plot Chart -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนแปลงตามประเภทการใช้ประโยชน์ที่ดิน</h4>
+                                        <div class="flex flex-col items-center justify-center">
+                                            <div class="pie-chart-container">
+                                                <canvas id="commercialPlotChart"></canvas>
+                                            </div>
+                                            <div id="commercial-plot-legend" class="w-full space-y-2">
+                                                <!-- Legend will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bar Chart Section for Commercial -->
+                                <div class="grid grid-cols-1 gap-8 mt-8">
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนเนื้อที่และแปลง ตามจังหวัด (เช่าเพื่อพาณิชยกรรมฯ)</h4>
+                                        <div class="chart-container">
+                                            <canvas id="commercialProvinceChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Data Table Section for Commercial -->
+                                <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 mt-8">
+                                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-2 lg:mb-0">รายละเอียดข้อมูลการเช่าเพื่อพาณิชยกรรมฯ</h4>
+                                        <div class="flex flex-col sm:flex-row gap-2">
+                                            <input type="text" id="searchInputCommercial" placeholder="ค้นหา..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <select id="nationalityFilterCommercial" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                <option value="">ทุกสัญชาติ</option>
+                                                <!-- Options will be populated by JavaScript -->
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Table -->
+                                    <div class="overflow-x-auto">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับที่</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภทการจดทะเบียน</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">กำหนดเวลา</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่จดทะเบียน</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ผู้ให้เช่า</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ผู้เช่า</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนแปลง</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เนื้อที่</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภทการใช้ประโยชน์ที่ดิน</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="dataTableBodyCommercial" class="bg-white divide-y divide-gray-200">
+                                                <!-- Table rows will be populated by JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <!-- Pagination -->
+                                    <div class="flex flex-col sm:flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                                        <div class="text-sm text-gray-700 mb-2 sm:mb-0">
+                                            แสดง <span id="showingStartCommercial">1</span> ถึง <span id="showingEndCommercial">10</span> จาก <span id="totalRecordsCommercial">0</span> รายการ
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <button id="prevPageCommercial" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <i class="fas fa-chevron-left mr-1"></i>ก่อนหน้า
+                                            </button>
+                                            <div id="pageNumbersCommercial" class="flex space-x-1">
+                                                <!-- Page numbers will be populated by JavaScript -->
+                                            </div>
+                                            <button id="nextPageCommercial" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                ถัดไป<i class="fas fa-chevron-right ml-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Religious Content -->
+                <div id="religious-content" class="content-section hidden">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <!-- Tab Navigation -->
+                        <div class="border-b border-gray-200">
+                            <nav class="flex space-x-4 lg:space-x-8 px-4 lg:px-6 pt-4 lg:pt-6 overflow-x-auto">
+                                <button onclick="showReligiousTab('temple', event)" class="religious-tab-button py-2 px-2 lg:px-1 border-b-2 font-medium text-xs lg:text-sm transition-colors duration-200 border-blue-500 text-blue-600 whitespace-nowrap">
+                                    วัดวาอาราม
+                                </button>
+                                <button onclick="showReligiousTab('mosque', event)" class="religious-tab-button py-2 px-2 lg:px-1 border-b-2 font-medium text-xs lg:text-sm transition-colors duration-200 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                                    มัสยิด
+                                </button>
+                                <button onclick="showReligiousTab('christian', event)" class="religious-tab-button py-2 px-2 lg:px-1 border-b-2 font-medium text-xs lg:text-sm transition-colors duration-200 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                                    มูลนิธิเกี่ยวกับคริสต์จักร
+                                </button>
+                                <button onclick="showReligiousTab('catholic', event)" class="religious-tab-button py-2 px-2 lg:px-1 border-b-2 font-medium text-xs lg:text-sm transition-colors duration-200 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
+                                    วัดบาดหลวงโรมันคาธอลิก
+                                </button>
+                            </nav>
+                        </div>
+                        
+                        <!-- Tab Content -->
+                        <div class="p-6">
+                            <div id="temple-religious-tab" class="religious-tab-content">
+                                <h3 class="text-xl font-semibold text-gray-900 mb-4">วัดวาอาราม</h3>
+                                
+                                <!-- Statistics Cards -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนวัด</p>
+                                                <p id="temple-total-records" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-place-of-worship text-yellow-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนแปลง</p>
+                                                <p id="temple-total-plots" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-map text-yellow-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนเนื้อที่</p>
+                                                <p id="temple-total-area" class="text-lg font-bold text-gray-900">0</p>
+                                                <p class="text-sm text-gray-500">ไร่</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-ruler-combined text-yellow-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bar Chart Section for Temple -->
+                                <div class="grid grid-cols-1 gap-8 mt-8">
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนวัดและเนื้อที่ ตามจังหวัด</h4>
+                                        <div class="chart-container">
+                                            <canvas id="templeProvinceChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Top 10 Tables -->
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                                    <!-- Top 10 by Plots -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-4">10 อันดับ วัดที่มีที่ดินตามจำนวนแปลงมากที่สุด</h4>
+                                        <div class="overflow-x-auto">
+                                            <table class="min-w-full divide-y divide-gray-200">
+                                                <thead class="bg-gray-50">
+                                                    <tr>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">อันดับ</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อวัด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนแปลง</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="temple-top10-plots-body" class="bg-white divide-y divide-gray-200">
+                                                    <!-- Data will be populated by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <!-- Top 10 by Area -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-4">10 อันดับ วัดที่มีที่ดินตามจำนวนเนื้อที่มากที่สุด</h4>
+                                        <div class="overflow-x-auto">
+                                            <table class="min-w-full divide-y divide-gray-200">
+                                                <thead class="bg-gray-50">
+                                                    <tr>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">อันดับ</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อวัด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เนื้อที่ (ไร่)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="temple-top10-area-body" class="bg-white divide-y divide-gray-200">
+                                                     <!-- Data will be populated by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="mosque-religious-tab" class="religious-tab-content hidden">
+                                <h3 class="text-xl font-semibold text-gray-900 mb-4">มัสยิด</h3>
+                                
+                                <!-- Statistics Cards for Mosque -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนมัสยิด</p>
+                                                <p id="mosque-total-records" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-mosque text-green-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนแปลง</p>
+                                                <p id="mosque-total-plots" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-map text-green-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนเนื้อที่</p>
+                                                <p id="mosque-total-area" class="text-lg font-bold text-gray-900">0</p>
+                                                <p class="text-sm text-gray-500">ไร่</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-ruler-combined text-green-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bar Chart Section for Mosque -->
+                                <div class="grid grid-cols-1 gap-8 mt-8">
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนมัสยิดและเนื้อที่ ตามจังหวัด</h4>
+                                        <div class="chart-container">
+                                            <canvas id="mosqueProvinceChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Top 10 Tables for Mosque -->
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                                    <!-- Top 10 by Plots -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-4">10 อันดับ มัสยิดที่มีที่ดินตามจำนวนแปลงมากที่สุด</h4>
+                                        <div class="overflow-x-auto">
+                                            <table class="min-w-full divide-y divide-gray-200">
+                                                <thead class="bg-gray-50">
+                                                    <tr>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">อันดับ</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อมัสยิด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนแปลง</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="mosque-top10-plots-body" class="bg-white divide-y divide-gray-200">
+                                                    <!-- Data will be populated by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <!-- Top 10 by Area -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-4">10 อันดับ มัสยิดที่มีที่ดินตามจำนวนเนื้อที่มากที่สุด</h4>
+                                        <div class="overflow-x-auto">
+                                            <table class="min-w-full divide-y divide-gray-200">
+                                                <thead class="bg-gray-50">
+                                                    <tr>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">อันดับ</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อมัสยิด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เนื้อที่ (ไร่)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="mosque-top10-area-body" class="bg-white divide-y divide-gray-200">
+                                                    <!-- Data will be populated by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="christian-religious-tab" class="religious-tab-content hidden">
+                                <h3 class="text-xl font-semibold text-gray-900 mb-4">มูลนิธิเกี่ยวกับคริสต์จักร</h3>
+                                
+                                <!-- Statistics Cards for Christian Foundations -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนมูลนิธิ</p>
+                                                <p id="christian-total-records" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-church text-blue-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนแปลง</p>
+                                                <p id="christian-total-plots" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-map text-blue-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนเนื้อที่</p>
+                                                <p id="christian-total-area" class="text-lg font-bold text-gray-900">0</p>
+                                                <p class="text-sm text-gray-500">ไร่</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-ruler-combined text-blue-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bar Chart Section for Christian Foundations -->
+                                <div class="grid grid-cols-1 gap-8 mt-8">
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนมูลนิธิและเนื้อที่ ตามจังหวัด</h4>
+                                        <div class="chart-container">
+                                            <canvas id="christianProvinceChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Top 10 Tables for Christian Foundations -->
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                                    <!-- Top 10 by Plots -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-4">10 อันดับ มูลนิธิที่มีที่ดินตามจำนวนแปลงมากที่สุด</h4>
+                                        <div class="overflow-x-auto">
+                                            <table class="min-w-full divide-y divide-gray-200">
+                                                <thead class="bg-gray-50">
+                                                    <tr>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">อันดับ</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อมูลนิธิ</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนแปลง</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="christian-top10-plots-body" class="bg-white divide-y divide-gray-200">
+                                                    <!-- Data will be populated by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <!-- Top 10 by Area -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-4">10 อันดับ มูลนิธิที่มีที่ดินตามจำนวนเนื้อที่มากที่สุด</h4>
+                                        <div class="overflow-x-auto">
+                                            <table class="min-w-full divide-y divide-gray-200">
+                                                <thead class="bg-gray-50">
+                                                    <tr>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">อันดับ</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อมูลนิธิ</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เนื้อที่ (ไร่)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="christian-top10-area-body" class="bg-white divide-y divide-gray-200">
+                                                    <!-- Data will be populated by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="catholic-religious-tab" class="religious-tab-content hidden">
+                                <h3 class="text-xl font-semibold text-gray-900 mb-4">มิซซังโรมันคาธอลิก (วัดบาดหลวงโรมันคาทอลิกไม่มีสภาพบุคคล จึงถือครองที่ดินในนามมิซซังฯ)</h3>
+
+                                <!-- Statistics Cards for Catholic Churches -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนมิซซัง</p>
+                                                <p id="catholic-total-records" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-cross text-indigo-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนแปลง</p>
+                                                <p id="catholic-total-plots" class="text-2xl font-bold text-gray-900">0</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-map text-indigo-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-600">จำนวนเนื้อที่</p>
+                                                <p id="catholic-total-area" class="text-lg font-bold text-gray-900">0</p>
+                                                <p class="text-sm text-gray-500">ไร่</p>
+                                            </div>
+                                            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-ruler-combined text-indigo-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bar Chart Section for Catholic Churches -->
+                                <div class="grid grid-cols-1 gap-8 mt-8">
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนวัดและเนื้อที่ ตามจังหวัด</h4>
+                                        <div class="chart-container">
+                                            <canvas id="catholicProvinceChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Top 10 Tables for Catholic Churches -->
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                                    <!-- Top 10 by Plots -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-4">10 อันดับ วัดบาดหลวงที่มีที่ดินตามจำนวนแปลงมากที่สุด</h4>
+                                        <div class="overflow-x-auto">
+                                            <table class="min-w-full divide-y divide-gray-200">
+                                                <thead class="bg-gray-50">
+                                                    <tr>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">อันดับ</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อวัดบาดหลวง</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนแปลง</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="catholic-top10-plots-body" class="bg-white divide-y divide-gray-200">
+                                                    <!-- Data will be populated by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <!-- Top 10 by Area -->
+                                    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-4">10 อันดับ วัดบาดหลวงที่มีที่ดินตามจำนวนเนื้อที่มากที่สุด</h4>
+                                        <div class="overflow-x-auto">
+                                            <table class="min-w-full divide-y divide-gray-200">
+                                                <thead class="bg-gray-50">
+                                                    <tr>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">อันดับ</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อวัดบาดหลวง</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เนื้อที่ (ไร่)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="catholic-top10-area-body" class="bg-white divide-y divide-gray-200">
+                                                    <!-- Data will be populated by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Content -->
+                <div id="users-content" class="content-section hidden">
+                    <div class="space-y-8">
+                        <!-- ตรวจสอบหลักทรัพย์ Section -->
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                                <i class="fas fa-shield-alt mr-3 text-blue-600"></i>
+                                ตรวจสอบหลักทรัพย์
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Card for "เรื่อง" -->
+                                <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-blue-800">จำนวนเรื่อง</p>
+                                            <p id="securities-total-cases" class="text-2xl font-bold text-blue-900">0</p>
+                                        </div>
+                                        <div class="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-file-signature text-blue-700 text-xl"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Card for "ราย" -->
+                                <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-blue-800">จำนวนราย</p>
+                                            <p id="securities-total-clients" class="text-2xl font-bold text-blue-900">0</p>
+                                        </div>
+                                        <div class="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-user-check text-blue-700 text-xl"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Data Table Section for Securities Verification -->
+                        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-2 lg:mb-0">รายละเอียดข้อมูลการตรวจสอบหลักทรัพย์</h4>
+                                <input type="text" id="searchInputSecurities" placeholder="ค้นหา..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <!-- Table -->
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับที่</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อผู้ขอ</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="securitiesTableBody" class="bg-white divide-y divide-gray-200">
+                                        <!-- Table rows will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Pagination -->
+                            <div class="flex flex-col sm:flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                                <div class="text-sm text-gray-700 mb-2 sm:mb-0">
+                                    แสดง <span id="showingStartSecurities">1</span> ถึง <span id="showingEndSecurities">10</span> จาก <span id="totalRecordsSecurities">0</span> รายการ
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button id="prevPageSecurities" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <i class="fas fa-chevron-left mr-1"></i>ก่อนหน้า
+                                    </button>
+                                    <div id="pageNumbersSecurities" class="flex space-x-1">
+                                        <!-- Page numbers will be populated by JavaScript -->
+                                    </div>
+                                    <button id="nextPageSecurities" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        ถัดไป<i class="fas fa-chevron-right ml-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ค้นหาเอกสารทะเบียนที่ดิน Section -->
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                                <i class="fas fa-folder-open mr-3 text-green-600"></i>
+                                ค้นหาเอกสารทะเบียนที่ดิน
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Card for "เรื่อง" -->
+                                <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-green-800">จำนวนเรื่อง</p>
+                                            <p id="docsearch-total-cases" class="text-2xl font-bold text-green-900">0</p>
+                                        </div>
+                                        <div class="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-search-location text-green-700 text-xl"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Card for "ราย" -->
+                                <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-green-800">จำนวนราย</p>
+                                            <p id="docsearch-total-clients" class="text-2xl font-bold text-green-900">0</p>
+                                        </div>
+                                        <div class="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-users text-green-700 text-xl"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Card for "ฉบับ" -->
+                                <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-green-800">จำนวนฉบับ</p>
+                                            <p id="docsearch-total-copies" class="text-2xl font-bold text-green-900">0</p>
+                                        </div>
+                                        <div class="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-copy text-green-700 text-xl"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Data Table Section for Document Search -->
+                        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-2 lg:mb-0">รายละเอียดข้อมูลการค้นหาเอกสาร</h4>
+                                <input type="text" id="searchInputDocSearch" placeholder="ค้นหา..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <!-- Table -->
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับที่</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อผู้ขอ</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนฉบับ</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="docSearchTableBody" class="bg-white divide-y divide-gray-200">
+                                        <!-- Table rows will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Pagination -->
+                            <div class="flex flex-col sm:flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                                <div class="text-sm text-gray-700 mb-2 sm:mb-0">
+                                    แสดง <span id="showingStartDocSearch">1</span> ถึง <span id="showingEndDocSearch">10</span> จาก <span id="totalRecordsDocSearch">0</span> รายการ
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button id="prevPageDocSearch" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <i class="fas fa-chevron-left mr-1"></i>ก่อนหน้า
+                                    </button>
+                                    <div id="pageNumbersDocSearch" class="flex space-x-1">
+                                        <!-- Page numbers will be populated by JavaScript -->
+                                    </div>
+                                    <button id="nextPageDocSearch" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        ถัดไป<i class="fas fa-chevron-right ml-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Abandoned Content -->
+                <div id="abandoned-content" class="content-section hidden">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">ที่ดินทอดทิ้ง</h3>
+                        <p class="text-gray-600 mb-4">ข้อมูลการจัดการที่ดินทอดทิ้งและการดำเนินการตามกฎหมาย</p>
+                        
+                        <!-- Statistics Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-600">จำนวนแปลงทั้งหมด</p>
+                                        <p id="abandoned-total-plots" class="text-2xl font-bold text-gray-900">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-map-marker-slash text-red-600 text-xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-600">จำนวนเนื้อที่ทั้งหมด</p>
+                                        <p id="abandoned-total-area" class="text-lg font-bold text-gray-900">0</p>
+                                        <p class="text-sm text-gray-500">ไร่</p>
+                                    </div>
+                                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-ruler-combined text-red-600 text-xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-600">รอดำเนินการ</p>
+                                        <p id="abandoned-pending-cases" class="text-2xl font-bold text-gray-900">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-clock text-orange-600 text-xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bar Charts Section for Abandoned Land -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                            <!-- Plots by Province -->
+                            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนแปลงที่ดินทอดทิ้ง แยกตามจังหวัด</h4>
+                                <div class="chart-container" style="height: 400px;">
+                                    <canvas id="abandonedPlotsChart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Area by Province -->
+                            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-6">จำนวนเนื้อที่ที่ดินทอดทิ้ง แยกตามจังหวัด (ไร่)</h4>
+                                <div class="chart-container" style="height: 400px;">
+                                    <canvas id="abandonedAreaChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Data Table Section for Abandoned Land -->
+                        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 mt-8">
+                            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-2 lg:mb-0">รายละเอียดข้อมูลที่ดินทอดทิ้ง</h4>
+                                <input type="text" id="searchInputAbandoned" placeholder="ค้นหา..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <!-- Table -->
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับที่</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จังหวัด</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนแปลง</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เนื้อที่ (ไร่)</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="abandonedTableBody" class="bg-white divide-y divide-gray-200">
+                                        <!-- Table rows will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Pagination -->
+                            <div class="flex flex-col sm:flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                                <div class="text-sm text-gray-700 mb-2 sm:mb-0">
+                                    แสดง <span id="showingStartAbandoned">1</span> ถึง <span id="showingEndAbandoned">10</span> จาก <span id="totalRecordsAbandoned">0</span> รายการ
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button id="prevPageAbandoned" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <i class="fas fa-chevron-left mr-1"></i>ก่อนหน้า
+                                    </button>
+                                    <div id="pageNumbersAbandoned" class="flex space-x-1">
+                                        <!-- Page numbers will be populated by JavaScript -->
+                                    </div>
+                                    <button id="nextPageAbandoned" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        ถัดไป<i class="fas fa-chevron-right ml-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Content -->
+                <div id="settings-content" class="content-section hidden">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">ตั้งค่าระบบ</h3>
+                        <p class="text-gray-600">ส่วนนี้จะแสดงการตั้งค่าต่างๆ ของระบบ</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Store chart instances to prevent duplicates and memory leaks
+        window.myCharts = {};
+
+        function destroyChart(canvasId) {
+            if (window.myCharts[canvasId]) {
+                window.myCharts[canvasId].destroy();
+                delete window.myCharts[canvasId];
+            }
+        }
+
+        function showContent(section, event) {
+            if(event) event.preventDefault();
+            
+            const sections = document.querySelectorAll('.content-section');
+            sections.forEach(s => s.classList.add('hidden'));
+            
+            const selectedSection = document.getElementById(section + '-content');
+            if (selectedSection) {
+                selectedSection.classList.remove('hidden');
+            }
+            
+            const titles = {
+                'overview': 'ส่วนกำหนดสิทธิในที่ดิน',
+                'foreigners': 'คนต่างด้าว',
+                'religious': 'นิติบุคคลเพื่อการศาสนา',
+                'abandoned': 'ที่ดินทอดทิ้ง',
+                'users': 'ฝ่ายควบคุมทะเบียนที่ดิน',
+                'settings': 'ตั้งค่า'
+            };
+            document.getElementById('page-title').textContent = titles[section] || 'Dashboard';
+            
+            const menuItems = document.querySelectorAll('.menu-item, .submenu-item');
+            menuItems.forEach(item => item.classList.remove('bg-blue-700'));
+            
+            if (event) {
+                const clickedItem = event.target.closest('.menu-item, .submenu-item');
+                if (clickedItem) {
+                    clickedItem.classList.add('bg-blue-700');
+                    // If a submenu item is clicked, also highlight its parent menu item
+                    const parentGroup = clickedItem.closest('.menu-group');
+                    if(parentGroup) {
+                        parentGroup.querySelector('.menu-item').classList.add('bg-blue-700');
+                    }
+                }
+            }
+
+            // Redraw charts for the default tab when its parent section becomes visible
+            setTimeout(() => {
+                if (section === 'foreigners') {
+                    showTab('section93');
+                }
+                if (section === 'religious') {
+                    showReligiousTab('temple');
+                }
+            }, 50); 
+        }
+
+        function toggleSubmenu(submenuId, event) {
+            if(event) event.preventDefault();
+            const submenu = document.getElementById(submenuId + '-submenu');
+            const arrow = document.getElementById(submenuId + '-arrow');
+            
+            submenu.classList.toggle('hidden');
+            arrow.style.transform = submenu.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+
+        function showTab(tabId, event) {
+            if(event) event.preventDefault();
+            
+            const tabContents = document.querySelectorAll('#foreigners-content .tab-content');
+            tabContents.forEach(content => content.classList.add('hidden'));
+            
+            document.getElementById(tabId + '-tab').classList.remove('hidden');
+            
+            const tabButtons = document.querySelectorAll('#foreigners-content .tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('border-blue-500', 'text-blue-600');
+                button.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            });
+            
+            const activeTabButton = document.querySelector(`.tab-button[onclick*="'${tabId}'"]`);
+            if (activeTabButton) {
+                activeTabButton.classList.add('border-blue-500', 'text-blue-600');
+                activeTabButton.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            }
+            
+            // NOTE: Chart drawing is now handled after data is loaded in DOMContentLoaded
+        }
+
+        function showReligiousTab(tabId, event) {
+            if(event) event.preventDefault();
+
+            const religiousTabContents = document.querySelectorAll('#religious-content .religious-tab-content');
+            religiousTabContents.forEach(content => content.classList.add('hidden'));
+            
+            document.getElementById(tabId + '-religious-tab').classList.remove('hidden');
+            
+            const religiousTabButtons = document.querySelectorAll('#religious-content .religious-tab-button');
+            religiousTabButtons.forEach(button => {
+                button.classList.remove('border-blue-500', 'text-blue-600');
+                button.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            });
+            
+            const activeTabButton = document.querySelector(`.religious-tab-button[onclick*="'${tabId}'"]`);
+            if(activeTabButton){
+                activeTabButton.classList.add('border-blue-500', 'text-blue-600');
+                activeTabButton.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            }
+
+            // NOTE: Chart drawing is now handled after data is loaded in DOMContentLoaded
+        }
+
+        // --- Chart Drawing Functions ---
+
+        function drawDoughnutChart(canvasId, labels, data, colors) {
+            destroyChart(canvasId);
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            window.myCharts[canvasId] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        hoverOffset: 4,
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            titleFont: { family: 'Prompt' },
+                            bodyFont: { family: 'Prompt' },
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.formattedValue;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function drawPieChart(canvasId, legendId, labels, data, unit) {
+            const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#F97316', '#6B7280', '#14B8A6', '#F43F5E', '#84CC16'];
+            drawDoughnutChart(canvasId, labels, data, colors);
+
+            // Update Legend
+            const legendContainer = document.getElementById(legendId);
+            legendContainer.innerHTML = '';
+            const total = data.reduce((acc, val) => acc + val, 0);
+            labels.forEach((label, index) => {
+                const percentage = total > 0 ? ((data[index] / total) * 100).toFixed(1) : 0;
+                const legendItem = `
+                    <div class="flex items-center justify-between text-sm">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full mr-2" style="background-color: ${colors[index % colors.length]}"></div>
+                            <span>${label}</span>
+                        </div>
+                        <span class="font-medium">${data[index].toLocaleString()} ${unit} (${percentage}%)</span>
+                    </div>`;
+                legendContainer.innerHTML += legendItem;
+            });
+        }
+        
+        function drawStackedColumnChart(labels, datasets) {
+            destroyChart('stackedColumnChart');
+            const ctx = document.getElementById('stackedColumnChart').getContext('2d');
+            const colors = ['#2563EB', '#059669', '#A855F7', '#D97706', '#4F46E5', '#DB2777', '#4B5563'];
+            
+            const chartDatasets = datasets.map((d, i) => ({
+                label: d.label,
+                data: d.data,
+                backgroundColor: colors[i % colors.length]
+            }));
+
+            window.myCharts['stackedColumnChart'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: chartDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: false },
+                        legend: { position: 'bottom' },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, title: { display: true, text: 'เนื้อที่ (ไร่)' } }
+                    }
+                }
+            });
+        }
+        
+        function drawCombinedBarChart(canvasId, labels, data1, data2, label1, label2, color1, color2, y1Label, y2Label) {
+            destroyChart(canvasId);
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            window.myCharts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: label1,
+                            data: data1,
+                            backgroundColor: color1,
+                            yAxisID: 'y',
+                            order: 2
+                        },
+                        {
+                            label: label2,
+                            data: data2,
+                            borderColor: color2,
+                            backgroundColor: color2 + '33', // Add transparency
+                            type: 'line',
+                            yAxisID: 'y1',
+                            tension: 0.3,
+                            fill: true,
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    stacked: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: y1Label }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: y2Label },
+                            grid: { drawOnChartArea: false }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function drawSimpleBarChart(canvasId, labels, data, label, color, yLabel) {
+            destroyChart(canvasId);
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            window.myCharts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        backgroundColor: color,
+                        borderColor: color,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: yLabel
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function drawSection93ProvinceChart(labels, plotData, areaData) {
+            drawCombinedBarChart(
+                'section93ProvinceChart',
+                labels,
+                plotData, // Data for Bar (จำนวนแปลง)
+                areaData, // Data for Line (เนื้อที่)
+                'จำนวนแปลง',
+                'เนื้อที่ (ไร่)',
+                '#3B82F6', '#10B981',
+                'จำนวนแปลง', 'เนื้อที่ (ไร่)'
+            );
+        }
+
+        function drawSection96ProvinceBarChart(labels, plotData, areaData) {
+            drawCombinedBarChart(
+                'section96ProvinceBarChart',
+                 labels,
+                plotData, // Data for Bar (จำนวนแปลง)
+                areaData, // Data for Line (เนื้อที่)
+                'จำนวนแปลง',
+                'เนื้อที่ (ไร่)',
+                '#10B981', '#F59E0B',
+                'จำนวนแปลง', 'เนื้อที่ (ไร่)'
+            );
+        }
+
+        function drawBoiProvincePlotChart(labels, plotData, areaData) {
+            drawCombinedBarChart(
+                'boiProvincePlotChart',
+                labels,
+                plotData, // Data for Bar (จำนวนราย/แปลง)
+                areaData, // Data for Line (เนื้อที่)
+                'จำนวนราย/แปลง',
+                'เนื้อที่ (ไร่)',
+                '#8B5CF6', '#DB2777',
+                'จำนวนราย/แปลง', 'เนื้อที่ (ไร่)'
+            );
+        }
+
+        function drawBoiProvinceAreaChart(labels, plotData, areaData) {
+            drawCombinedBarChart(
+                'boiProvinceAreaChart',
+                labels,
+                plotData, // Data for Bar (จำนวนราย/แปลง)
+                areaData, // Data for Line (เนื้อที่)
+                'จำนวนราย/แปลง',
+                'เนื้อที่ (ไร่)',
+                '#8B5CF6', '#16A34A',
+                'จำนวนราย/แปลง', 'เนื้อที่ (ไร่)'
+            );
+        }
+
+        function drawCommercialProvinceChart(labels, plotData, areaData) {
+            drawCombinedBarChart(
+                'commercialProvinceChart',
+                labels,
+                plotData, // Data for Bar (จำนวนแปลง)
+                areaData, // Data for Line (เนื้อที่)
+                'จำนวนแปลง',
+                'เนื้อที่ (ไร่)',
+                '#F97316', '#0891B2',
+                'จำนวนแปลง', 'เนื้อที่ (ไร่)'
+            );
+        }
+
+        function drawTempleProvinceChart(labels, plotData, areaData) {
+            // --- ส่วนที่เพิ่มเข้ามา ---
+            // กำหนด 2 สีที่ต้องการให้สลับกัน
+            const color1 = '#FBBF24'; // สีที่ 1
+            const color2 = '#3B82F6'; // สีที่ 2 (ตัวอย่าง)
+
+            // สร้างอาร์เรย์ของสีสลับกันตามจำนวนข้อมูล
+            const alternatingColors = plotData.map((_, index) => 
+                index % 2 === 0 ? color1 : color2
+            );
+            // --- จบส่วนที่เพิ่มเข้ามา ---
+            drawCombinedBarChart(
+                'templeProvinceChart',
+                labels,
+                plotData,
+                areaData, 
+                'จำนวนวัด', 'เนื้อที่ (ไร่)',
+                alternatingColors, '#F97316',
+                'จำนวนวัด', 'เนื้อที่ (ไร่)'
+            );
+        }
+
+        function drawMosqueProvinceChart(labels, plotData, areaData) {
+            drawCombinedBarChart(
+                'mosqueProvinceChart',
+                labels,
+                plotData, // จำนวนมัสยิด
+                areaData, // เนื้อที่ (ไร่)
+                'จำนวนมัสยิด', 'เนื้อที่ (ไร่)',
+                '#22C55E', '#15803D',
+                'จำนวนมัสยิด', 'เนื้อที่ (ไร่)'
+            );
+        }
+
+        function drawChristianProvinceChart(labels, plotData, areaData) {
+            drawCombinedBarChart(
+                'christianProvinceChart',
+                labels,
+                plotData, 
+                areaData, 
+                'จำนวนมูลนิธิ', 'เนื้อที่ (ไร่)',
+                '#3B82F6', '#2563EB',
+                'จำนวนมูลนิธิ', 'เนื้อที่ (ไร่)'
+            );
+        }
+
+        function drawCatholicProvinceChart(labels, plotData, areaData) {
+            drawCombinedBarChart(
+                'catholicProvinceChart',
+                labels,
+                plotData, 
+                areaData, 
+                'จำนวนวัด', 'เนื้อที่ (ไร่)',
+                '#6366F1', '#4F46E5',
+                'จำนวนวัด', 'เนื้อที่ (ไร่)'
+            );
+        }
+
+        function drawAbandonedPlotsByProvinceChart(labels, data) {
+            drawSimpleBarChart(
+                'abandonedPlotsChart',
+                labels,
+                data,
+                'จำนวนแปลง',
+                'rgba(239, 68, 68, 0.6)',
+                'จำนวนแปลง'
+            );
+        }
+
+        function drawAbandonedAreaByProvinceChart(labels, data) {
+            drawSimpleBarChart(
+                'abandonedAreaChart',
+                labels,
+                data,
+                'จำนวนเนื้อที่ (ไร่)',
+                'rgba(249, 115, 22, 0.6)',
+                'จำนวนเนื้อที่ (ไร่)'
+            );
+        }
+
+
+        // --- Table and Pagination Functions ---
+        function setupPagination(tableId, data, renderFunc, itemsPerPage) {
+            let currentPage = 1;
+            const tablePrefix = tableId;
+
+            function render() {
+                const filteredData = filterData(tableId, data);
+                renderFunc(filteredData, currentPage, itemsPerPage);
+                updateNav(filteredData.length);
+            }
+
+            function filterData(prefix, originalData) {
+                const searchInput = document.getElementById(`searchInput${prefix}`);
+                const nationalityFilterSelect = document.getElementById(`nationalityFilter${prefix}`);
+                
+                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+                const nationalityFilter = nationalityFilterSelect ? nationalityFilterSelect.value : '';
+
+                if (!originalData) return [];
+
+                return originalData.filter(item => {
+                    const nameMatch = item.name ? item.name.toLowerCase().includes(searchTerm) : true;
+                    const clientNameMatch = item.client_name ? item.client_name.toLowerCase().includes(searchTerm) : true;
+                    const provinceMatch = item.province ? item.province.toLowerCase().includes(searchTerm) : true;
+                    const idMatch = item.id ? item.id.toLowerCase().includes(searchTerm) : true;
+                    const nationalityMatch = nationalityFilter === '' || (item.nationality && item.nationality === nationalityFilter);
+                    
+                    if (prefix === 'Abandoned' || prefix === 'DocSearch') {
+                         return provinceMatch || idMatch || clientNameMatch;
+                    }
+                    if (prefix === 'Securities') {
+                         return clientNameMatch || provinceMatch || idMatch;
+                    }
+
+                    return (nameMatch || provinceMatch) && nationalityMatch;
+                });
+            }
+
+            function updateNav(totalRecordsCount) {
+                const totalPages = Math.ceil(totalRecordsCount / itemsPerPage);
+                if (currentPage > totalPages) {
+                    currentPage = totalPages > 0 ? totalPages : 1;
+                }
+
+                const prevButton = document.getElementById(`prevPage${tablePrefix}`);
+                const nextButton = document.getElementById(`nextPage${tablePrefix}`);
+                const pageNumbersDiv = document.getElementById(`pageNumbers${tablePrefix}`);
+                const showingStart = document.getElementById(`showingStart${tablePrefix}`);
+                const showingEnd = document.getElementById(`showingEnd${tablePrefix}`);
+                const totalRecords = document.getElementById(`totalRecords${tablePrefix}`);
+
+                showingStart.textContent = totalRecordsCount > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+                showingEnd.textContent = Math.min(currentPage * itemsPerPage, totalRecordsCount);
+                totalRecords.textContent = totalRecordsCount;
+
+                prevButton.disabled = currentPage === 1;
+                nextButton.disabled = currentPage === totalPages || totalRecordsCount === 0;
+
+                pageNumbersDiv.innerHTML = '';
+                // Logic to show limited page numbers
+                const maxPagesToShow = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+                let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+                
+                if(endPage - startPage + 1 < maxPagesToShow) {
+                    startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                }
+
+                if (startPage > 1) {
+                    const firstButton = document.createElement('button');
+                    firstButton.textContent = '1';
+                    firstButton.className = 'px-3 py-1 text-sm rounded-md bg-white text-gray-600 hover:bg-gray-100';
+                    firstButton.onclick = () => { currentPage = 1; render(); };
+                    pageNumbersDiv.appendChild(firstButton);
+                    if (startPage > 2) {
+                        pageNumbersDiv.insertAdjacentHTML('beforeend', '<span class="px-3 py-1 text-sm">...</span>');
+                    }
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageButton = document.createElement('button');
+                    pageButton.textContent = i;
+                    pageButton.className = `px-3 py-1 text-sm rounded-md ${i === currentPage ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`;
+                    pageButton.onclick = () => {
+                        currentPage = i;
+                        render();
+                    };
+                    pageNumbersDiv.appendChild(pageButton);
+                }
+
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        pageNumbersDiv.insertAdjacentHTML('beforeend', '<span class="px-3 py-1 text-sm">...</span>');
+                    }
+                    const lastButton = document.createElement('button');
+                    lastButton.textContent = totalPages;
+                    lastButton.className = 'px-3 py-1 text-sm rounded-md bg-white text-gray-600 hover:bg-gray-100';
+                    lastButton.onclick = () => { currentPage = totalPages; render(); };
+                    pageNumbersDiv.appendChild(lastButton);
+                }
+            }
+            
+            document.getElementById(`prevPage${tablePrefix}`).onclick = () => {
+                if(currentPage > 1) {
+                    currentPage--;
+                    render();
+                }
+            };
+            document.getElementById(`nextPage${tablePrefix}`).onclick = () => {
+                const totalRecordsCount = filterData(tablePrefix, data).length;
+                const totalPages = Math.ceil(totalRecordsCount / itemsPerPage);
+                if(currentPage < totalPages) {
+                    currentPage++;
+                    render();
+                }
+            };
+            
+            const searchInput = document.getElementById(`searchInput${tablePrefix}`);
+            if(searchInput) searchInput.addEventListener('input', render);
+            
+            const nationalityFilterSelect = document.getElementById(`nationalityFilter${tablePrefix}`);
+            if(nationalityFilterSelect) nationalityFilterSelect.addEventListener('change', render);
+
+            render();
+        }
+
+        // --- Google Sheets Data Loading ---
+
+        /**
+         * Parses CSV text into an array of objects.
+         * @param {string} text - The CSV text.
+         * @returns {Array<Object>}
+         */
+        function parseCSV(text) {
+            const lines = text.split(/\r?\n/);
+            if (lines.length < 2) return []; // Return empty if no data rows
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i]) continue;
+                const values = lines[i].split(',');
+                const entry = {};
+                for (let j = 0; j < headers.length; j++) {
+                    const header = headers[j];
+                    const value = values[j] ? values[j].trim() : '';
+                    entry[header] = value;
+                }
+                data.push(entry);
+            }
+            return data;
+        }
+
+        /**
+         * Fetches and parses data from a published Google Sheet CSV URL.
+         * @param {string} url - The Google Sheet CSV URL.
+         * @returns {Promise<Array<Object>>}
+         */
+        async function loadDataFromSheet(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok: ${response.statusText}`);
+                }
+                const csvText = await response.text();
+                return parseCSV(csvText);
+            } catch (error) {
+                console.error('Failed to load or parse sheet data:', error);
+                return [];
+            }
+        }
+
+        // --- Data Processing and Dashboard Update Functions ---
+
+        function convertAreaToWah(areaString) {
+            if (!areaString || typeof areaString !== 'string') return 0;
+            const parts = areaString.split('-').map(Number);
+            const [rai = 0, ngan = 0, wah = 0] = parts;
+            return (rai * 400) + (ngan * 100) + wah;
+        }
+
+        function convertWahToRaiNganWah(totalWah) {
+            const rai = Math.floor(totalWah / 400);
+            const remainingWahAfterRai = totalWah % 400;
+            const ngan = Math.floor(remainingWahAfterRai / 100);
+            const wah = remainingWahAfterRai % 100;
+            return `${rai.toLocaleString()}-${ngan}-${wah.toFixed(0)}`;
+        }
+
+        function updateSection93Dashboard(data) {
+            if (!data || data.length === 0) return;
+
+            // 1. Update Summary Cards
+            const totalRecords = data.length;
+            const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
+            const totalWah = data.reduce((sum, item) => sum + convertAreaToWah(item.area), 0);
+            
+            document.getElementById('s93-total-records').textContent = totalRecords.toLocaleString();
+            document.getElementById('s93-total-plots').textContent = totalPlots.toLocaleString();
+            document.getElementById('s93-total-area').textContent = convertWahToRaiNganWah(totalWah);
+
+            // 2. Process and Update Nationality Chart
+            const nationalityCounts = data.reduce((acc, item) => {
+                const nat = item.nationality || 'ไม่ระบุ';
+                acc[nat] = (acc[nat] || 0) + 1;
+                return acc;
+            }, {});
+            const sortedNationalities = Object.entries(nationalityCounts).sort((a, b) => b[1] - a[1]);
+            const natLabels = sortedNationalities.map(item => item[0]);
+            const natData = sortedNationalities.map(item => item[1]);
+            drawPieChart('nationalityChart', 'nationality-legend', natLabels, natData, 'ราย');
+            
+            // 3. Populate Nationality Filter
+            const nationalityFilter = document.getElementById('nationalityFilter');
+            nationalityFilter.innerHTML = '<option value="">ทุกสัญชาติ</option>'; // Reset
+            natLabels.forEach(nat => {
+                const option = document.createElement('option');
+                option.value = nat;
+                option.textContent = nat;
+                nationalityFilter.appendChild(option);
+            });
+
+            // 4. Process and Update Province Chart
+            const provinceData = data.reduce((acc, item) => {
+                const prov = item.province || 'ไม่ระบุ';
+                if (!acc[prov]) {
+                    acc[prov] = { plots: 0, totalWah: 0 };
+                }
+                acc[prov].plots += (parseInt(item.plot_count, 10) || 0);
+                acc[prov].totalWah += convertAreaToWah(item.area);
+                return acc;
+            }, {});
+            const sortedProvinces = Object.entries(provinceData).sort((a, b) => b[1].plots - a[1].plots);
+            const provLabels = sortedProvinces.map(item => item[0]);
+            const provPlotData = sortedProvinces.map(item => item[1].plots);
+            const provAreaData = sortedProvinces.map(item => item[1].totalWah / 400); // Convert back to Rai for chart
+            drawSection93ProvinceChart(provLabels, provPlotData, provAreaData);
+
+            // 5. Process and Update Land Use Charts
+            const landUseData = data.reduce((acc, item) => {
+                const useType = item.land_use_type || 'ไม่ระบุ';
+                if (!acc[useType]) {
+                    acc[useType] = { plots: 0, totalWah: 0 };
+                }
+                acc[useType].plots += (parseInt(item.plot_count, 10) || 0);
+                acc[useType].totalWah += convertAreaToWah(item.area);
+                return acc;
+            }, {});
+            const sortedLandUse = Object.entries(landUseData).sort((a, b) => b[1].plots - a[1].plots);
+            const landUseLabels = sortedLandUse.map(item => item[0]);
+            const landUsePlotData = sortedLandUse.map(item => item[1].plots);
+            const landUseAreaData = sortedLandUse.map(item => Math.round(item[1].totalWah / 400)); // in Rai
+            
+            drawPieChart('landUsePlotChart', 'landuse-plot-legend', landUseLabels, landUsePlotData, 'แปลง');
+            drawPieChart('landUseAreaChart', 'landuse-area-legend', landUseLabels, landUseAreaData, 'ไร่');
+
+            // 6. Process and Update Stacked Bar Chart
+            const stackedData = data.reduce((acc, item) => {
+                const nat = item.nationality || 'ไม่ระบุ';
+                const useType = item.land_use_type || 'ไม่ระบุ';
+                const areaRai = convertAreaToWah(item.area) / 400;
+
+                if (!acc[nat]) {
+                    acc[nat] = {};
+                }
+                acc[nat][useType] = (acc[nat][useType] || 0) + areaRai;
+                return acc;
+            }, {});
+
+            const allUseTypes = [...new Set(data.map(item => item.land_use_type || 'ไม่ระบุ'))];
+            const allNationalities = [...new Set(data.map(item => item.nationality || 'ไม่ระบุ'))];
+
+            const stackedDatasets = allUseTypes.map(useType => {
+                return {
+                    label: useType,
+                    data: allNationalities.map(nat => stackedData[nat][useType] || 0)
+                };
+            });
+            drawStackedColumnChart(allNationalities, stackedDatasets);
+        }
+
+        function updateSection96Dashboard(data) {
+            if (!data || data.length === 0) return;
+
+            // 1. Update Summary Cards
+            const totalRecords = data.length;
+            const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
+            const totalWah = data.reduce((sum, item) => sum + convertAreaToWah(item.area), 0);
+            
+            document.getElementById('s96-total-records').textContent = totalRecords.toLocaleString();
+            document.getElementById('s96-total-plots').textContent = totalPlots.toLocaleString();
+            document.getElementById('s96-total-area').textContent = convertWahToRaiNganWah(totalWah);
+
+            // 2. Process and Update Nationality Chart
+            const nationalityCounts = data.reduce((acc, item) => {
+                const nat = item.nationality || 'ไม่ระบุ';
+                acc[nat] = (acc[nat] || 0) + 1;
+                return acc;
+            }, {});
+            const sortedNationalities = Object.entries(nationalityCounts).sort((a, b) => b[1] - a[1]);
+            const natLabels = sortedNationalities.map(item => item[0]);
+            const natData = sortedNationalities.map(item => item[1]);
+            drawPieChart('section96NationalityChart', 's96-nationality-legend', natLabels, natData, 'ราย');
+            
+            // 3. Populate Nationality Filter
+            const nationalityFilter = document.getElementById('nationalityFilter96');
+            nationalityFilter.innerHTML = '<option value="">ทุกสัญชาติ</option>'; // Reset
+            natLabels.forEach(nat => {
+                const option = document.createElement('option');
+                option.value = nat;
+                option.textContent = nat;
+                nationalityFilter.appendChild(option);
+            });
+
+            // 4. Process and Update Investment Type Chart (using 'note' column)
+            const investmentCounts = data.reduce((acc, item) => {
+                const invType = item.note || 'ไม่ระบุ';
+                acc[invType] = (acc[invType] || 0) + 1;
+                return acc;
+            }, {});
+            const sortedInvestments = Object.entries(investmentCounts).sort((a, b) => b[1] - a[1]);
+            const invLabels = sortedInvestments.map(item => item[0]);
+            const invData = sortedInvestments.map(item => item[1]);
+            drawPieChart('section96InvestmentChart', 's96-investment-legend', invLabels, invData, 'ราย');
+
+            // 5. Process and Update Province Chart
+            const provinceData = data.reduce((acc, item) => {
+                const prov = item.province || 'ไม่ระบุ';
+                if (!acc[prov]) {
+                    acc[prov] = { plots: 0, totalWah: 0 };
+                }
+                acc[prov].plots += (parseInt(item.plot_count, 10) || 0);
+                acc[prov].totalWah += convertAreaToWah(item.area);
+                return acc;
+            }, {});
+            const sortedProvinces = Object.entries(provinceData).sort((a, b) => b[1].plots - a[1].plots);
+            const provLabels = sortedProvinces.map(item => item[0]);
+            const provPlotData = sortedProvinces.map(item => item[1].plots);
+            const provAreaData = sortedProvinces.map(item => item[1].totalWah / 400); // Convert back to Rai for chart
+            drawSection96ProvinceBarChart(provLabels, provPlotData, provAreaData);
+        }
+
+        function updateBoiDashboard(data) {
+            if (!data || data.length === 0) return;
+
+            // 1. Update Summary Cards
+            const totalRecords = data.length;
+            const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
+            const totalWah = data.reduce((sum, item) => sum + convertAreaToWah(item.area), 0);
+            
+            document.getElementById('boi-total-records').textContent = totalRecords.toLocaleString();
+            document.getElementById('boi-total-plots').textContent = totalPlots.toLocaleString();
+            document.getElementById('boi-total-area').textContent = convertWahToRaiNganWah(totalWah);
+
+            // 2. Populate Nationality Filter
+            const nationalityCounts = data.reduce((acc, item) => {
+                const nat = item.nationality || 'ไม่ระบุ';
+                acc[nat] = (acc[nat] || 0) + 1;
+                return acc;
+            }, {});
+            const natLabels = Object.keys(nationalityCounts).sort();
+            const nationalityFilter = document.getElementById('nationalityFilterBoi');
+            nationalityFilter.innerHTML = '<option value="">ทุกสัญชาติ</option>'; // Reset
+            natLabels.forEach(nat => {
+                const option = document.createElement('option');
+                option.value = nat;
+                option.textContent = nat;
+                nationalityFilter.appendChild(option);
+            });
+
+            // 3. Process and Update Province Charts
+            const provinceData = data.reduce((acc, item) => {
+                const prov = item.province || 'ไม่ระบุ';
+                if (!acc[prov]) {
+                    acc[prov] = { plots: 0, totalWah: 0 };
+                }
+                acc[prov].plots += (parseInt(item.plot_count, 10) || 0);
+                acc[prov].totalWah += convertAreaToWah(item.area);
+                return acc;
+            }, {});
+            const sortedProvinces = Object.entries(provinceData).sort((a, b) => b[1].plots - a[1].plots);
+            const provLabels = sortedProvinces.map(item => item[0]);
+            const provPlotData = sortedProvinces.map(item => item[1].plots);
+            const provAreaData = sortedProvinces.map(item => item[1].totalWah / 400); // in Rai
+
+            drawBoiProvincePlotChart(provLabels, provPlotData, provAreaData);
+            drawBoiProvinceAreaChart(provLabels, provPlotData, provAreaData);
+        }
+
+        function updateCommercialDashboard(data) {
+             if (!data || data.length === 0) return;
+
+            // 1. Update Summary Cards
+            const totalRecords = data.length;
+            const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
+            const totalWah = data.reduce((sum, item) => sum + convertAreaToWah(item.area), 0);
+            
+            document.getElementById('commercial-total-records').textContent = totalRecords.toLocaleString();
+            document.getElementById('commercial-total-plots').textContent = totalPlots.toLocaleString();
+            document.getElementById('commercial-total-area').textContent = convertWahToRaiNganWah(totalWah);
+
+            // 2. Populate Nationality Filter
+            const nationalityCounts = data.reduce((acc, item) => {
+                const nat = item.nationality || 'ไม่ระบุ';
+                acc[nat] = (acc[nat] || 0) + 1;
+                return acc;
+            }, {});
+            const natLabels = Object.keys(nationalityCounts).sort();
+            const nationalityFilter = document.getElementById('nationalityFilterCommercial');
+            nationalityFilter.innerHTML = '<option value="">ทุกสัญชาติ</option>'; // Reset
+            natLabels.forEach(nat => {
+                const option = document.createElement('option');
+                option.value = nat;
+                option.textContent = nat;
+                nationalityFilter.appendChild(option);
+            });
+
+            // 3. Process and Update Land Use Charts
+            const landUseData = data.reduce((acc, item) => {
+                const useType = item.land_use_type || 'ไม่ระบุ';
+                if (!acc[useType]) {
+                    acc[useType] = { plots: 0, totalWah: 0 };
+                }
+                acc[useType].plots += (parseInt(item.plot_count, 10) || 0);
+                acc[useType].totalWah += convertAreaToWah(item.area);
+                return acc;
+            }, {});
+            const sortedLandUse = Object.entries(landUseData).sort((a, b) => b[1].plots - a[1].plots);
+            const landUseLabels = sortedLandUse.map(item => item[0]);
+            const landUsePlotData = sortedLandUse.map(item => item[1].plots);
+            const landUseAreaData = sortedLandUse.map(item => Math.round(item[1].totalWah / 400)); // in Rai
+            
+            drawPieChart('commercialPlotChart', 'commercial-plot-legend', landUseLabels, landUsePlotData, 'แปลง');
+            drawPieChart('commercialAreaChart', 'commercial-area-legend', landUseLabels, landUseAreaData, 'ไร่');
+
+            // 4. Process and Update Province Chart
+            const provinceData = data.reduce((acc, item) => {
+                const prov = item.province || 'ไม่ระบุ';
+                if (!acc[prov]) {
+                    acc[prov] = { plots: 0, totalWah: 0 };
+                }
+                acc[prov].plots += (parseInt(item.plot_count, 10) || 0);
+                acc[prov].totalWah += convertAreaToWah(item.area);
+                return acc;
+            }, {});
+            const sortedProvinces = Object.entries(provinceData).sort((a, b) => b[1].plots - a[1].plots);
+            const provLabels = sortedProvinces.map(item => item[0]);
+            const provPlotData = sortedProvinces.map(item => item[1].plots);
+            const provAreaData = sortedProvinces.map(item => item[1].totalWah / 400); // Convert back to Rai for chart
+            drawCommercialProvinceChart(provLabels, provPlotData, provAreaData);
+        }
+        
+        function updateReligiousTempleDashboard(data) {
+            if (!data || data.length === 0) return;
+
+            // 1. Update Summary Cards
+            const totalRecords = data.reduce((sum, item) => sum + (parseInt(item.จำนวนวัด, 10) || 0), 0);
+            const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.จำนวนแปลง, 10) || 0), 0);
+            const totalArea = data.reduce((sum, item) => sum + (parseFloat(item.เนื้อที่) || 0), 0);
+
+            document.getElementById('temple-total-records').textContent = totalRecords.toLocaleString();
+            document.getElementById('temple-total-plots').textContent = totalPlots.toLocaleString();
+            document.getElementById('temple-total-area').textContent = totalArea.toLocaleString();
+
+            // 2. Update Top 10 Tables
+            // Top 10 by Plots
+            const sortedByPlots = [...data].sort((a, b) => (parseInt(b.plot_count, 10) || 0) - (parseInt(a.plot_count, 10) || 0));
+            const top10PlotsBody = document.getElementById('temple-top10-plots-body');
+            top10PlotsBody.innerHTML = '';
+            sortedByPlots.slice(0, 10).forEach((item, index) => {
+                const row = `<tr>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.temple_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
+                </tr>`;
+                top10PlotsBody.innerHTML += row;
+            });
+
+            // Top 10 by Area
+            const sortedByArea = [...data].sort((a, b) => (parseFloat(b.area_rai) || 0) - (parseFloat(a.area_rai) || 0));
+            const top10AreaBody = document.getElementById('temple-top10-area-body');
+            top10AreaBody.innerHTML = '';
+            sortedByArea.slice(0, 10).forEach((item, index) => {
+                const row = `<tr>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.temple_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
+                </tr>`;
+                top10AreaBody.innerHTML += row;
+            });
+
+            // 3. Process and Update Province Chart
+            const provinceData = data.reduce((acc, item) => {
+                const prov = item.จังหวัด || 'ไม่ระบุ';
+                if (!acc[prov]) {
+                    acc[prov] = { temples: 0, totalArea: 0 };
+                }
+                acc[prov].temples += (parseFloat(item.จำนวนวัด) || 0);
+                acc[prov].totalArea += (parseFloat(item.เนื้อที่) || 0);
+                return acc;
+            }, {});
+            const sortedProvinces = Object.entries(provinceData).sort((a, b) => b[1].temples - a[1].plots);
+            const provLabels = sortedProvinces.map(item => item[0]);
+            const provTempleData = sortedProvinces.map(item => item[1].temples);
+            const provAreaData = sortedProvinces.map(item => item[1].totalArea);
+            drawTempleProvinceChart(provLabels, provTempleData, provAreaData);
+        }
+
+        function updateReligiousMosqueDashboard(data) {
+            if (!data || data.length === 0) return;
+
+            // 1. Update Summary Cards
+            const totalRecords = data.reduce((sum, item) => sum + (parseInt(item.จำนวนมัสยิด, 10) || 0), 0);
+            const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.จำนวนแปลง, 10) || 0), 0);
+            const totalArea = data.reduce((sum, item) => sum + (parseFloat(item.เนื้อที่) || 0), 0);
+
+            document.getElementById('mosque-total-records').textContent = totalRecords.toLocaleString();
+            document.getElementById('mosque-total-plots').textContent = totalPlots.toLocaleString();
+            document.getElementById('mosque-total-area').textContent = totalArea.toLocaleString();
+
+            // 2. Update Top 10 Tables
+            // Top 10 by Plots
+            const sortedByPlots = [...data].sort((a, b) => (parseInt(b.plot_count, 10) || 0) - (parseInt(a.plot_count, 10) || 0));
+            const top10PlotsBody = document.getElementById('mosque-top10-plots-body');
+            top10PlotsBody.innerHTML = '';
+            sortedByPlots.slice(0, 10).forEach((item, index) => {
+                const row = `<tr>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.mosque_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
+                </tr>`;
+                top10PlotsBody.innerHTML += row;
+            });
+
+            // Top 10 by Area
+            const sortedByArea = [...data].sort((a, b) => (parseFloat(b.area_rai) || 0) - (parseFloat(a.area_rai) || 0));
+            const top10AreaBody = document.getElementById('mosque-top10-area-body');
+            top10AreaBody.innerHTML = '';
+            sortedByArea.slice(0, 10).forEach((item, index) => {
+                const row = `<tr>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.mosque_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
+                </tr>`;
+                top10AreaBody.innerHTML += row;
+            });
+
+            // 3. Process and Update Province Chart
+            const provinceData = data.reduce((acc, item) => {
+                const prov = item.จังหวัด || 'ไม่ระบุ';
+                if (!acc[prov]) {
+                    acc[prov] = { mosques: 0, totalArea: 0 };
+                }
+                acc[prov].mosques += (parseFloat(item.จำนวนมัสยิด) || 0);
+                acc[prov].totalArea += (parseFloat(item.เนื้อที่) || 0);
+                return acc;
+            }, {});
+            const sortedProvinces = Object.entries(provinceData).sort((a, b) => {
+                const provinceA = a[0];
+                const provinceB = b[0];
+                return provinceA.localeCompare(provinceB, 'th');
+            });
+            const provLabels = sortedProvinces.map(item => item[0]);
+            const provMosqueData = sortedProvinces.map(item => item[1].mosques);
+            const provAreaData = sortedProvinces.map(item => item[1].totalArea);
+            drawMosqueProvinceChart(provLabels, provMosqueData, provAreaData);
+        }
+
+        function updateReligiousChristianDashboard(data) {
+            if (!data || data.length === 0) return;
+
+            // 1. Update Summary Cards
+            const totalRecords = data.reduce((sum, item) => sum + (parseInt(item.จำนวนมูลนิธิ, 10) || 0), 0);
+            const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.จำนวนแปลง, 10) || 0), 0);
+            const totalArea = data.reduce((sum, item) => sum + (parseFloat(item.เนื้อที่) || 0), 0);
+
+            document.getElementById('christian-total-records').textContent = totalRecords.toLocaleString();
+            document.getElementById('christian-total-plots').textContent = totalPlots.toLocaleString();
+            document.getElementById('christian-total-area').textContent = totalArea.toLocaleString();
+
+            // 2. Update Top 10 Tables
+            // Top 10 by Plots
+            const sortedByPlots = [...data].sort((a, b) => (parseInt(b.plot_count, 10) || 0) - (parseInt(a.plot_count, 10) || 0));
+            const top10PlotsBody = document.getElementById('christian-top10-plots-body');
+            top10PlotsBody.innerHTML = '';
+            sortedByPlots.slice(0, 10).forEach((item, index) => {
+                const row = `<tr>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.foundation_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
+                </tr>`;
+                top10PlotsBody.innerHTML += row;
+            });
+
+            // Top 10 by Area
+            const sortedByArea = [...data].sort((a, b) => (parseFloat(b.area_rai) || 0) - (parseFloat(a.area_rai) || 0));
+            const top10AreaBody = document.getElementById('christian-top10-area-body');
+            top10AreaBody.innerHTML = '';
+            sortedByArea.slice(0, 10).forEach((item, index) => {
+                const row = `<tr>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.foundation_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
+                </tr>`;
+                top10AreaBody.innerHTML += row;
+            });
+
+            // 3. Process and Update Province Chart
+            const provinceData = data.reduce((acc, item) => {
+                const prov = item.จังหวัด || 'ไม่ระบุ';
+                if (!acc[prov]) {
+                    acc[prov] = { foundations: 0, totalArea: 0 };
+                }
+                acc[prov].foundations += (parseFloat(item.จำนวนมูลนิธิ) || 0);
+                acc[prov].totalArea += (parseFloat(item.เนื้อที่) || 0);
+                return acc;
+            }, {});
+            const sortedProvinces = Object.entries(provinceData).sort((a, b) => {
+                const provinceA = a[0];
+                const provinceB = b[0];
+                return provinceA.localeCompare(provinceB, 'th');
+            });
+            const provLabels = sortedProvinces.map(item => item[0]);
+            const provFoundationData = sortedProvinces.map(item => item[1].foundations);
+            const provAreaData = sortedProvinces.map(item => item[1].totalArea);
+            drawChristianProvinceChart(provLabels, provFoundationData, provAreaData);
+        }
+
+        function updateReligiousCatholicDashboard(data) {
+            if (!data || data.length === 0) return;
+
+            // 1. Update Summary Cards
+            const totalRecords = data.reduce((sum, item) => sum + (parseInt(item.จำนวนวัดบาดหลวง, 10) || 0), 0);
+            const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
+            const totalArea = data.reduce((sum, item) => sum + (parseFloat(item.area_rai) || 0), 0);
+
+            document.getElementById('catholic-total-records').textContent = totalRecords.toLocaleString();
+            document.getElementById('catholic-total-plots').textContent = totalPlots.toLocaleString();
+            document.getElementById('catholic-total-area').textContent = totalArea.toLocaleString();
+
+            // 2. Update Top 10 Tables
+            // Top 10 by Plots
+            const sortedByPlots = [...data].sort((a, b) => (parseInt(b.plot_count, 10) || 0) - (parseInt(a.plot_count, 10) || 0));
+            const top10PlotsBody = document.getElementById('catholic-top10-plots-body');
+            top10PlotsBody.innerHTML = '';
+            sortedByPlots.slice(0, 10).forEach((item, index) => {
+                const row = `<tr>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.church_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
+                </tr>`;
+                top10PlotsBody.innerHTML += row;
+            });
+
+            // Top 10 by Area
+            const sortedByArea = [...data].sort((a, b) => (parseFloat(b.area_rai) || 0) - (parseFloat(a.area_rai) || 0));
+            const top10AreaBody = document.getElementById('catholic-top10-area-body');
+            top10AreaBody.innerHTML = '';
+            sortedByArea.slice(0, 10).forEach((item, index) => {
+                const row = `<tr>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.church_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
+                </tr>`;
+                top10AreaBody.innerHTML += row;
+            });
+
+            // 3. Process and Update Province Chart
+            const provinceData = data.reduce((acc, item) => {
+                const prov = item.จังหวัด || 'ไม่ระบุ';
+                if (!acc[prov]) {
+                    acc[prov] = { churches: 0, totalArea: 0 };
+                }
+                acc[prov].churches += (parseFloat(item.จำนวนวัดบาดหลวง) || 0);
+                acc[prov].totalArea += (parseFloat(item.เนื้อที่) || 0);
+                return acc;
+            }, {});
+            const sortedProvinces = Object.entries(provinceData).sort((a, b) => {
+                const provinceA = a[0];
+                const provinceB = b[0];
+                return provinceA.localeCompare(provinceB, 'th');
+            });
+            const provLabels = sortedProvinces.map(item => item[0]);
+            const provChurchData = sortedProvinces.map(item => item[1].churches);
+            const provAreaData = sortedProvinces.map(item => item[1].totalArea);
+            drawCatholicProvinceChart(provLabels, provChurchData, provAreaData);
+        }
+
+        function updateAbandonedDashboard(data) {
+            if (!data || data.length === 0) return;
+
+            // 1. Update Summary Cards
+            const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
+            const totalArea = data.reduce((sum, item) => sum + (parseFloat(item.area_rai) || 0), 0);
+            const pendingCases = data.filter(item => item.status === 'รอดำเนินการ').length;
+
+            document.getElementById('abandoned-total-plots').textContent = totalPlots.toLocaleString();
+            document.getElementById('abandoned-total-area').textContent = totalArea.toLocaleString();
+            document.getElementById('abandoned-pending-cases').textContent = pendingCases.toLocaleString();
+
+            // 2. Process and Update Province Charts
+            const provinceData = data.reduce((acc, item) => {
+                const prov = item.province || 'ไม่ระบุ';
+                if (!acc[prov]) {
+                    acc[prov] = { plots: 0, totalArea: 0 };
+                }
+                acc[prov].plots += (parseInt(item.plot_count, 10) || 0);
+                acc[prov].totalArea += (parseFloat(item.area_rai) || 0);
+                return acc;
+            }, {});
+            const sortedProvincesByPlot = Object.entries(provinceData).sort((a, b) => b[1].plots - a[1].plots);
+            const sortedProvincesByArea = Object.entries(provinceData).sort((a, b) => b[1].totalArea - a[1].totalArea);
+
+            drawAbandonedPlotsByProvinceChart(sortedProvincesByPlot.map(p => p[0]), sortedProvincesByPlot.map(p => p[1].plots));
+            drawAbandonedAreaByProvinceChart(sortedProvincesByArea.map(p => p[0]), sortedProvincesByArea.map(p => p[1].totalArea));
+        }
+
+        function updateSecuritiesDashboard(data) {
+            if (!data || data.length === 0) return;
+
+            // 1. Update Summary Cards
+            const totalCases = data.length;
+            const uniqueClients = new Set(data.map(item => item.client_name)).size;
+
+            document.getElementById('securities-total-cases').textContent = totalCases.toLocaleString();
+            document.getElementById('securities-total-clients').textContent = uniqueClients.toLocaleString();
+        }
+
+        function updateDocumentSearchDashboard(data) {
+            if (!data || data.length === 0) return;
+
+            // 1. Update Summary Cards
+            const totalCases = data.length;
+            const uniqueClients = new Set(data.map(item => item.client_name)).size;
+            const totalCopies = data.reduce((sum, item) => sum + (parseInt(item.copy_count, 10) || 0), 0);
+
+            document.getElementById('docsearch-total-cases').textContent = totalCases.toLocaleString();
+            document.getElementById('docsearch-total-clients').textContent = uniqueClients.toLocaleString();
+            document.getElementById('docsearch-total-copies').textContent = totalCopies.toLocaleString();
+        }
+
+        // --- Table Initialization ---
+        document.addEventListener('DOMContentLoaded', async function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const sidebar = document.getElementById('sidebar');
+            const mobileOverlay = document.getElementById('mobile-overlay');
+
+            function toggleMobileMenu() {
+                sidebar.classList.toggle('-translate-x-full');
+                mobileOverlay.classList.toggle('hidden');
+            }
+
+            function closeMobileMenu() {
+                sidebar.classList.add('-translate-x-full');
+                mobileOverlay.classList.add('hidden');
+            }
+
+            mobileMenuButton.addEventListener('click', toggleMobileMenu);
+            mobileOverlay.addEventListener('click', closeMobileMenu);
+
+            const menuItems = document.querySelectorAll('.menu-item, .submenu-item');
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth < 1024) {
+                        closeMobileMenu();
+                    }
+                });
+            });
+
+            // --- Load Section 93 Data from Google Sheets ---
+            const section93SheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=679295658&single=true&output=csv'; // <--- ❗ This is a sample URL. Replace with your own.
+            
+            const dataTableBody = document.getElementById('dataTableBody');
+            dataTableBody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
+            
+            const section93Data = await loadDataFromSheet(section93SheetUrl);
+            
+            if(section93Data.length > 0) {
+                updateSection93Dashboard(section93Data);
+                 setupPagination('', section93Data, (data, currentPage, itemsPerPage) => {
+                    const tbody = document.getElementById('dataTableBody');
+                    tbody.innerHTML = '';
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-gray-500">ไม่พบข้อมูล</td></tr>';
+                        return;
+                    }
+                    const pageData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                    pageData.forEach((item) => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50';
+                        row.innerHTML = `
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${item.nationality || ''}</span></td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.land_use_type || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${item.note || ''}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }, 10);
+            } else {
+                dataTableBody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้ หรือชีตไม่มีข้อมูล</td></tr>';
+            }
+           
+            // --- Load Section 96 Data from Google Sheets ---
+            const section96SheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=428060711&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "มาตรา 96" ที่นี่
+            
+            const dataTableBody96 = document.getElementById('dataTableBody96');
+            dataTableBody96.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
+
+            const section96Data = await loadDataFromSheet(section96SheetUrl);
+
+            if(section96Data.length > 0) {
+                updateSection96Dashboard(section96Data);
+                setupPagination('96', section96Data, (data, currentPage, itemsPerPage) => {
+                    const tbody = document.getElementById('dataTableBody96');
+                    tbody.innerHTML = '';
+                     if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">ไม่พบข้อมูล</td></tr>';
+                        return;
+                    }
+                    const pageData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                    pageData.forEach((item) => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50';
+                        row.innerHTML = `<td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td><td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td><td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">${item.nationality || ''}</span></td><td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td><td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td><td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td><td class="px-4 py-3 text-sm text-gray-600">${item.note || ''}</td>`;
+                        tbody.appendChild(row);
+                    });
+                }, 10);
+            } else {
+                 dataTableBody96.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้ หรือชีตไม่มีข้อมูล</td></tr>';
+            }
+
+            // --- Load BOI Data from Google Sheets ---
+            const boiSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1748513612&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "BOI" ที่นี่
+            
+            const dataTableBodyBoi = document.getElementById('dataTableBodyBoi');
+            dataTableBodyBoi.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
+
+            const boiData = await loadDataFromSheet(boiSheetUrl);
+
+            if(boiData.length > 0) {
+                updateBoiDashboard(boiData);
+                setupPagination('Boi', boiData, (data, currentPage, itemsPerPage) => {
+                    const tbody = document.getElementById('dataTableBodyBoi');
+                    tbody.innerHTML = '';
+                     if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">ไม่พบข้อมูล</td></tr>';
+                        return;
+                    }
+                    const pageData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                    pageData.forEach((item) => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50';
+                        row.innerHTML = `
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">${item.nationality || ''}</span></td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${item.land_use_type || ''}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }, 10);
+            } else {
+                 dataTableBodyBoi.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้ หรือชีตไม่มีข้อมูล</td></tr>';
+            }
+
+            // --- Load Commercial Data from Google Sheets ---
+            const commercialSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=300478018&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "เช่าเพื่อพาณิชยกรรม" ที่นี่
+            
+            const dataTableBodyCommercial = document.getElementById('dataTableBodyCommercial');
+            dataTableBodyCommercial.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
+
+            const commercialData = await loadDataFromSheet(commercialSheetUrl);
+
+            if(commercialData.length > 0) {
+                updateCommercialDashboard(commercialData);
+                setupPagination('Commercial', commercialData, (data, currentPage, itemsPerPage) => {
+                    const tbody = document.getElementById('dataTableBodyCommercial');
+                    tbody.innerHTML = '';
+                     if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">ไม่พบข้อมูล</td></tr>';
+                        return;
+                    }
+                    const pageData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                    pageData.forEach((item) => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50';
+                        row.innerHTML = `
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.ประเภทจดทะเบียน || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.กำหนดเวลา || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.วันจดทะเบียน || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.ผู้ให้เช่า || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${item.land_use_type || ''}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }, 10);
+            } else {
+                 dataTableBodyCommercial.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้ หรือชีตไม่มีข้อมูล</td></tr>';
+            }
+
+            // --- Load Temple Data from Google Sheets ---
+            const templeSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1456133095&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "วัด" ที่นี่
+
+            const templeData = await loadDataFromSheet(templeSheetUrl);
+            if(templeData.length > 0) {
+                updateReligiousTempleDashboard(templeData);
+            } else {
+                console.log("No data for temples or failed to load.");
+            }
+
+            // --- Load Mosque Data from Google Sheets ---
+            const mosqueSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1025487410&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "มัสยิด" ที่นี่
+            
+            const mosqueData = await loadDataFromSheet(mosqueSheetUrl);
+            if(mosqueData.length > 0) {
+                updateReligiousMosqueDashboard(mosqueData);
+            } else {
+                console.log("No data for mosques or failed to load.");
+                document.getElementById('mosque-top10-plots-body').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+                document.getElementById('mosque-top10-area-body').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+            }
+
+            // --- Load Christian Foundation Data from Google Sheets ---
+            const christianSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=2104196646&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "มูลนิธิคริสต์" ที่นี่
+            
+            const christianData = await loadDataFromSheet(christianSheetUrl);
+            if(christianData.length > 0) {
+                updateReligiousChristianDashboard(christianData);
+            } else {
+                console.log("No data for Christian foundations or failed to load.");
+                document.getElementById('christian-top10-plots-body').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+                document.getElementById('christian-top10-area-body').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+            }
+            
+            // --- Load Catholic Church Data from Google Sheets ---
+            const catholicSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1235840245&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "วัดคาทอลิก" ที่นี่
+
+            const catholicData = await loadDataFromSheet(catholicSheetUrl);
+            if(catholicData.length > 0) {
+                updateReligiousCatholicDashboard(catholicData);
+            } else {
+                console.log("No data for Catholic churches or failed to load.");
+                document.getElementById('catholic-top10-plots-body').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+                document.getElementById('catholic-top10-area-body').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+            }
+
+            // --- Load Abandoned Land Data from Google Sheets ---
+            const abandonedSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=146619613&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "ที่ดินทอดทิ้ง" ที่นี่
+            
+            const abandonedData = await loadDataFromSheet(abandonedSheetUrl);
+            if(abandonedData.length > 0) {
+                updateAbandonedDashboard(abandonedData);
+                setupPagination('Abandoned', abandonedData, (data, currentPage, itemsPerPage) => {
+                    const tbody = document.getElementById('abandonedTableBody');
+                    tbody.innerHTML = '';
+                     if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">ไม่พบข้อมูล</td></tr>';
+                        return;
+                    }
+                    const pageData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                    pageData.forEach((item) => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50';
+                        const statusColor = item.status === 'รอดำเนินการ' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800';
+                        row.innerHTML = `
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${(parseFloat(item.area_rai) || 0).toLocaleString()}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${item.status || ''}</span></td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }, 10);
+            } else {
+                console.log("No data for abandoned land or failed to load.");
+                document.getElementById('abandonedTableBody').innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+            }
+
+            // --- Load Securities Verification Data from Google Sheets ---
+            const securitiesSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1213605999&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "ตรวจสอบหลักทรัพย์" ที่นี่
+            
+            const securitiesData = await loadDataFromSheet(securitiesSheetUrl);
+            if(securitiesData.length > 0) {
+                updateSecuritiesDashboard(securitiesData);
+                setupPagination('Securities', securitiesData, (data, currentPage, itemsPerPage) => {
+                    const tbody = document.getElementById('securitiesTableBody');
+                    tbody.innerHTML = '';
+                     if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-500">ไม่พบข้อมูล</td></tr>';
+                        return;
+                    }
+                    const pageData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                    pageData.forEach((item) => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50';
+                        const statusColor = item.status === 'รอดำเนินการ' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800';
+                        row.innerHTML = `
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.client_name || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${item.status || ''}</span></td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }, 10);
+            } else {
+                console.log("No data for securities verification or failed to load.");
+                document.getElementById('securitiesTableBody').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+            }
+
+            // --- Load Document Search Data from Google Sheets ---
+            const docSearchSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1378066006&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "ค้นหาเอกสาร" ที่นี่
+            
+            const docSearchData = await loadDataFromSheet(docSearchSheetUrl);
+            if(docSearchData.length > 0) {
+                updateDocumentSearchDashboard(docSearchData);
+                setupPagination('DocSearch', docSearchData, (data, currentPage, itemsPerPage) => {
+                    const tbody = document.getElementById('docSearchTableBody');
+                    tbody.innerHTML = '';
+                     if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">ไม่พบข้อมูล</td></tr>';
+                        return;
+                    }
+                    const pageData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                    pageData.forEach((item) => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50';
+                        const statusColor = item.status === 'รอดำเนินการ' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800';
+                        row.innerHTML = `
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.client_name || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.copy_count, 10) || 0).toLocaleString()}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${item.status || ''}</span></td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }, 10);
+            } else {
+                console.log("No data for document search or failed to load.");
+                document.getElementById('docSearchTableBody').innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+            }
+
+            // Set initial view
+            showContent('overview');
+        });
+    </script>
+</body>
+</html>
