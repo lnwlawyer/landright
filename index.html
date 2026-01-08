@@ -2,8 +2,23 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard</title>
+    
+    <!-- PWA Settings -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LandDashboard">
+    <meta name="theme-color" content="#1e3a8a">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/jpeg" href="https://live.staticflickr.com/65535/54607724576_60403c6e49_w.jpg">
+    <link rel="apple-touch-icon" href="https://live.staticflickr.com/65535/54607724576_60403c6e49_w.jpg">
+
+    <!-- Web App Manifest (Embedded Data URI) -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"ระบบข้อมูลที่ดิน","short_name":"LandDashboard","start_url":".","display":"standalone","background_color":"#f9fafb","theme_color":"#1e3a8a","description":"Dashboard ส่วนกำหนดสิทธิในที่ดิน","icons":[{"src":"https://live.staticflickr.com/65535/54607724576_60403c6e49_w.jpg","sizes":"192x192","type":"image/jpeg"},{"src":"https://live.staticflickr.com/65535/54607724576_60403c6e49_w.jpg","sizes":"512x512","type":"image/jpeg"}]}'>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- เพิ่ม Chart.js library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -2683,7 +2698,6 @@
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                             <td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${item.land_use_type || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-600">${item.note || ''}</td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -2691,7 +2705,7 @@
             } else {
                 dataTableBody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-red-500">ไม่สามารถโหลดข้อมูลได้ หรือชีตไม่มีข้อมูล</td></tr>';
             }
-           
+            
             // --- Load Section 96 Data from Google Sheets ---
             const section96SheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=428060711&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "มาตรา 96" ที่นี่
             
