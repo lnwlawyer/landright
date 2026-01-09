@@ -1,0 +1,22 @@
+{
+  "name": "ระบบข้อมูลที่ดิน",
+  "short_name": "LandDashboard",
+  "start_url": "./dashboard.html",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#1e3a8a",
+  "description": "Dashboard ส่วนกำหนดสิทธิในที่ดิน",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://live.staticflickr.com/65535/54607724576_60403c6e49_w.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "https://live.staticflickr.com/65535/54607724576_60403c6e49_w.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
