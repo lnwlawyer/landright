@@ -273,3 +273,11 @@ test('SMT2 public snapshots reject invalid dates, future approvals and small cel
   {byGroup:[{label:'กลุ่ม ก'+String.fromCharCode(10),count:10}]}
  ]) assert.equal(validatePublicSnapshot({...valid,...change}),false);
 });
+
+test('SMT2 public dashboard matches LandRight shell without exposing restricted tools', () => {
+ const page=readFileSync(new URL('../smt2/public.html',import.meta.url),'utf8');
+ for(const required of ['family=Prompt','class="sidebar"','class="topbar"','class="workspace"','class="main"','class="stat"','id="mobile-menu-button"','id="mobile-overlay"','aria-current="page"','href="../index.html"','id="publication-status"','id="published-dashboard"']) assert.ok(page.includes(required),required);
+ for(const forbidden of ['google.script.run','getServerData(', 'updateRecord(', 'addRecord(', 'script.google.com/macros/']) assert.ok(!page.includes(forbidden),forbidden);
+ assert.ok(page.includes('validatePublicSnapshot(snapshot)'));
+ assert.ok(page.includes('prefers-reduced-motion'));
+});
