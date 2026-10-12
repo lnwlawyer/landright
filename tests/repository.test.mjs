@@ -239,3 +239,24 @@ test('public SMT2 route does not expose case data or editing controls', () => {
  }
  assert.ok(html.includes('href="smt2/public.html"'));
 });
+
+test('public SMT2 summary accepts only approved, reconciled aggregates', async () => {
+ const {validatePublicSnapshot} = await import('../smt2/public-dashboard.mjs');
+ const valid = {schemaVersion:1,approvedForPublic:true,asOf:'2026-10-01',approvedOn:'2026-10-12',summary:{totalRecords:10,completedRecords:7,pendingRecords:3},byStatus:[{label:'เสร็จ',count:7},{label:'ค้าง',count:3}],byGroup:[{label:'กลุ่ม 1',count:10}]};
+ assert.equal(validatePublicSnapshot(valid),true);
+ for (const change of [
+  {approvedForPublic:false},
+  {secret:'private'},
+  {summary:{...valid.summary,totalRecords:11}},
+  {byStatus:[{label:'<img>',count:10}]},
+  {byGroup:[{label:'กลุ่ม 1',count:-1}]},
+  {approvedOn:'2026-09-01'}
+ ]) assert.equal(validatePublicSnapshot({...valid,...change}),false);
+});
+test('public SMT2 page fetches only approved local JSON', () => {
+ const page = readFileSync(new URL('../smt2/public.html',import.meta.url),'utf8');
+ assert.match(page,/fetch\('\.\/approved-summary\.json'/);
+ assert.match(page,/validatePublicSnapshot\(snapshot\)/);
+ assert.ok(!page.includes('script.google.com/macros/'));
+ assert.ok(!page.includes('google.script.run'));
+});
