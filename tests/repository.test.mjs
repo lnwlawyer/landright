@@ -287,7 +287,24 @@ test('SMT2 is a native LandRight section without separate-page navigation', () =
  assert.ok(html.includes('showContent(\'smt2\', event)'));
  assert.ok(html.includes("'smt2': 'ระบบบริหารงาน SMT2'"));
  assert.ok(html.includes("if (section === 'smt2') loadSmt2PublicDashboard()"));
- assert.ok(html.includes("import {validatePublicSnapshot,formatCount} from './smt2/public-dashboard.mjs'"));
- assert.ok(html.includes("fetch('./smt2/approved-summary.json'"));
+ assert.ok(html.includes("import {createInlineController} from './smt2/inline-dashboard.mjs'"));
+ assert.ok(readFileSync(new URL('../smt2/inline-dashboard.mjs',import.meta.url),'utf8').includes("SMT2_SNAPSHOT_PATH = './smt2/approved-summary.json'"));
  assert.ok(!html.includes('href="smt2/public.html"'));
+});
+
+test('SMT2 inline dashboard offers refresh, deep link and no private backend', () => {
+ assert.ok(html.includes('id="smt2-refresh"'));
+ assert.ok(html.includes('id="smt2-public-meta"'));
+ assert.ok(html.includes("new URLSearchParams(location.search).get('view') === 'smt2'"));
+ assert.ok(html.includes("window.loadSmt2PublicDashboard = () => controller.load()"));
+ const module = readFileSync(new URL('../smt2/inline-dashboard.mjs',import.meta.url),'utf8');
+ for (const text of ['validatePublicSnapshot(data)','redirect:\'error\'','credentials:\'omit\'','AbortController','clearTimeout(timeout)','root.replaceChildren()','button.disabled=true','button.disabled=false']) assert.ok(module.includes(text),text);
+ for (const secret of ['google.script.run','updateRecord(', 'addRecord(', 'getServerData(', 'script.google.com/macros/']) assert.ok(!module.includes(secret),secret);
+});
+test('SMT2 inline module provides strict public snapshot data contract', async () => {
+ const {describeSnapshot,SMT2_MAX_BYTES} = await import('../smt2/inline-dashboard.mjs');
+ assert.equal(SMT2_MAX_BYTES,16384);
+ const good={schemaVersion:1,approvedForPublic:true,asOf:'2026-10-01',approvedOn:'2026-10-12',summary:{totalRecords:10,completedRecords:5,pendingRecords:5},byStatus:[{label:'เสร็จ',count:5},{label:'ค้าง',count:5}],byGroup:[{label:'กลุ่ม ก',count:10}]};
+ assert.equal(describeSnapshot(good).cards[0][1],10);
+ assert.throws(()=>describeSnapshot({...good,approvedForPublic:false}),/UNAPPROVED/);
 });
