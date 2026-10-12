@@ -2070,6 +2070,10 @@
             if (row.some(value => value.trim() !== '')) rows.push(row);
             if (rows.length < 2) return [];
             const headers = rows[0].map(value => value.trim());
+            const nonemptyHeaders = headers.filter(Boolean);
+            if (new Set(nonemptyHeaders).size !== nonemptyHeaders.length) {
+                throw new Error('Invalid CSV: duplicate column headers');
+            }
             return rows.slice(1).map(values => {
                 const entry = {};
                 headers.forEach((header, index) => {
