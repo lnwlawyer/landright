@@ -2009,10 +2009,10 @@
             };
             
             const searchInput = document.getElementById(`searchInput${tablePrefix}`);
-            if(searchInput) searchInput.addEventListener('input', render);
+            if(searchInput) searchInput.addEventListener('input', () => { currentPage = 1; render(); });
             
             const nationalityFilterSelect = document.getElementById(`nationalityFilter${tablePrefix}`);
-            if(nationalityFilterSelect) nationalityFilterSelect.addEventListener('change', render);
+            if(nationalityFilterSelect) nationalityFilterSelect.addEventListener('change', () => { currentPage = 1; render(); });
 
             render();
         }
