@@ -86,3 +86,7 @@ test('table page is clamped before data rows are rendered', () => {
  assert.match(renderBody, /currentPage = Math\.min\(Math\.max\(1, currentPage\), totalPages\)/);
  assert.ok(renderBody.indexOf('currentPage = Math.min') < renderBody.indexOf('renderFunc(filteredData'));
 });
+
+test('active pagination button is announced to assistive technology', () => {
+ assert.match(html, /if \(i === currentPage\) pageButton\.setAttribute\('aria-current', 'page'\)/);
+});
