@@ -1907,6 +1907,8 @@
 
             function render() {
                 const filteredData = filterData(tableId, data);
+                const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
+                currentPage = Math.min(Math.max(1, currentPage), totalPages);
                 renderFunc(filteredData, currentPage, itemsPerPage);
                 updateNav(filteredData.length);
             }
