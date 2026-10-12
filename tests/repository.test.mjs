@@ -77,3 +77,12 @@ test('pagination resets on search and nationality filter changes', () => {
  assert.match(html, /searchInput\.addEventListener\('input', \(\) => \{ currentPage = 1; render\(\); \}\)/);
  assert.match(html, /nationalityFilterSelect\.addEventListener\('change', \(\) => \{ currentPage = 1; render\(\); \}\)/);
 });
+
+test('table page is clamped before data rows are rendered', () => {
+ const start = html.indexOf('function setupPagination(tableId, data, renderFunc, itemsPerPage)');
+ const end = html.indexOf('function filterData(prefix, originalData)', start);
+ assert.ok(start >= 0 && end > start);
+ const renderBody = html.slice(start, end);
+ assert.match(renderBody, /currentPage = Math\.min\(Math\.max\(1, currentPage\), totalPages\)/);
+ assert.ok(renderBody.indexOf('currentPage = Math.min') < renderBody.indexOf('renderFunc(filteredData'));
+});
