@@ -124,10 +124,10 @@
                         ส่วนกำหนดสิทธิในที่ดิน
                     </a>
                     <div class="menu-group">
-                        <a href="#" onclick="toggleSubmenu('land-rights', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                        <a href="#" onclick="toggleSubmenu('land-rights', event)" aria-controls="land-rights-submenu" aria-expanded="false" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200">
                             <i class="fas fa-chart-bar mr-3"></i>
                             กลุ่มกำหนดสิทธิในที่ดิน
-                            <i class="fas fa-chevron-down ml-auto transition-transform duration-200" id="land-rights-arrow"></i>
+                            <i class="fas fa-chevron-down ml-auto transition-transform duration-200" id="land-rights-arrow" aria-hidden="true"></i>
                         </a>
                         <div id="land-rights-submenu" class="submenu hidden ml-6 mt-2 space-y-1">
                             <a href="#" onclick="showContent('foreigners', event)" class="submenu-item flex items-center px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm">
@@ -1519,7 +1519,9 @@
             const arrow = document.getElementById(submenuId + '-arrow');
             
             submenu.classList.toggle('hidden');
-            arrow.style.transform = submenu.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+            const expanded = !submenu.classList.contains('hidden');
+            arrow.style.transform = expanded ? 'rotate(180deg)' : 'rotate(0deg)';
+            event?.currentTarget?.setAttribute('aria-expanded', String(expanded));
         }
 
         function showTab(tabId, event) {
@@ -2711,22 +2713,36 @@
             const mobileOverlay = document.getElementById('mobile-overlay');
 
             function toggleMobileMenu() {
-                sidebar.classList.toggle('-translate-x-full');
-                mobileOverlay.classList.toggle('hidden');
+                const opening = sidebar.classList.contains('-translate-x-full');
+                sidebar.classList.toggle('-translate-x-full', !opening);
+                mobileOverlay.classList.toggle('hidden', !opening);
+                mobileMenuButton.setAttribute('aria-expanded', String(opening));
+                mobileMenuButton.setAttribute('aria-label', opening ? 'ปิดเมนูนำทาง' : 'เปิดเมนูนำทาง');
             }
 
             function closeMobileMenu() {
                 sidebar.classList.add('-translate-x-full');
                 mobileOverlay.classList.add('hidden');
+                mobileMenuButton.setAttribute('aria-expanded', 'false');
+                mobileMenuButton.setAttribute('aria-label', 'เปิดเมนูนำทาง');
             }
 
             mobileMenuButton.addEventListener('click', toggleMobileMenu);
             mobileOverlay.addEventListener('click', closeMobileMenu);
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && !mobileOverlay.classList.contains('hidden')) {
+                    closeMobileMenu();
+                    mobileMenuButton.focus();
+                }
+            });
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 1024) closeMobileMenu();
+            });
 
             const menuItems = document.querySelectorAll('.menu-item, .submenu-item');
             menuItems.forEach(item => {
                 item.addEventListener('click', function() {
-                    if (window.innerWidth < 1024) {
+                    if (window.innerWidth < 1024 && !item.closest('a[onclick^="toggleSubmenu"]')) {
                         closeMobileMenu();
                     }
                 });
