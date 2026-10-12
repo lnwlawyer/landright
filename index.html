@@ -1975,6 +1975,7 @@
                 for (let i = startPage; i <= endPage; i++) {
                     const pageButton = document.createElement('button');
                     pageButton.textContent = i;
+                    if (i === currentPage) pageButton.setAttribute('aria-current', 'page');
                     pageButton.className = `px-3 py-1 text-sm rounded-md ${i === currentPage ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`;
                     pageButton.onclick = () => {
                         currentPage = i;
