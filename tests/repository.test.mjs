@@ -168,3 +168,16 @@ test('empty filtered tables retain one logical pagination page', () => {
  assert.ok(start >= 0 && end > start);
  assert.match(html.slice(start, end), /const totalPages = Math\.max\(1, Math\.ceil\(totalRecordsCount \/ itemsPerPage\)\)/);
 });
+
+test('UI removes misleading account and nonfunctional header actions', () => {
+ assert.ok(!html.includes('admin@example.com'));
+ assert.ok(!html.includes('fa-bell text-xl'));
+ assert.ok(!html.includes('fa-search text-xl'));
+ assert.ok(html.includes('LandRight'));
+});
+test('responsive UI supports mobile charts and reduced motion', () => {
+ assert.match(html, /@media \(max-width: 640px\)/);
+ assert.match(html, /@media \(prefers-reduced-motion: reduce\)/);
+ assert.match(html, /aria-label="เปิดเมนูนำทาง"/);
+ assert.match(html, /aria-current', 'page'/);
+});
