@@ -72,3 +72,8 @@ test('table search does not match records with missing fields', () => {
  assert.deepEqual(filterData('Abandoned', rows), [rows[0]]);
  assert.deepEqual(filterData('Securities', rows), [rows[0]]);
 });
+
+test('pagination resets on search and nationality filter changes', () => {
+ assert.match(html, /searchInput\.addEventListener\('input', \(\) => \{ currentPage = 1; render\(\); \}\)/);
+ assert.match(html, /nationalityFilterSelect\.addEventListener\('change', \(\) => \{ currentPage = 1; render\(\); \}\)/);
+});
