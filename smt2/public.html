@@ -2,22 +2,39 @@
 <html lang="th">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ภาพรวมการบริหารงาน | LandRight</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#1e3a8a">
+<title>ระบบบริหารงาน SMT2 | LandRight</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <style>
-:root{font-family:Sarabun,system-ui,sans-serif;color:#172b4d;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#142f55;color:white;padding:1rem max(1rem,calc((100vw - 1100px)/2))}header nav{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}a{color:inherit}header a{padding:.55rem .8rem;border:1px solid #b4c8e5;border-radius:.5rem;text-decoration:none}main{max-width:1100px;margin:auto;padding:2rem 1rem}h1{margin:.25rem 0;font-size:clamp(1.5rem,4vw,2.2rem)}p{line-height:1.7}.muted{color:#56667c}.panel{background:white;border:1px solid #dce4ef;border-radius:1rem;padding:1.5rem;margin:1.25rem 0;box-shadow:0 2px 10px #1227460a}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}.stat{padding:1.25rem;background:#f5f8fc;border-radius:.75rem}.stat strong{display:block;margin-top:.7rem;font-size:1.15rem}.note{border-left:4px solid #2d6fb1;padding:.7rem 1rem;background:#edf4fc}a:focus-visible{outline:3px solid #ffbe45;outline-offset:3px}@media(max-width:480px){main{padding:1.25rem .75rem}.panel{padding:1rem}.stat{padding:1rem}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}footer{padding:1.5rem;text-align:center;color:#526078}
-.skip-link{position:absolute;left:-10000px;top:0;background:white;color:#142f55;padding:.75rem;z-index:100}.skip-link:focus{left:1rem}</style>
+:root{font-family:Prompt,sans-serif;color:#1e293b;background:#f9fafb}*{box-sizing:border-box}body{margin:0}a{color:inherit}button{font:inherit}.layout{display:flex;height:100dvh;min-height:420px}.sidebar{width:256px;flex:0 0 256px;display:flex;flex-direction:column;background:linear-gradient(#1e3a8a,#1e40af);color:#fff;box-shadow:0 8px 20px #0f172a20}.brand{padding:24px;border-bottom:1px solid #3b5998;font-size:24px;font-weight:700}.brand i{margin-right:12px}.navigation{padding:24px 16px;overflow-y:auto;flex:1}.nav-link{display:flex;align-items:center;gap:12px;min-height:48px;padding:12px 16px;border-radius:8px;text-decoration:none;font-size:14px;margin-bottom:8px}.nav-link:hover,.nav-link.active{background:#1d4ed8}.nav-link i{width:18px;text-align:center}.sidebar-footer{padding:16px;border-top:1px solid #3b5998;font-size:12px;color:#dbeafe}.workspace{display:flex;flex-direction:column;flex:1;min-width:0}.topbar{display:flex;align-items:center;gap:14px;background:#fff;padding:16px 24px;box-shadow:0 1px 3px #00000012;border-bottom:1px solid #e5e7eb}.topbar h1{font-size:22px;font-weight:600;margin:0}.topbar-note{margin-left:auto;color:#64748b;font-size:13px}.mobile-toggle{display:none;border:0;border-radius:6px;background:#eff6ff;color:#1e40af;padding:9px 12px;cursor:pointer}.main{flex:1;overflow-y:auto;padding:24px}.content{max-width:1600px;margin:auto}.panel{background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 3px #0000000b;padding:24px;margin-bottom:20px}.panel h2{font-size:20px;margin:0 0 12px;font-weight:600}.panel h3{font-size:17px}.panel p{line-height:1.8}.intro{color:#64748b;margin:0 0 20px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.stat{padding:18px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 1px 3px #0000000b}.stat span{color:#64748b;font-size:14px}.stat strong{display:block;font-size:22px;margin-top:10px;color:#0f172a}.note{padding:14px 18px;background:#eff6ff;border-left:4px solid #2563eb;border-radius:4px;color:#1e40af;margin-bottom:20px}.muted{color:#64748b}.overlay{display:none}.skip-link{position:absolute;left:-9999px;top:0;padding:12px;background:#fff;z-index:200}.skip-link:focus{left:12px}a:focus-visible,button:focus-visible{outline:3px solid #38bdf8;outline-offset:2px}
+@media(max-width:1023px){.sidebar{position:fixed;inset:0 auto 0 0;z-index:60;transform:translateX(-100%);transition:transform .2s ease}.sidebar.open{transform:translateX(0)}.overlay.visible{display:block;position:fixed;inset:0;background:#0008;z-index:50}.mobile-toggle{display:block}.topbar{padding:14px 16px}.topbar h1{font-size:19px}.main{padding:16px}.panel{padding:18px}.grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}}@media(max-width:480px){.topbar-note{display:none}.grid{grid-template-columns:1fr}.panel{padding:16px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;scroll-behavior:auto!important}}
+</style>
 </head>
 <body>
 <a class="skip-link" href="#main-content">ข้ามไปเนื้อหาหลัก</a>
-<header><nav><strong>LandRight / ระบบบริหารงาน SMT2</strong><a href="../index.html">กลับสู่ LandRight</a></nav></header>
-<main id="main-content">
-<p class="muted">ระบบบริหารงาน • ข้อมูลสำหรับเผยแพร่ต่อสาธารณะ</p>
-<h1>ภาพรวมการบริหารงาน</h1>
-<p>พื้นที่แสดงข้อมูลสรุปที่ผ่านการตรวจสอบและอนุมัติให้เผยแพร่เท่านั้น โดยไม่แสดงข้อมูลรายเรื่อง ข้อมูลส่วนบุคคล หรือเครื่องมือแก้ไขข้อมูล</p>
+<div id="mobile-overlay" class="overlay" aria-hidden="true"></div>
+<div class="layout">
+<aside id="sidebar" class="sidebar" aria-label="เมนูหลัก">
+<div class="brand"><i class="fas fa-chart-line" aria-hidden="true"></i>LandRight</div>
+<nav class="navigation" aria-label="เมนูหลัก">
+<a class="nav-link" href="../index.html"><i class="fas fa-home" aria-hidden="true"></i>ส่วนกำหนดสิทธิในที่ดิน</a>
+<a class="nav-link" href="../index.html"><i class="fas fa-chart-bar" aria-hidden="true"></i>กลุ่มกำหนดสิทธิในที่ดิน</a>
+<a class="nav-link" href="../index.html"><i class="fas fa-users" aria-hidden="true"></i>ฝ่ายควบคุมทะเบียนที่ดิน</a>
+<a class="nav-link active" href="./public.html" aria-current="page"><i class="fas fa-clipboard-list" aria-hidden="true"></i>ระบบบริหารงาน SMT2</a>
+<a class="nav-link" href="../index.html"><i class="fas fa-cog" aria-hidden="true"></i>ตั้งค่า</a>
+</nav><div class="sidebar-footer">ระบบข้อมูลสิทธิในที่ดิน</div>
+</aside>
+<div class="workspace">
+<header class="topbar">
+<button id="mobile-menu-button" class="mobile-toggle" type="button" aria-label="เปิดเมนูนำทาง" aria-controls="sidebar" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
+<h1>ระบบบริหารงาน SMT2</h1><span class="topbar-note">ระบบข้อมูลสิทธิในที่ดิน</span>
+</header>
+<main id="main-content" class="main"><div class="content">
+<p class="intro">ภาพรวมการบริหารงาน • ข้อมูลสำหรับเผยแพร่ต่อสาธารณะ</p>
 <section class="panel" aria-labelledby="publish-title">
-<h2 id="publish-title">สถานะข้อมูลสาธารณะ</h2>
+<h2 id="publish-title">Dashboard ระบบบริหารงาน SMT2</h2>
+<p>แสดงเฉพาะข้อมูลสรุปที่ผ่านการตรวจสอบและอนุมัติให้เผยแพร่ โดยไม่เปิดเผยข้อมูลรายเรื่องหรือข้อมูลส่วนบุคคล</p>
 <p class="note" role="status" id="publication-status">ยังไม่มีชุดข้อมูลสรุป SMT2 ที่ได้รับการอนุมัติให้เผยแพร่ผ่านเว็บไซต์นี้ จึงยังไม่แสดงตัวเลขสถิติ เพื่อหลีกเลี่ยงข้อมูลที่คลาดเคลื่อนหรือการเปิดเผยข้อมูลภายใน</p>
 <div id="published-dashboard" aria-live="polite"><div class="grid">
 <div class="stat"><span>จำนวนเรื่องทั้งหมด</span><strong>รอข้อมูลที่อนุมัติเผยแพร่</strong></div>
@@ -26,7 +43,7 @@
 </div></div>
 </section>
 <section class="panel" aria-labelledby="access-title"><h2 id="access-title">การเข้าถึงข้อมูลภายใน</h2><p>ข้อมูลรายเรื่อง การค้นหาประวัติงาน การเพิ่มและแก้ไขรายการ จำกัดเฉพาะเจ้าหน้าที่ที่ได้รับอนุญาตผ่านระบบที่ตรวจสอบตัวตนและสิทธิ์ฝั่งเซิร์ฟเวอร์ ไม่เปิดให้ใช้งานจากหน้านี้</p></section>
-</main>
+</div></main></div></div>
 <script type="module">
 import {validatePublicSnapshot,renderSnapshot} from './public-dashboard.mjs';
 const container=document.getElementById('published-dashboard');
@@ -45,6 +62,14 @@ try {
  status.textContent='ยังไม่มีข้อมูลสรุปที่ผ่านการอนุมัติเผยแพร่';
 }
 </script>
-
-<footer>ระบบข้อมูลสิทธิในที่ดิน — LandRight</footer>
+<script>
+const sidebar=document.getElementById('sidebar');
+const overlay=document.getElementById('mobile-overlay');
+const toggle=document.getElementById('mobile-menu-button');
+function closeSidebar(){sidebar.classList.remove('open');overlay.classList.remove('visible');toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','เปิดเมนูนำทาง');}
+toggle.addEventListener('click',()=>{const open=!sidebar.classList.contains('open');sidebar.classList.toggle('open',open);overlay.classList.toggle('visible',open);toggle.setAttribute('aria-expanded',String(open));toggle.setAttribute('aria-label',open?'ปิดเมนูนำทาง':'เปิดเมนูนำทาง');});
+overlay.addEventListener('click',closeSidebar);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSidebar();});
+window.addEventListener('resize',()=>{if(window.innerWidth>=1024)closeSidebar();});
+</script>
 </body></html>
