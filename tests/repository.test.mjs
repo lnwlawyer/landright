@@ -161,3 +161,10 @@ test('table search safely ignores null and non-object records', () => {
  assert.deepEqual(filterData('Abandoned', [null, undefined, 'bad', { province: 'Bangkok' }]), [{ province: 'Bangkok' }]);
  assert.deepEqual(filterData('Abandoned', null), []);
 });
+
+test('empty filtered tables retain one logical pagination page', () => {
+ const start = html.indexOf('function updateNav(totalRecordsCount)');
+ const end = html.indexOf('const prevButton = document.getElementById', start);
+ assert.ok(start >= 0 && end > start);
+ assert.match(html.slice(start, end), /const totalPages = Math\.max\(1, Math\.ceil\(totalRecordsCount \/ itemsPerPage\)\)/);
+});
