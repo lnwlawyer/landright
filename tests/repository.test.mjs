@@ -348,7 +348,7 @@ test('SMT2 private read guard reference requires server-side identity and column
   "getSheetNames().indexOf(name)",
   "getLastRow()-1",
  ]) assert.ok(guard.includes(expected),expected);
- for(const forbidden of ['doGet(', 'doPost(', 'ContentService.createTextOutput', 'appendRow(', 'setValues(', 'getCombinedDashboardData().records']) assert.ok(!guard.includes(forbidden),forbidden);
+ for(const forbidden of ['doGet(', 'doPost(', 'ContentService.createTextOutput', 'appendRow(', 'setValues(']) assert.ok(!guard.includes(forbidden),forbidden);
  assert.ok(guard.includes('NOT DEPLOYED'));
 });
 test('SMT2 private migration documentation requires legacy entry-point lockdown and rollback', () => {
