@@ -46,6 +46,9 @@ test('land area conversion preserves fractional square wah', () => {
  assert.equal(helpers.convertAreaToWah('4-3-15.25'), 1915.25);
  assert.equal(helpers.convertWahToRaiNganWah(1915.25), '4-3-15.25');
  assert.equal(helpers.convertWahToRaiNganWah(500.5), '1-1-0.5');
+ assert.equal(helpers.convertWahToRaiNganWah(400), '1-0-0');
+ assert.equal(helpers.convertWahToRaiNganWah(0), '0-0-0');
+ assert.equal(helpers.convertWahToRaiNganWah(1200), '3-0-0');
  assert.equal(helpers.convertAreaToWah('2-4-20'), 0);
 });
 

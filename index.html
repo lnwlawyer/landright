@@ -2117,7 +2117,7 @@
             const remaining = Math.round((rounded - rai * 400) * 100) / 100;
             const ngan = Math.floor(remaining / 100);
             const wah = Math.round((remaining - ngan * 100) * 100) / 100;
-            const wahText = wah.toFixed(2).replace(/\.?0+$/, '');
+            const wahText = wah === 0 ? '0' : wah.toFixed(2).replace(/\.?0+$/, '');
             return `${rai.toLocaleString()}-${ngan}-${wahText}`;
         }
 
