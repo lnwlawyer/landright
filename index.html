@@ -1505,10 +1505,10 @@
             // Redraw charts for the default tab when its parent section becomes visible
             setTimeout(() => {
                 if (section === 'foreigners') {
-                    showTab('section93');
+                    showTab(document.querySelector('#foreigners-content .tab-button[aria-selected="true"]')?.getAttribute('data-tab') || 'section93');
                 }
                 if (section === 'religious') {
-                    showReligiousTab('temple');
+                    showReligiousTab(document.querySelector('#religious-content .religious-tab-button[aria-selected="true"]')?.getAttribute('data-tab') || 'temple');
                 }
             }, 50); 
         }
@@ -1535,12 +1535,15 @@
             const tabButtons = document.querySelectorAll('#foreigners-content .tab-button');
             tabButtons.forEach(button => {
                 button.classList.remove('border-blue-500', 'text-blue-600');
+                button.setAttribute('aria-selected', 'false');
                 button.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
             });
             
-            const activeTabButton = document.querySelector(`.tab-button[onclick*="'${tabId}'"]`);
+            const activeTabButton = document.querySelector(`#foreigners-content .tab-button[onclick*="'${tabId}'"]`);
             if (activeTabButton) {
                 activeTabButton.classList.add('border-blue-500', 'text-blue-600');
+                activeTabButton.setAttribute('aria-selected', 'true');
+                activeTabButton.setAttribute('data-tab', tabId);
                 activeTabButton.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
             }
             
@@ -1558,12 +1561,15 @@
             const religiousTabButtons = document.querySelectorAll('#religious-content .religious-tab-button');
             religiousTabButtons.forEach(button => {
                 button.classList.remove('border-blue-500', 'text-blue-600');
+                button.setAttribute('aria-selected', 'false');
                 button.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
             });
             
             const activeTabButton = document.querySelector(`.religious-tab-button[onclick*="'${tabId}'"]`);
             if(activeTabButton){
                 activeTabButton.classList.add('border-blue-500', 'text-blue-600');
+                activeTabButton.setAttribute('aria-selected', 'true');
+                activeTabButton.setAttribute('data-tab', tabId);
                 activeTabButton.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
             }
 
