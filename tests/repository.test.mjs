@@ -105,3 +105,13 @@ test('religious and Thai-labelled sheet fields are escaped in table HTML', () =>
   assert.ok(!html.includes('${item.' + field + " || ''}"), 'unsafe field: ' + field);
  }
 });
+
+test('chart legend escapes untrusted labels and units', () => {
+ const start = html.indexOf('function drawPieChart(canvasId, legendId, labels, data, unit)');
+ const end = html.indexOf('function drawStackedColumnChart', start);
+ assert.ok(start >= 0 && end > start);
+ const legend = html.slice(start, end);
+ assert.ok(legend.includes('escapeSheetHtml(label)'));
+ assert.ok(legend.includes('escapeSheetHtml(unit)'));
+ assert.ok(!legend.includes('<span>${label}</span>'));
+});
