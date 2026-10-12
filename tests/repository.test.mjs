@@ -48,3 +48,9 @@ test('land area conversion preserves fractional square wah', () => {
  assert.equal(helpers.convertWahToRaiNganWah(500.5), '1-1-0.5');
  assert.equal(helpers.convertAreaToWah('2-4-20'), 0);
 });
+
+test('mobile users can zoom and page has a descriptive title', () => {
+ assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1\.0">/);
+ assert.doesNotMatch(html, /user-scalable=no/);
+ assert.match(html, /<title>LandRight \| ระบบข้อมูลที่ดิน<\/title>/);
+});
