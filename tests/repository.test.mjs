@@ -214,7 +214,7 @@ test('asynchronous data loading never resets the selected section', () => {
 
 test('SMT2 is integrated without removing existing LandRight navigation', () => {
  const smt = readFileSync(new URL('../smt2/index.html', import.meta.url), 'utf8');
- assert.ok(html.includes('href="smt2/index.html"'));
+ assert.ok(html.includes('href="smt2/public.html"'));
  for (const page of ['org-structure','dashboard','table']) assert.ok(smt.includes('id="'+page+'"'));
  assert.ok(smt.includes('href="../index.html"'));
  assert.ok(smt.includes("addNewBtn.disabled = true"));
@@ -228,4 +228,14 @@ test('SMT2 write guard reference fails closed and protects sheet edits', () => {
   assert.ok(guard.includes(required), required);
  }
  assert.ok(!guard.includes('function doPost('), 'do not expose a public write endpoint');
+});
+
+test('public SMT2 route does not expose case data or editing controls', () => {
+ const publicHtml = readFileSync(new URL('../smt2/public.html', import.meta.url), 'utf8');
+ assert.match(publicHtml, /ยังไม่มีชุดข้อมูลสรุป SMT2 ที่ได้รับการอนุมัติ/);
+ assert.match(publicHtml, /จำกัดเฉพาะเจ้าหน้าที่/);
+ for (const forbidden of ['google.script.run', 'getCombinedDashboardData', 'getServerData', 'addRecord(', 'updateRecord(', 'script.google.com/macros/', '<iframe']) {
+  assert.ok(!publicHtml.includes(forbidden), forbidden);
+ }
+ assert.ok(html.includes('href="smt2/public.html"'));
 });
