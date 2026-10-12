@@ -9,8 +9,8 @@
     <!-- PWA Settings -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LandDashboard">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LandRight">
     <meta name="theme-color" content="#1e3a8a">
 
     <!-- Icons -->
@@ -24,6 +24,33 @@
     <!-- เพิ่ม Chart.js library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root { color-scheme: light; }
+        html { scroll-behavior: smooth; }
+        body { color: #172554; }
+        .content-section { max-width: 1600px; margin-inline: auto; }
+        .content-section > .bg-white, .content-section .rounded-xl { border-color: #e2e8f0; }
+        .menu-item, .submenu-item { min-height: 44px; }
+        .menu-item:focus-visible, .submenu-item:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+            outline: 3px solid #38bdf8;
+            outline-offset: 2px;
+        }
+        main { scrollbar-gutter: stable; }
+        main table { border-collapse: separate; border-spacing: 0; }
+        main table thead { background: #f1f5f9; }
+        main table tbody tr { transition: background-color .15s ease; }
+        main table tbody tr:nth-child(even) { background: #f8fafc; }
+        main table tbody tr:hover { background: #eff6ff; }
+        main table th { white-space: nowrap; font-weight: 600; color: #334155; }
+        main table td { vertical-align: top; }
+        @media (max-width: 640px) {
+            .chart-container { height: 300px !important; }
+            .pie-chart-container { width: 168px; height: 168px; }
+            .content-section .p-6 { padding: 1rem; }
+            main table th, main table td { padding: .65rem .75rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+        }
         .tooltip {
             position: absolute;
             background: rgba(0, 0, 0, 0.8);
@@ -75,18 +102,18 @@
 </head>
 <body class="bg-gray-50 font-thai">
     <!-- Mobile Menu Overlay -->
-    <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden"></div>
+    <div id="mobile-overlay" aria-hidden="true" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden"></div>
     
     <!-- Tooltip (Chart.js has built-in tooltips) -->
     <div id="tooltip" class="tooltip"></div>
     
     <div class="flex h-screen">
         <!-- Sidebar -->
-        <div id="sidebar" class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white shadow-xl transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+        <div id="sidebar" aria-label="เมนูหลัก" class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white shadow-xl transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
             <div class="p-6 border-b border-blue-700">
                 <h1 class="text-2xl font-bold flex items-center">
                     <i class="fas fa-chart-line mr-3"></i>
-                    Dashboard
+                    LandRight
                 </h1>
             </div>
             
@@ -128,16 +155,8 @@
                 </div>
             </nav>
             
-            <div class="absolute bottom-0 w-64 p-4 border-t border-blue-700">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="ml-3">
-                        <p class="font-medium">ผู้ดูแลระบบ</p>
-                        <p class="text-sm text-blue-200">admin@example.com</p>
-                    </div>
-                </div>
+            <div class="absolute bottom-0 w-64 p-4 border-t border-blue-700 text-sm text-blue-100">
+                ระบบข้อมูลสิทธิในที่ดิน
             </div>
         </div>
 
@@ -147,19 +166,12 @@
             <header class="bg-white shadow-sm border-b border-gray-200">
                 <div class="flex items-center justify-between px-4 lg:px-6 py-4">
                     <div class="flex items-center">
-                        <button id="mobile-menu-button" class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 mr-3">
+                        <button id="mobile-menu-button" type="button" aria-label="เปิดเมนูนำทาง" aria-controls="sidebar" aria-expanded="false" class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 mr-3">
                             <i class="fas fa-bars text-xl"></i>
                         </button>
                         <h2 id="page-title" class="text-xl lg:text-2xl font-semibold text-gray-800">ส่วนกำหนดสิทธิในที่ดิน</h2>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                            <i class="fas fa-bell text-xl"></i>
-                        </button>
-                        <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                            <i class="fas fa-search text-xl"></i>
-                        </button>
-                    </div>
+                    <span class="hidden sm:inline text-sm text-slate-500">ระบบข้อมูลสิทธิในที่ดิน</span>
                 </div>
             </header>
 
@@ -1472,12 +1484,16 @@
             document.getElementById('page-title').textContent = titles[section] || 'Dashboard';
             
             const menuItems = document.querySelectorAll('.menu-item, .submenu-item');
-            menuItems.forEach(item => item.classList.remove('bg-blue-700'));
+            menuItems.forEach(item => {
+                item.classList.remove('bg-blue-700');
+                item.removeAttribute('aria-current');
+            });
             
             if (event) {
                 const clickedItem = event.target.closest('.menu-item, .submenu-item');
                 if (clickedItem) {
                     clickedItem.classList.add('bg-blue-700');
+                    clickedItem.setAttribute('aria-current', 'page');
                     // If a submenu item is clicked, also highlight its parent menu item
                     const parentGroup = clickedItem.closest('.menu-group');
                     if(parentGroup) {
