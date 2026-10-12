@@ -2400,7 +2400,7 @@
             sortedByPlots.slice(0, 10).forEach((item, index) => {
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.temple_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.temple_name)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                 </tr>`;
@@ -2414,9 +2414,9 @@
             sortedByArea.slice(0, 10).forEach((item, index) => {
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.temple_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.temple_name)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.area_rai)}</td>
                 </tr>`;
                 top10AreaBody.innerHTML += row;
             });
@@ -2474,7 +2474,7 @@
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.mosque_name)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.area_rai)}</td>
                 </tr>`;
                 top10AreaBody.innerHTML += row;
             });
@@ -2520,7 +2520,7 @@
             sortedByPlots.slice(0, 10).forEach((item, index) => {
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.foundation_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.foundation_name)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                 </tr>`;
@@ -2534,9 +2534,9 @@
             sortedByArea.slice(0, 10).forEach((item, index) => {
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.foundation_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.foundation_name)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.area_rai)}</td>
                 </tr>`;
                 top10AreaBody.innerHTML += row;
             });
@@ -2582,7 +2582,7 @@
             sortedByPlots.slice(0, 10).forEach((item, index) => {
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.church_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.church_name)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                 </tr>`;
@@ -2596,9 +2596,9 @@
             sortedByArea.slice(0, 10).forEach((item, index) => {
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.church_name}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.church_name)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.area_rai)}</td>
                 </tr>`;
                 top10AreaBody.innerHTML += row;
             });
@@ -2831,10 +2831,10 @@
                         row.className = 'hover:bg-gray-50';
                         row.innerHTML = `
                             <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.ประเภทจดทะเบียน || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.กำหนดเวลา || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.วันจดทะเบียน || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.ผู้ให้เช่า || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.ประเภทจดทะเบียน)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.กำหนดเวลา)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.วันจดทะเบียน)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.ผู้ให้เช่า)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.name)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
