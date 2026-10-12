@@ -38,3 +38,13 @@ test('CSV parser handles quoted commas, escaped quotes, and newlines', () => {
  assert.equal(rows[0].notes, 'line one\nline two');
  assert.equal(rows[1].name, 'Office "B"');
 });
+
+test('land area conversion preserves fractional square wah', () => {
+ const match = html.match(/        function convertAreaToWah\(areaString\) \{[\s\S]*?\n        \}\n\n        function convertWahToRaiNganWah\(totalWah\) \{[\s\S]*?\n        \}\n/);
+ assert.ok(match, 'area helpers exist');
+ const helpers = new Function(match[0] + '; return { convertAreaToWah, convertWahToRaiNganWah };')();
+ assert.equal(helpers.convertAreaToWah('4-3-15.25'), 1915.25);
+ assert.equal(helpers.convertWahToRaiNganWah(1915.25), '4-3-15.25');
+ assert.equal(helpers.convertWahToRaiNganWah(500.5), '1-1-0.5');
+ assert.equal(helpers.convertAreaToWah('2-4-20'), 0);
+});
