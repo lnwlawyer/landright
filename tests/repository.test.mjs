@@ -202,3 +202,12 @@ test('wide data tables are keyboard accessible scroll regions', () => {
  assert.ok(regions.length >= 10);
  assert.ok(html.includes('overscroll-x-contain'));
 });
+
+test('asynchronous data loading never resets the selected section', () => {
+ const start = html.indexOf("document.addEventListener('DOMContentLoaded', async function()");
+ assert.ok(start >= 0);
+ const loader = html.slice(start);
+ assert.doesNotMatch(loader, /showContent\('overview'\)/);
+ assert.match(html, /id="overview-content" class="content-section"/);
+ assert.match(html, /id="foreigners-content" class="content-section hidden"/);
+});
