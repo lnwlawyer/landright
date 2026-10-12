@@ -97,3 +97,11 @@ test('remaining spreadsheet text fields are escaped in table templates', () => {
   assert.ok(!html.includes('${item.' + field + " || ''}"), 'unsafe interpolation: ' + field);
  }
 });
+
+test('religious and Thai-labelled sheet fields are escaped in table HTML', () => {
+ for (const field of ['temple_name', 'foundation_name', 'church_name', 'area_rai', 'ประเภทจดทะเบียน', 'กำหนดเวลา', 'วันจดทะเบียน', 'ผู้ให้เช่า']) {
+  assert.ok(html.includes('escapeSheetHtml(item.' + field + ')'), field);
+  assert.ok(!html.includes('${item.' + field + '}'), 'unsafe field: ' + field);
+  assert.ok(!html.includes('${item.' + field + " || ''}"), 'unsafe field: ' + field);
+ }
+});
