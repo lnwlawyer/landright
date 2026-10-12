@@ -315,7 +315,7 @@ test('SMT2 publication preflight rejects identifying fields and unapproved figur
  assert.deepEqual(inspectPublication(JSON.stringify(good)),[]);
  for(const bad of [
   {...good,approvedForPublic:false},
-  {...good,summary:{totalRecords:10,completedRecords:9,pendingRecords:1}},
+  {...good,summary:{totalRecords:10,completedRecords:9,pendingRecords:2}},
   {...good,byGroup:[{label:'เลขโฉนด',count:10}]},
   {...good,byStatus:[{label:'เสร็จ',count:9},{label:'ค้าง',count:1}]},
   {...good,asOf:'2099-01-01'},
