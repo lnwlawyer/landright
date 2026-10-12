@@ -62,7 +62,9 @@ function smt2SafeReadPage(input) {
   var allowed = String(PropertiesService.getScriptProperties().getProperty('SMT2_READER_COLUMNS') || '');
   var columns = allowed.split(',').map(function(s){return s.trim();}).filter(Boolean);
   if (!columns.length) throw new Error('READER_COLUMNS_NOT_CONFIGURED');
+  if (new Set(columns).size !== columns.length) throw new Error('COLUMN_NOT_ALLOWED');
   var width = sheet.getLastColumn();
+  if (!Number.isSafeInteger(width) || width < 1) throw new Error('INVALID_SHEET_SCHEMA');
   var header = sheet.getRange(1,1,1,width).getDisplayValues()[0];
   var positions = columns.map(function(column) {
     var i = header.indexOf(column);
@@ -71,6 +73,7 @@ function smt2SafeReadPage(input) {
   });
   var count = Math.max(0,sheet.getLastRow()-1);
   var offset = (page-1)*limit;
+  if (!Number.isSafeInteger(offset)) throw new Error('INVALID_PAGE');
   var length = Math.min(limit,Math.max(0,count-offset));
   var rows = length ? sheet.getRange(offset+2,1,length,width).getDisplayValues() : [];
   return {page:page,limit:limit,totalRows:count,columns:columns,rows:rows.map(function(row){
