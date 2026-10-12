@@ -288,7 +288,7 @@ test('SMT2 is a native LandRight section without separate-page navigation', () =
  assert.ok(html.includes("'smt2': 'ระบบบริหารงาน SMT2'"));
  assert.ok(html.includes("if (section === 'smt2') loadSmt2PublicDashboard()"));
  assert.ok(html.includes("import {createInlineController} from './smt2/inline-dashboard.mjs'"));
- assert.ok(html.includes("fetch('./smt2/approved-summary.json'"));
+ assert.ok(readFileSync(new URL('../smt2/inline-dashboard.mjs',import.meta.url),'utf8').includes("SMT2_SNAPSHOT_PATH = './smt2/approved-summary.json'"));
  assert.ok(!html.includes('href="smt2/public.html"'));
 });
 
