@@ -189,3 +189,10 @@ test('mobile navigation stays open for submenu expansion and supports Escape', (
  assert.ok(html.includes("mobileMenuButton.setAttribute('aria-expanded', String(opening))"));
  assert.ok(html.includes('aria-controls="land-rights-submenu"'));
 });
+
+test('dashboard preserves active subtab and announces selected state', () => {
+ assert.ok(html.includes("document.querySelector('#foreigners-content .tab-button[aria-selected=\"true\"]')"));
+ assert.ok(html.includes("document.querySelector('#religious-content .religious-tab-button[aria-selected=\"true\"]')"));
+ assert.ok(html.includes("activeTabButton.setAttribute('aria-selected', 'true')"));
+ assert.ok(html.includes("button.setAttribute('aria-selected', 'false')"));
+});
