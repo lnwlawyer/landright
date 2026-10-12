@@ -15,3 +15,4 @@ jobs:
           node-version: '22'
       - run: npm test
       - run: node scripts/check-smt2-public.mjs
+      - run: node scripts/smt2-public-preflight.mjs
