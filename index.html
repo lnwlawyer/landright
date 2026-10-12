@@ -1948,6 +1948,8 @@
                 showingEnd.textContent = Math.min(currentPage * itemsPerPage, totalRecordsCount);
                 totalRecords.textContent = totalRecordsCount;
 
+                prevButton.setAttribute('aria-label', 'หน้าก่อนหน้า');
+                nextButton.setAttribute('aria-label', 'หน้าถัดไป');
                 prevButton.disabled = currentPage === 1;
                 nextButton.disabled = currentPage === totalPages || totalRecordsCount === 0;
 
@@ -1964,6 +1966,7 @@
                 if (startPage > 1) {
                     const firstButton = document.createElement('button');
                     firstButton.textContent = '1';
+                    firstButton.setAttribute('aria-label', 'ไปหน้าที่ 1');
                     firstButton.className = 'px-3 py-1 text-sm rounded-md bg-white text-gray-600 hover:bg-gray-100';
                     firstButton.onclick = () => { currentPage = 1; render(); };
                     pageNumbersDiv.appendChild(firstButton);
@@ -1975,6 +1978,7 @@
                 for (let i = startPage; i <= endPage; i++) {
                     const pageButton = document.createElement('button');
                     pageButton.textContent = i;
+                    pageButton.setAttribute('aria-label', `ไปหน้าที่ ${i}`);
                     if (i === currentPage) pageButton.setAttribute('aria-current', 'page');
                     pageButton.className = `px-3 py-1 text-sm rounded-md ${i === currentPage ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`;
                     pageButton.onclick = () => {
@@ -1990,6 +1994,7 @@
                     }
                     const lastButton = document.createElement('button');
                     lastButton.textContent = totalPages;
+                    lastButton.setAttribute('aria-label', `ไปหน้าที่ ${totalPages}`);
                     lastButton.className = 'px-3 py-1 text-sm rounded-md bg-white text-gray-600 hover:bg-gray-100';
                     lastButton.onclick = () => { currentPage = totalPages; render(); };
                     pageNumbersDiv.appendChild(lastButton);
