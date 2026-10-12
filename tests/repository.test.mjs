@@ -57,3 +57,8 @@ test('mobile users can zoom and page has a descriptive title', () => {
  assert.doesNotMatch(html, /user-scalable=no/);
  assert.match(html, /<title>LandRight \| ระบบข้อมูลที่ดิน<\/title>/);
 });
+
+test('PWA permits landscape orientation on tablets', () => {
+ assert.equal(manifest.orientation, undefined);
+ assert.equal(manifest.short_name, 'LandRight');
+});
