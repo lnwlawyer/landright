@@ -6,12 +6,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{font-family:Sarabun,system-ui,sans-serif;color:#172b4d;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#142f55;color:white;padding:1rem max(1rem,calc((100vw - 1100px)/2))}header nav{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}a{color:inherit}header a{padding:.55rem .8rem;border:1px solid #b4c8e5;border-radius:.5rem;text-decoration:none}main{max-width:1100px;margin:auto;padding:2rem 1rem}h1{margin:.25rem 0;font-size:clamp(1.5rem,4vw,2.2rem)}p{line-height:1.7}.muted{color:#56667c}.panel{background:white;border:1px solid #dce4ef;border-radius:1rem;padding:1.5rem;margin:1.25rem 0;box-shadow:0 2px 10px #1227460a}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}.stat{padding:1.25rem;background:#f5f8fc;border-radius:.75rem}.stat strong{display:block;margin-top:.7rem;font-size:1.15rem}.note{border-left:4px solid #2d6fb1;padding:.7rem 1rem;background:#edf4fc}a:focus-visible{outline:3px solid #ffbe45;outline-offset:3px}footer{padding:1.5rem;text-align:center;color:#526078}
-</style>
+:root{font-family:Sarabun,system-ui,sans-serif;color:#172b4d;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#142f55;color:white;padding:1rem max(1rem,calc((100vw - 1100px)/2))}header nav{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}a{color:inherit}header a{padding:.55rem .8rem;border:1px solid #b4c8e5;border-radius:.5rem;text-decoration:none}main{max-width:1100px;margin:auto;padding:2rem 1rem}h1{margin:.25rem 0;font-size:clamp(1.5rem,4vw,2.2rem)}p{line-height:1.7}.muted{color:#56667c}.panel{background:white;border:1px solid #dce4ef;border-radius:1rem;padding:1.5rem;margin:1.25rem 0;box-shadow:0 2px 10px #1227460a}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}.stat{padding:1.25rem;background:#f5f8fc;border-radius:.75rem}.stat strong{display:block;margin-top:.7rem;font-size:1.15rem}.note{border-left:4px solid #2d6fb1;padding:.7rem 1rem;background:#edf4fc}a:focus-visible{outline:3px solid #ffbe45;outline-offset:3px}@media(max-width:480px){main{padding:1.25rem .75rem}.panel{padding:1rem}.stat{padding:1rem}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}footer{padding:1.5rem;text-align:center;color:#526078}
+.skip-link{position:absolute;left:-10000px;top:0;background:white;color:#142f55;padding:.75rem;z-index:100}.skip-link:focus{left:1rem}</style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">ข้ามไปเนื้อหาหลัก</a>
 <header><nav><strong>LandRight / ระบบบริหารงาน SMT2</strong><a href="../index.html">กลับสู่ LandRight</a></nav></header>
-<main>
+<main id="main-content">
 <p class="muted">ระบบบริหารงาน • ข้อมูลสำหรับเผยแพร่ต่อสาธารณะ</p>
 <h1>ภาพรวมการบริหารงาน</h1>
 <p>พื้นที่แสดงข้อมูลสรุปที่ผ่านการตรวจสอบและอนุมัติให้เผยแพร่เท่านั้น โดยไม่แสดงข้อมูลรายเรื่อง ข้อมูลส่วนบุคคล หรือเครื่องมือแก้ไขข้อมูล</p>
@@ -33,7 +34,10 @@ const status=document.getElementById('publication-status');
 try {
  const response=await fetch('./approved-summary.json',{cache:'no-store',credentials:'omit'});
  if (!response.ok) throw new Error('NOT_PUBLISHED');
- const snapshot=await response.json();
+ if (Number(response.headers.get('content-length') || 0) > 16384) throw new Error('SNAPSHOT_TOO_LARGE');
+ const text=await response.text();
+ if (text.length > 16384) throw new Error('SNAPSHOT_TOO_LARGE');
+ const snapshot=JSON.parse(text);
  if (!validatePublicSnapshot(snapshot)) throw new Error('INVALID_PUBLIC_SNAPSHOT');
  renderSnapshot(snapshot,container);
  status.textContent='ข้อมูลสรุปที่ได้รับอนุมัติเผยแพร่';
