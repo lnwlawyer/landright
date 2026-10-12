@@ -2065,6 +2065,7 @@
                     field += char;
                 }
             }
+            if (quoted) throw new Error('Invalid CSV: unterminated quoted field');
             row.push(field);
             if (row.some(value => value.trim() !== '')) rows.push(row);
             if (rows.length < 2) return [];
