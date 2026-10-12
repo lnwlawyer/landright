@@ -2039,8 +2039,10 @@
                     if (quoted && input[i + 1] === '"') {
                         field += '"';
                         i++;
-                    } else if (quoted || field === '') {
-                        quoted = !quoted;
+                    } else if (quoted) {
+                        quoted = false;
+                    } else if (field === '') {
+                        quoted = true;
                     } else {
                         field += char;
                     }
