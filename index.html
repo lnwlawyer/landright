@@ -149,7 +149,7 @@
                         <i class="fas fa-users mr-3"></i>
                         ฝ่ายควบคุมทะเบียนที่ดิน
                     </a>
-                    <a href="smt2/public.html" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200" aria-label="เปิดระบบบริหารงาน SMT2">
+                    <a href="#" onclick="showContent('smt2', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200" aria-label="เปิดระบบบริหารงาน SMT2">
                         <i class="fas fa-clipboard-list mr-3" aria-hidden="true"></i>
                         ระบบบริหารงาน SMT2
                     </a>
@@ -190,6 +190,24 @@
                     </div>
                 </div>
 
+                <div id="smt2-content" class="content-section hidden">
+                    <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-gray-100 mb-5">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Dashboard ระบบบริหารงาน SMT2</h3>
+                        <p class="text-sm text-gray-600 mb-4">ข้อมูลสรุปสำหรับสาธารณะเท่านั้น ไม่แสดงข้อมูลรายเรื่องหรือข้อมูลส่วนบุคคล</p>
+                        <p id="smt2-public-status" class="rounded-lg border-l-4 border-blue-500 bg-blue-50 px-4 py-3 text-blue-900 text-sm" role="status">ยังไม่มีชุดข้อมูลสรุป SMT2 ที่ได้รับการอนุมัติให้เผยแพร่</p>
+                        <div id="smt2-public-dashboard" class="mt-4" aria-live="polite">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="rounded-lg border border-slate-200 p-4"><p class="text-sm text-gray-600">จำนวนเรื่องทั้งหมด</p><p class="mt-2 font-semibold text-gray-800">รอข้อมูลที่อนุมัติเผยแพร่</p></div>
+                                <div class="rounded-lg border border-slate-200 p-4"><p class="text-sm text-gray-600">สถานะการดำเนินงาน</p><p class="mt-2 font-semibold text-gray-800">รอข้อมูลที่อนุมัติเผยแพร่</p></div>
+                                <div class="rounded-lg border border-slate-200 p-4"><p class="text-sm text-gray-600">ภาพรวมกลุ่มงาน</p><p class="mt-2 font-semibold text-gray-800">รอข้อมูลที่อนุมัติเผยแพร่</p></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">ข้อมูลสำหรับเจ้าหน้าที่</h3>
+                        <p class="text-sm text-gray-600">ข้อมูลรายเรื่อง การเพิ่มและแก้ไขข้อมูล ต้องผ่านการยืนยันตัวตนและตรวจสอบสิทธิ์ฝั่ง Backend จึงยังไม่เปิดใช้งานใน Dashboard สาธารณะ</p>
+                    </div>
+                </div>
                 <!-- Foreigners Content -->
                 <div id="foreigners-content" class="content-section hidden">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -1484,6 +1502,7 @@
                 'religious': 'นิติบุคคลเพื่อการศาสนา',
                 'abandoned': 'ที่ดินทอดทิ้ง',
                 'users': 'ฝ่ายควบคุมทะเบียนที่ดิน',
+                'smt2': 'ระบบบริหารงาน SMT2',
                 'settings': 'ตั้งค่า'
             };
             document.getElementById('page-title').textContent = titles[section] || 'Dashboard';
@@ -1506,6 +1525,8 @@
                     }
                 }
             }
+
+            if (section === 'smt2') loadSmt2PublicDashboard();
 
             // Redraw charts for the default tab when its parent section becomes visible
             setTimeout(() => {
@@ -3048,6 +3069,62 @@
 
             // Keep the section the user selected while asynchronous data was loading.
         });
+    </script>
+    <script type="module">
+        import {validatePublicSnapshot,formatCount} from './smt2/public-dashboard.mjs';
+        let smt2Loaded = false;
+        let smt2Loading = false;
+        window.loadSmt2PublicDashboard = async function () {
+            if (smt2Loaded || smt2Loading) return;
+            smt2Loading = true;
+            const root = document.getElementById('smt2-public-dashboard');
+            const status = document.getElementById('smt2-public-status');
+            try {
+                const response = await fetch('./smt2/approved-summary.json', {cache:'no-store',credentials:'omit'});
+                if (!response.ok || Number(response.headers.get('content-length') || 0) > 16384) throw new Error('UNAVAILABLE');
+                const text = await response.text();
+                if (text.length > 16384) throw new Error('TOO_LARGE');
+                const data = JSON.parse(text);
+                if (!validatePublicSnapshot(data)) throw new Error('UNAPPROVED');
+                const cards = document.createElement('div');
+                cards.className = 'grid grid-cols-1 md:grid-cols-3 gap-4';
+                for (const [label,value] of [['จำนวนเรื่องทั้งหมด',data.summary.totalRecords],['ดำเนินการเสร็จแล้ว',data.summary.completedRecords],['อยู่ระหว่างดำเนินการ',data.summary.pendingRecords]]) {
+                    const card = document.createElement('div');
+                    card.className = 'rounded-lg border border-slate-200 p-4';
+                    const heading = document.createElement('p');
+                    heading.className = 'text-sm text-gray-600';
+                    heading.textContent = label;
+                    const count = document.createElement('p');
+                    count.className = 'mt-2 text-2xl font-bold text-gray-900';
+                    count.textContent = formatCount(value);
+                    card.append(heading,count);
+                    cards.append(card);
+                }
+                root.replaceChildren(cards);
+                for (const [title,rows] of [['จำแนกตามสถานะ',data.byStatus],['จำแนกตามกลุ่มงาน',data.byGroup]]) {
+                    const panel = document.createElement('section');
+                    panel.className = 'mt-4 rounded-lg border border-slate-200 p-4';
+                    const heading = document.createElement('h4');
+                    heading.className = 'font-semibold text-gray-800 mb-2';
+                    heading.textContent = title;
+                    const list = document.createElement('ul');
+                    list.className = 'space-y-2 text-sm text-gray-700';
+                    for (const item of rows) {
+                        const row = document.createElement('li');
+                        row.textContent = item.label + ' — ' + formatCount(item.count);
+                        list.append(row);
+                    }
+                    panel.append(heading,list);
+                    root.append(panel);
+                }
+                status.textContent = 'ข้อมูลสรุปที่ได้รับอนุมัติเผยแพร่ ณ วันที่ ' + data.asOf;
+                smt2Loaded = true;
+            } catch (_) {
+                status.textContent = 'ยังไม่มีชุดข้อมูลสรุป SMT2 ที่ได้รับการอนุมัติให้เผยแพร่';
+            } finally {
+                smt2Loading = false;
+            }
+        };
     </script>
 </body>
 </html>

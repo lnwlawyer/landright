@@ -214,7 +214,7 @@ test('asynchronous data loading never resets the selected section', () => {
 
 test('SMT2 is integrated without removing existing LandRight navigation', () => {
  const smt = readFileSync(new URL('../smt2/index.html', import.meta.url), 'utf8');
- assert.ok(html.includes('href="smt2/public.html"'));
+ assert.ok(html.includes('id="smt2-content"'));
  for (const page of ['org-structure','dashboard','table']) assert.ok(smt.includes('id="'+page+'"'));
  assert.ok(smt.includes('href="../index.html"'));
  assert.ok(smt.includes("addNewBtn.disabled = true"));
@@ -237,7 +237,7 @@ test('public SMT2 route does not expose case data or editing controls', () => {
  for (const forbidden of ['google.script.run', 'getCombinedDashboardData', 'getServerData', 'addRecord(', 'updateRecord(', 'script.google.com/macros/', '<iframe']) {
   assert.ok(!publicHtml.includes(forbidden), forbidden);
  }
- assert.ok(html.includes('href="smt2/public.html"'));
+ assert.ok(html.includes('id="smt2-content"'));
 });
 
 test('public SMT2 summary accepts only approved, reconciled aggregates', async () => {
@@ -280,4 +280,14 @@ test('SMT2 public dashboard matches LandRight shell without exposing restricted 
  for(const forbidden of ['google.script.run','getServerData(', 'updateRecord(', 'addRecord(', 'script.google.com/macros/']) assert.ok(!page.includes(forbidden),forbidden);
  assert.ok(page.includes('validatePublicSnapshot(snapshot)'));
  assert.ok(page.includes('prefers-reduced-motion'));
+});
+
+test('SMT2 is a native LandRight section without separate-page navigation', () => {
+ assert.ok(html.includes('id="smt2-content" class="content-section hidden"'));
+ assert.ok(html.includes('showContent(\'smt2\', event)'));
+ assert.ok(html.includes("'smt2': 'ระบบบริหารงาน SMT2'"));
+ assert.ok(html.includes("if (section === 'smt2') loadSmt2PublicDashboard()"));
+ assert.ok(html.includes("import {validatePublicSnapshot,formatCount} from './smt2/public-dashboard.mjs'"));
+ assert.ok(html.includes("fetch('./smt2/approved-summary.json'"));
+ assert.ok(!html.includes('href="smt2/public.html"'));
 });
