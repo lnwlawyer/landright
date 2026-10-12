@@ -90,3 +90,10 @@ test('table page is clamped before data rows are rendered', () => {
 test('active pagination button is announced to assistive technology', () => {
  assert.match(html, /if \(i === currentPage\) pageButton\.setAttribute\('aria-current', 'page'\)/);
 });
+
+test('remaining spreadsheet text fields are escaped in table templates', () => {
+ for (const field of ['name', 'nationality', 'area_rai', 'land_use_type', 'note']) {
+  assert.ok(html.includes('escapeSheetHtml(item.' + field + ')'), field);
+  assert.ok(!html.includes('${item.' + field + " || ''}"), 'unsafe interpolation: ' + field);
+ }
+});
