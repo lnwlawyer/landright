@@ -2050,7 +2050,7 @@
                     } else if (field === '') {
                         quoted = true;
                     } else {
-                        field += char;
+                        throw new Error('Invalid CSV: unexpected quote in unquoted field');
                     }
                 } else if (char === ',' && !quoted) {
                     row.push(field);
@@ -2065,6 +2065,7 @@
                     field += char;
                 }
             }
+            if (quoted) throw new Error('Invalid CSV: unterminated quoted field');
             row.push(field);
             if (row.some(value => value.trim() !== '')) rows.push(row);
             if (rows.length < 2) return [];
