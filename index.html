@@ -3084,7 +3084,7 @@
         });
         window.loadSmt2PublicDashboard = () => controller.load();
         if (new URLSearchParams(location.search).get('view') === 'smt2') {
-            const menu = document.querySelector('a[onclick*="showContent(\'smt2\'"]');
+            const menu = document.querySelector('#sidebar a[aria-label="เปิดระบบบริหารงาน SMT2"]');
             if (menu) menu.click();
         }
     </script>
