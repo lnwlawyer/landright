@@ -115,3 +115,9 @@ test('chart legend escapes untrusted labels and units', () => {
  assert.ok(legend.includes('escapeSheetHtml(unit)'));
  assert.ok(!legend.includes('<span>${label}</span>'));
 });
+
+test('pagination navigation has descriptive accessible names', () => {
+ for (const phrase of ["prevButton.setAttribute('aria-label', 'หน้าก่อนหน้า')", "nextButton.setAttribute('aria-label', 'หน้าถัดไป')", "firstButton.setAttribute('aria-label', 'ไปหน้าที่ 1')", "pageButton.setAttribute('aria-label', `ไปหน้าที่ ${i}`)", "lastButton.setAttribute('aria-label', `ไปหน้าที่ ${totalPages}`)"]) {
+  assert.ok(html.includes(phrase), phrase);
+ }
+});
