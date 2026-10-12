@@ -181,3 +181,11 @@ test('responsive UI supports mobile charts and reduced motion', () => {
  assert.match(html, /aria-label="เปิดเมนูนำทาง"/);
  assert.match(html, /aria-current', 'page'/);
 });
+
+test('mobile navigation stays open for submenu expansion and supports Escape', () => {
+ assert.ok(html.includes("!item.closest('a[onclick^=\"toggleSubmenu\"]')"));
+ assert.ok(html.includes("event.key === 'Escape'"));
+ assert.ok(html.includes("mobileMenuButton.focus()"));
+ assert.ok(html.includes("mobileMenuButton.setAttribute('aria-expanded', String(opening))"));
+ assert.ok(html.includes('aria-controls="land-rights-submenu"'));
+});
