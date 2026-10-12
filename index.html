@@ -2728,12 +2728,12 @@
                         row.className = 'hover:bg-gray-50';
                         row.innerHTML = `
                             <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${item.nationality || ''}</span></td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.name)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${escapeSheetHtml(item.nationality)}</span></td>
                             <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.land_use_type || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 font-mono">${escapeSheetHtml(item.area_rai)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.land_use_type)}</td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -2763,7 +2763,7 @@
                     pageData.forEach((item) => {
                         const row = document.createElement('tr');
                         row.className = 'hover:bg-gray-50';
-                        row.innerHTML = `<td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td><td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td><td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">${item.nationality || ''}</span></td><td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td><td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td><td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td><td class="px-4 py-3 text-sm text-gray-600">${item.note || ''}</td>`;
+                        row.innerHTML = `<td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td><td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.name)}</td><td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">${escapeSheetHtml(item.nationality)}</span></td><td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td><td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td><td class="px-4 py-3 text-sm text-gray-900 font-mono">${escapeSheetHtml(item.area_rai)}</td><td class="px-4 py-3 text-sm text-gray-600">${escapeSheetHtml(item.note)}</td>`;
                         tbody.appendChild(row);
                     });
                 }, 10);
@@ -2794,12 +2794,12 @@
                         row.className = 'hover:bg-gray-50';
                         row.innerHTML = `
                             <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">${item.nationality || ''}</span></td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.name)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">${escapeSheetHtml(item.nationality)}</span></td>
                             <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-600">${item.land_use_type || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 font-mono">${escapeSheetHtml(item.area_rai)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${escapeSheetHtml(item.land_use_type)}</td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -2835,11 +2835,11 @@
                             <td class="px-4 py-3 text-sm text-gray-900">${item.กำหนดเวลา || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${item.วันจดทะเบียน || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${item.ผู้ให้เช่า || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.name)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-600">${item.land_use_type || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 font-mono">${escapeSheetHtml(item.area_rai)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">${escapeSheetHtml(item.land_use_type)}</td>
                         `;
                         tbody.appendChild(row);
                     });
