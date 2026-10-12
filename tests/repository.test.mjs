@@ -27,3 +27,14 @@ test('spreadsheet-derived labels are HTML-escaped in table templates', () => {
   assert.ok(!html.includes('${item.' + field + " || ''}"), 'unsafe interpolation: ' + field);
  }
 });
+
+test('CSV parser handles quoted commas, escaped quotes, and newlines', () => {
+ const match = html.match(/        function parseCSV\(text\) \{[\s\S]*?\n        \}\n/);
+ assert.ok(match, 'parseCSV must exist');
+ const parseCSV = new Function(match[0].trim() + '; return parseCSV;')();
+ const rows = parseCSV('name,province,notes\r\n"Office, A",Bangkok,"line one\nline two"\r\n"Office ""B""",Chiang Mai,ok\r\n');
+ assert.equal(rows.length, 2);
+ assert.equal(rows[0].name, 'Office, A');
+ assert.equal(rows[0].notes, 'line one\nline two');
+ assert.equal(rows[1].name, 'Office "B"');
+});
