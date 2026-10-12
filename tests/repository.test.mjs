@@ -308,3 +308,25 @@ test('SMT2 inline module provides strict public snapshot data contract', async (
  assert.equal(describeSnapshot(good).cards[0][1],10);
  assert.throws(()=>describeSnapshot({...good,approvedForPublic:false}),/UNAPPROVED/);
 });
+
+test('SMT2 publication preflight rejects identifying fields and unapproved figures', async () => {
+ const {inspectPublication}=await import('../scripts/smt2-public-preflight.mjs');
+ const good={schemaVersion:1,approvedForPublic:true,asOf:'2026-10-01',approvedOn:'2026-10-12',summary:{totalRecords:10,completedRecords:5,pendingRecords:5},byStatus:[{label:'เสร็จ',count:5},{label:'ค้าง',count:5}],byGroup:[{label:'กลุ่ม ก',count:10}]};
+ assert.deepEqual(inspectPublication(JSON.stringify(good)),[]);
+ for(const bad of [
+  {...good,approvedForPublic:false},
+  {...good,summary:{totalRecords:10,completedRecords:9,pendingRecords:2}},
+  {...good,byGroup:[{label:'เลขโฉนด',count:10}]},
+  {...good,byStatus:[{label:'เสร็จ',count:9},{label:'ค้าง',count:1}]},
+  {...good,asOf:'2099-01-01'},
+  {...good,byGroup:[{label:'กลุ่ม ก',count:5},{label:'กลุ่ม ก',count:5}]},
+  {...good,byGroup:[{label:'กลุ่ม ก',count:5},{label:'กลุ่ม ก ',count:5}]},
+  {...good,caseId:'ABC'},
+ ]) assert.ok(inspectPublication(JSON.stringify(bad)).length>0);
+ assert.ok(inspectPublication('{broken').length>0);
+ assert.ok(inspectPublication(' '.repeat(17000)).length>0);
+});
+test('SMT2 publication preflight is mandatory in GitHub CI', () => {
+ const workflow=readFileSync(new URL('../.github/workflows/ci.yml',import.meta.url),'utf8');
+ assert.ok(workflow.includes('node scripts/smt2-public-preflight.mjs'));
+});
