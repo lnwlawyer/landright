@@ -152,3 +152,12 @@ test('CSV parser rejects duplicate headers instead of overwriting values', () =>
  assert.throws(() => parseCSV('name, name\nA,B'), /duplicate column headers/);
  assert.deepEqual(parseCSV('name,province\nA,B'), [{ name: 'A', province: 'B' }]);
 });
+
+test('table search safely ignores null and non-object records', () => {
+ const match = html.match(/            function filterData\(prefix, originalData\) \{[\s\S]*?\n            \}\n/);
+ assert.ok(match);
+ const document = { getElementById: id => id.startsWith('searchInput') ? { value: 'Bangkok' } : null };
+ const filterData = new Function('document', match[0] + '; return filterData;')(document);
+ assert.deepEqual(filterData('Abandoned', [null, undefined, 'bad', { province: 'Bangkok' }]), [{ province: 'Bangkok' }]);
+ assert.deepEqual(filterData('Abandoned', null), []);
+});
