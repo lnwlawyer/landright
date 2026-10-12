@@ -53,6 +53,12 @@
         }
     </style>
     <script>
+        // Encode values from published spreadsheets before inserting into HTML templates.
+        function escapeSheetHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[char]);
+        }
         tailwind.config = {
             theme: {
                 extend: {
@@ -2365,7 +2371,7 @@
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${item.temple_name}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                 </tr>`;
                 top10PlotsBody.innerHTML += row;
@@ -2379,7 +2385,7 @@
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${item.temple_name}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
                 </tr>`;
                 top10AreaBody.innerHTML += row;
@@ -2422,8 +2428,8 @@
             sortedByPlots.slice(0, 10).forEach((item, index) => {
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.mosque_name}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.mosque_name)}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                 </tr>`;
                 top10PlotsBody.innerHTML += row;
@@ -2436,8 +2442,8 @@
             sortedByArea.slice(0, 10).forEach((item, index) => {
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.mosque_name}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.mosque_name)}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
                 </tr>`;
                 top10AreaBody.innerHTML += row;
@@ -2485,7 +2491,7 @@
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${item.foundation_name}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                 </tr>`;
                 top10PlotsBody.innerHTML += row;
@@ -2499,7 +2505,7 @@
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${item.foundation_name}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
                 </tr>`;
                 top10AreaBody.innerHTML += row;
@@ -2547,7 +2553,7 @@
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${item.church_name}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                 </tr>`;
                 top10PlotsBody.innerHTML += row;
@@ -2561,7 +2567,7 @@
                 const row = `<tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${index + 1}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${item.church_name}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm">${item.province}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm">${escapeSheetHtml(item.province)}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm">${item.area_rai}</td>
                 </tr>`;
                 top10AreaBody.innerHTML += row;
@@ -2691,10 +2697,10 @@
                         const row = document.createElement('tr');
                         row.className = 'hover:bg-gray-50';
                         row.innerHTML = `
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${item.nationality || ''}</span></td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                             <td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${item.land_use_type || ''}</td>
@@ -2727,7 +2733,7 @@
                     pageData.forEach((item) => {
                         const row = document.createElement('tr');
                         row.className = 'hover:bg-gray-50';
-                        row.innerHTML = `<td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td><td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td><td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">${item.nationality || ''}</span></td><td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td><td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td><td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td><td class="px-4 py-3 text-sm text-gray-600">${item.note || ''}</td>`;
+                        row.innerHTML = `<td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td><td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td><td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">${item.nationality || ''}</span></td><td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td><td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td><td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td><td class="px-4 py-3 text-sm text-gray-600">${item.note || ''}</td>`;
                         tbody.appendChild(row);
                     });
                 }, 10);
@@ -2757,10 +2763,10 @@
                         const row = document.createElement('tr');
                         row.className = 'hover:bg-gray-50';
                         row.innerHTML = `
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">${item.nationality || ''}</span></td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                             <td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">${item.land_use_type || ''}</td>
@@ -2794,13 +2800,13 @@
                         const row = document.createElement('tr');
                         row.className = 'hover:bg-gray-50';
                         row.innerHTML = `
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${item.ประเภทจดทะเบียน || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${item.กำหนดเวลา || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${item.วันจดทะเบียน || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${item.ผู้ให้เช่า || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${item.name || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                             <td class="px-4 py-3 text-sm text-gray-900 font-mono">${item.area_rai || ''}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">${item.land_use_type || ''}</td>
@@ -2877,11 +2883,11 @@
                         row.className = 'hover:bg-gray-50';
                         const statusColor = item.status === 'รอดำเนินการ' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800';
                         row.innerHTML = `
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseFloat(item.area_rai) || 0).toLocaleString()}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${item.status || ''}</span></td>
+                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${escapeSheetHtml(item.status)}</span></td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -2910,10 +2916,10 @@
                         row.className = 'hover:bg-gray-50';
                         const statusColor = item.status === 'รอดำเนินการ' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800';
                         row.innerHTML = `
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.client_name || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${item.status || ''}</span></td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.client_name)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${escapeSheetHtml(item.status)}</span></td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -2942,11 +2948,11 @@
                         row.className = 'hover:bg-gray-50';
                         const statusColor = item.status === 'รอดำเนินการ' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800';
                         row.innerHTML = `
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.id || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.client_name || ''}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${item.province || ''}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.client_name)}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.copy_count, 10) || 0).toLocaleString()}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${item.status || ''}</span></td>
+                            <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${escapeSheetHtml(item.status)}</span></td>
                         `;
                         tbody.appendChild(row);
                     });

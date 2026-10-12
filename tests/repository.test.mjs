@@ -19,3 +19,11 @@ test('PWA manifest is valid and uses a relative start URL', () => {
  assert.equal(manifest.display, 'standalone');
  assert.ok(manifest.name);
 });
+
+test('spreadsheet-derived labels are HTML-escaped in table templates', () => {
+ assert.match(html, /function escapeSheetHtml\(value\)/);
+ for (const field of ['client_name', 'province', 'status', 'mosque_name']) {
+  assert.ok(html.includes('escapeSheetHtml(item.' + field + ')'), field);
+  assert.ok(!html.includes('${item.' + field + " || ''}"), 'unsafe interpolation: ' + field);
+ }
+});
