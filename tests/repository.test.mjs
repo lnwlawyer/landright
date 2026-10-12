@@ -211,3 +211,13 @@ test('asynchronous data loading never resets the selected section', () => {
  assert.match(html, /id="overview-content" class="content-section"/);
  assert.match(html, /id="foreigners-content" class="content-section hidden"/);
 });
+
+test('SMT2 is integrated without removing existing LandRight navigation', () => {
+ const smt = readFileSync(new URL('../smt2/index.html', import.meta.url), 'utf8');
+ assert.ok(html.includes('href="smt2/index.html"'));
+ for (const page of ['org-structure','dashboard','table']) assert.ok(smt.includes('id="'+page+'"'));
+ assert.ok(smt.includes('href="../index.html"'));
+ assert.ok(smt.includes("addNewBtn.disabled = true"));
+ assert.ok(smt.includes("saveBtn.disabled = true"));
+ assert.ok(smt.includes('ยังไม่ได้เชื่อมต่อ Backend ที่ปลอดภัย'));
+});
