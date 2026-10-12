@@ -2033,22 +2033,49 @@
          * @returns {Array<Object>}
          */
         function parseCSV(text) {
-            const lines = text.split(/\r?\n/);
-            if (lines.length < 2) return []; // Return empty if no data rows
-            const headers = lines[0].split(',').map(h => h.trim());
-            const data = [];
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i]) continue;
-                const values = lines[i].split(',');
-                const entry = {};
-                for (let j = 0; j < headers.length; j++) {
-                    const header = headers[j];
-                    const value = values[j] ? values[j].trim() : '';
-                    entry[header] = value;
+            // RFC 4180-style quoted fields, escaped quotes and multiline values.
+            const rows = [];
+            let row = [];
+            let field = '';
+            let quoted = false;
+            const input = String(text ?? '').replace(/^\uFEFF/, '');
+            for (let i = 0; i < input.length; i++) {
+                const char = input[i];
+                if (char === '"') {
+                    if (quoted && input[i + 1] === '"') {
+                        field += '"';
+                        i++;
+                    } else if (quoted || field === '') {
+                        quoted = !quoted;
+                    } else {
+                        field += char;
+                    }
+                } else if (char === ',' && !quoted) {
+                    row.push(field);
+                    field = '';
+                } else if ((char === '\n' || char === '\r') && !quoted) {
+                    if (char === '\r' && input[i + 1] === '\n') i++;
+                    row.push(field);
+                    if (row.some(value => value.trim() !== '')) rows.push(row);
+                    row = [];
+                    field = '';
+                } else {
+                    field += char;
                 }
-                data.push(entry);
             }
-            return data;
+            row.push(field);
+            if (row.some(value => value.trim() !== '')) rows.push(row);
+            if (rows.length < 2) return [];
+            const headers = rows[0].map(value => value.trim());
+            return rows.slice(1).map(values => {
+                const entry = {};
+                headers.forEach((header, index) => {
+                    if (header && header !== '__proto__' && header !== 'constructor' && header !== 'prototype') {
+                        entry[header] = (values[index] ?? '').trim();
+                    }
+                });
+                return entry;
+            });
         }
 
         /**
