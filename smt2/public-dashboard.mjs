@@ -16,8 +16,9 @@ export function validatePublicSnapshot(s) {
  const {totalRecords,completedRecords,pendingRecords}=s.summary;
  if (![totalRecords,completedRecords,pendingRecords].every(safeInteger) || completedRecords+pendingRecords !== totalRecords) return false;
  if (!Array.isArray(s.byStatus) || !Array.isArray(s.byGroup) || s.byStatus.length > 20 || s.byGroup.length > 20) return false;
- const validRows = rows => rows.every(row=>plainObject(row) && permitted(row,['label','count']) && safeLabel(row.label) && safeInteger(row.count)) && new Set(rows.map(row=>row.label)).size===rows.length;
+ const validRows = rows => rows.every(row=>plainObject(row) && permitted(row,['label','count']) && safeLabel(row.label) && safeInteger(row.count)) && new Set(rows.map(row=>row.label.toLocaleLowerCase('th-TH'))).size===rows.length;
  if (!validRows(s.byStatus) || !validRows(s.byGroup)) return false;
+ if (totalRecords > 0 && (!s.byStatus.length || !s.byGroup.length)) return false;
  // Do not publish small breakdown cells that could identify individuals.
  if ([...s.byStatus,...s.byGroup].some(row => row.count > 0 && row.count < 5)) return false;
  if (s.byStatus.reduce((n,r)=>n+r.count,0)!==totalRecords || s.byGroup.reduce((n,r)=>n+r.count,0)!==totalRecords) return false;
