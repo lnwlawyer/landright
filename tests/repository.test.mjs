@@ -330,3 +330,28 @@ test('SMT2 publication preflight is mandatory in GitHub CI', () => {
  const workflow=readFileSync(new URL('../.github/workflows/ci.yml',import.meta.url),'utf8');
  assert.ok(workflow.includes('node scripts/smt2-public-preflight.mjs'));
 });
+
+test('SMT2 private read guard reference requires server-side identity and column projection', () => {
+ const guard=readFileSync(new URL('../smt2/backend/private-read-guards.reference.gs',import.meta.url),'utf8');
+ for(const expected of [
+  "Session.getActiveUser().getEmail()",
+  "SMT2_READER_EMAILS",
+  "SMT2_EDITOR_EMAILS",
+  "SMT2_READER_COLUMNS",
+  "NOT_AUTHORIZED",
+  "SHEET_NOT_ALLOWED",
+  "COLUMN_NOT_ALLOWED",
+  "INVALID_PAGE",
+  "INVALID_LIMIT",
+  "getDisplayValues()",
+  "rows:rows.map",
+  "getSheetNames().indexOf(name)",
+  "getLastRow()-1",
+ ]) assert.ok(guard.includes(expected),expected);
+ for(const forbidden of ['doGet(', 'doPost(', 'ContentService.createTextOutput', 'appendRow(', 'setValues(', 'getCombinedDashboardData().records']) assert.ok(!guard.includes(forbidden),forbidden);
+ assert.ok(guard.includes('NOT DEPLOYED'));
+});
+test('SMT2 private migration documentation requires legacy entry-point lockdown and rollback', () => {
+ const guide=readFileSync(new URL('../docs/smt2-private-backend-ten-workstreams.md',import.meta.url),'utf8');
+ for(const required of ['getServerData','getUniqueColumnValues','getCombinedDashboardData','addRecord','updateRecord','rollback','Anyone','disposable test spreadsheet']) assert.ok(guide.includes(required),required);
+});
