@@ -3,21 +3,23 @@
  * This code must never fetch Apps Script directly or accept case-level data.
  */
 export const SNAPSHOT_SCHEMA_VERSION = 1;
-const safeInteger = n => Number.isSafeInteger(n) && n >= 0;
+const safeInteger = n => Number.isSafeInteger(n) && n >= 0 && n <= 100000000;
 const plainObject = o => o !== null && typeof o === 'object' && !Array.isArray(o);
 const permitted = (obj, keys) => Object.keys(obj).every(k => keys.includes(k));
-const safeLabel = value => typeof value === 'string' && value.length > 0 && value.length <= 80 && !/[<>]/.test(value);
+const safeLabel = value => typeof value === 'string' && value.trim() === value && value.length > 0 && value.length <= 80 && !/[<>\\x00-\\x1f\\x7f]/.test(value);
 const isoDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value + 'T00:00:00Z'));
 export function validatePublicSnapshot(s) {
  if (!plainObject(s) || !permitted(s, ['schemaVersion','approvedForPublic','asOf','approvedOn','summary','byStatus','byGroup'])) return false;
  if (s.schemaVersion !== SNAPSHOT_SCHEMA_VERSION || s.approvedForPublic !== true || !isoDate(s.asOf) || !isoDate(s.approvedOn)) return false;
- if (s.approvedOn < s.asOf) return false;
+ if (s.approvedOn < s.asOf || s.approvedOn > new Date().toISOString().slice(0,10)) return false;
  if (!plainObject(s.summary) || !permitted(s.summary,['totalRecords','completedRecords','pendingRecords'])) return false;
  const {totalRecords,completedRecords,pendingRecords}=s.summary;
  if (![totalRecords,completedRecords,pendingRecords].every(safeInteger) || completedRecords+pendingRecords !== totalRecords) return false;
  if (!Array.isArray(s.byStatus) || !Array.isArray(s.byGroup) || s.byStatus.length > 20 || s.byGroup.length > 20) return false;
  const validRows = rows => rows.every(row=>plainObject(row) && permitted(row,['label','count']) && safeLabel(row.label) && safeInteger(row.count)) && new Set(rows.map(row=>row.label)).size===rows.length;
  if (!validRows(s.byStatus) || !validRows(s.byGroup)) return false;
+ // Do not publish small breakdown cells that could identify individuals.
+ if ([...s.byStatus,...s.byGroup].some(row => row.count > 0 && row.count < 5)) return false;
  if (s.byStatus.reduce((n,r)=>n+r.count,0)!==totalRecords || s.byGroup.reduce((n,r)=>n+r.count,0)!==totalRecords) return false;
  return true;
 }
