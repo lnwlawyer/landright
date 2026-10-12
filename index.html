@@ -3070,5 +3070,61 @@
             // Keep the section the user selected while asynchronous data was loading.
         });
     </script>
+    <script type="module">
+        import {validatePublicSnapshot,formatCount} from './smt2/public-dashboard.mjs';
+        let smt2Loaded = false;
+        let smt2Loading = false;
+        window.loadSmt2PublicDashboard = async function () {
+            if (smt2Loaded || smt2Loading) return;
+            smt2Loading = true;
+            const root = document.getElementById('smt2-public-dashboard');
+            const status = document.getElementById('smt2-public-status');
+            try {
+                const response = await fetch('./smt2/approved-summary.json', {cache:'no-store',credentials:'omit'});
+                if (!response.ok || Number(response.headers.get('content-length') || 0) > 16384) throw new Error('UNAVAILABLE');
+                const text = await response.text();
+                if (text.length > 16384) throw new Error('TOO_LARGE');
+                const data = JSON.parse(text);
+                if (!validatePublicSnapshot(data)) throw new Error('UNAPPROVED');
+                const cards = document.createElement('div');
+                cards.className = 'grid grid-cols-1 md:grid-cols-3 gap-4';
+                for (const [label,value] of [['จำนวนเรื่องทั้งหมด',data.summary.totalRecords],['ดำเนินการเสร็จแล้ว',data.summary.completedRecords],['อยู่ระหว่างดำเนินการ',data.summary.pendingRecords]]) {
+                    const card = document.createElement('div');
+                    card.className = 'rounded-lg border border-slate-200 p-4';
+                    const heading = document.createElement('p');
+                    heading.className = 'text-sm text-gray-600';
+                    heading.textContent = label;
+                    const count = document.createElement('p');
+                    count.className = 'mt-2 text-2xl font-bold text-gray-900';
+                    count.textContent = formatCount(value);
+                    card.append(heading,count);
+                    cards.append(card);
+                }
+                root.replaceChildren(cards);
+                for (const [title,rows] of [['จำแนกตามสถานะ',data.byStatus],['จำแนกตามกลุ่มงาน',data.byGroup]]) {
+                    const panel = document.createElement('section');
+                    panel.className = 'mt-4 rounded-lg border border-slate-200 p-4';
+                    const heading = document.createElement('h4');
+                    heading.className = 'font-semibold text-gray-800 mb-2';
+                    heading.textContent = title;
+                    const list = document.createElement('ul');
+                    list.className = 'space-y-2 text-sm text-gray-700';
+                    for (const item of rows) {
+                        const row = document.createElement('li');
+                        row.textContent = item.label + ' — ' + formatCount(item.count);
+                        list.append(row);
+                    }
+                    panel.append(heading,list);
+                    root.append(panel);
+                }
+                status.textContent = 'ข้อมูลสรุปที่ได้รับอนุมัติเผยแพร่ ณ วันที่ ' + data.asOf;
+                smt2Loaded = true;
+            } catch (_) {
+                status.textContent = 'ยังไม่มีชุดข้อมูลสรุป SMT2 ที่ได้รับการอนุมัติให้เผยแพร่';
+            } finally {
+                smt2Loading = false;
+            }
+        };
+    </script>
 </body>
 </html>
