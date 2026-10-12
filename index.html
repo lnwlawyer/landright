@@ -1933,7 +1933,7 @@
             }
 
             function updateNav(totalRecordsCount) {
-                const totalPages = Math.ceil(totalRecordsCount / itemsPerPage);
+                const totalPages = Math.max(1, Math.ceil(totalRecordsCount / itemsPerPage));
                 if (currentPage > totalPages) {
                     currentPage = totalPages > 0 ? totalPages : 1;
                 }
