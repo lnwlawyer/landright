@@ -135,3 +135,11 @@ test('search covers religious names and Thai registration fields', () => {
  term = 'วัด';
  assert.deepEqual(filterData('96', rows), [rows[1]]);
 });
+
+test('CSV parser rejects unterminated quoted values without partial data', () => {
+ const match = html.match(/        function parseCSV\(text\) \{[\s\S]*?\n        \}\n/);
+ assert.ok(match);
+ const parseCSV = new Function(match[0].trim() + '; return parseCSV;')();
+ assert.throws(() => parseCSV('name,province\n"unfinished,Bangkok'), /unterminated quoted field/);
+ assert.deepEqual(parseCSV('name,province\n"valid",Bangkok'), [{ name: 'valid', province: 'Bangkok' }]);
+});
