@@ -1924,9 +1924,9 @@
                     const nationalityMatch = !nationalityFilter || item.nationality === nationalityFilter;
                     if (!nationalityMatch) return false;
                     if (!searchTerm) return true;
-                    const fields = prefix === 'Abandoned' || prefix === 'DocSearch' || prefix === 'Securities'
-                        ? ['id', 'client_name', 'province', 'name']
-                        : ['name', 'client_name', 'province', 'id'];
+                    const fields = ['id', 'name', 'client_name', 'province', 'nationality',
+                        'temple_name', 'foundation_name', 'church_name', 'mosque_name',
+                        'ประเภทจดทะเบียน', 'กำหนดเวลา', 'วันจดทะเบียน', 'ผู้ให้เช่า'];
                     return fields.some(field => String(item[field] ?? '').toLocaleLowerCase().includes(searchTerm));
                 });
             }

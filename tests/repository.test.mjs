@@ -121,3 +121,17 @@ test('pagination navigation has descriptive accessible names', () => {
   assert.ok(html.includes(phrase), phrase);
  }
 });
+
+test('search covers religious names and Thai registration fields', () => {
+ const match = html.match(/            function filterData\(prefix, originalData\) \{[\s\S]*?\n            \}\n/);
+ assert.ok(match);
+ let term = 'มูลนิธิ';
+ const document = { getElementById: id => id.startsWith('searchInput') ? { get value() { return term; } } : null };
+ const filterData = new Function('document', match[0] + '; return filterData;')(document);
+ const rows = [{ foundation_name: 'มูลนิธิทดสอบ' }, { temple_name: 'วัดทดสอบ' }, { 'ผู้ให้เช่า': 'บริษัททดสอบ' }];
+ assert.deepEqual(filterData('Commercial', rows), [rows[0]]);
+ term = 'บริษัท';
+ assert.deepEqual(filterData('Commercial', rows), [rows[2]]);
+ term = 'วัด';
+ assert.deepEqual(filterData('96', rows), [rows[1]]);
+});
