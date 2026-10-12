@@ -221,3 +221,11 @@ test('SMT2 is integrated without removing existing LandRight navigation', () => 
  assert.ok(smt.includes("saveBtn.disabled = true"));
  assert.ok(smt.includes('ยังไม่ได้เชื่อมต่อ Backend ที่ปลอดภัย'));
 });
+
+test('SMT2 write guard reference fails closed and protects sheet edits', () => {
+ const guard = readFileSync(new URL('../smt2/backend/write-guards.reference.gs', import.meta.url), 'utf8');
+ for (const required of ['SMT2_EDITOR_EMAILS', 'NOT_AUTHORIZED', 'SHEET_NOT_ALLOWED', 'INVALID_ROW', 'COLUMN_MISMATCH', 'CONFLICT_RELOAD_REQUIRED', 'LockService.getDocumentLock()', 'expectedValues']) {
+  assert.ok(guard.includes(required), required);
+ }
+ assert.ok(!guard.includes('function doPost('), 'do not expose a public write endpoint');
+});
