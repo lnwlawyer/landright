@@ -270,6 +270,6 @@ test('SMT2 public snapshots reject invalid dates, future approvals and small cel
   {approvedOn:'2099-01-01'},
   {byStatus:[{label:'เสร็จ',count:9},{label:'ค้าง',count:1}]},
   {byGroup:[{label:'กลุ่ม ก ',count:10}]},
-  {byGroup:[{label:'กลุ่ม ก\\n',count:10}]}
+  {byGroup:[{label:'กลุ่ม ก'+String.fromCharCode(10),count:10}]}
  ]) assert.equal(validatePublicSnapshot({...valid,...change}),false);
 });
