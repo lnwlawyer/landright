@@ -17,14 +17,30 @@
 <p>พื้นที่แสดงข้อมูลสรุปที่ผ่านการตรวจสอบและอนุมัติให้เผยแพร่เท่านั้น โดยไม่แสดงข้อมูลรายเรื่อง ข้อมูลส่วนบุคคล หรือเครื่องมือแก้ไขข้อมูล</p>
 <section class="panel" aria-labelledby="publish-title">
 <h2 id="publish-title">สถานะข้อมูลสาธารณะ</h2>
-<p class="note" role="status">ยังไม่มีชุดข้อมูลสรุป SMT2 ที่ได้รับการอนุมัติให้เผยแพร่ผ่านเว็บไซต์นี้ จึงยังไม่แสดงตัวเลขสถิติ เพื่อหลีกเลี่ยงข้อมูลที่คลาดเคลื่อนหรือการเปิดเผยข้อมูลภายใน</p>
-<div class="grid">
+<p class="note" role="status" id="publication-status">ยังไม่มีชุดข้อมูลสรุป SMT2 ที่ได้รับการอนุมัติให้เผยแพร่ผ่านเว็บไซต์นี้ จึงยังไม่แสดงตัวเลขสถิติ เพื่อหลีกเลี่ยงข้อมูลที่คลาดเคลื่อนหรือการเปิดเผยข้อมูลภายใน</p>
+<div id="published-dashboard" aria-live="polite"><div class="grid">
 <div class="stat"><span>จำนวนเรื่องทั้งหมด</span><strong>รอข้อมูลที่อนุมัติเผยแพร่</strong></div>
 <div class="stat"><span>สถานะการดำเนินงาน</span><strong>รอข้อมูลที่อนุมัติเผยแพร่</strong></div>
 <div class="stat"><span>ภาพรวมกลุ่มงาน</span><strong>รอข้อมูลที่อนุมัติเผยแพร่</strong></div>
-</div>
+</div></div>
 </section>
 <section class="panel" aria-labelledby="access-title"><h2 id="access-title">การเข้าถึงข้อมูลภายใน</h2><p>ข้อมูลรายเรื่อง การค้นหาประวัติงาน การเพิ่มและแก้ไขรายการ จำกัดเฉพาะเจ้าหน้าที่ที่ได้รับอนุญาตผ่านระบบที่ตรวจสอบตัวตนและสิทธิ์ฝั่งเซิร์ฟเวอร์ ไม่เปิดให้ใช้งานจากหน้านี้</p></section>
 </main>
+<script type="module">
+import {validatePublicSnapshot,renderSnapshot} from './public-dashboard.mjs';
+const container=document.getElementById('published-dashboard');
+const status=document.getElementById('publication-status');
+try {
+ const response=await fetch('./approved-summary.json',{cache:'no-store',credentials:'omit'});
+ if (!response.ok) throw new Error('NOT_PUBLISHED');
+ const snapshot=await response.json();
+ if (!validatePublicSnapshot(snapshot)) throw new Error('INVALID_PUBLIC_SNAPSHOT');
+ renderSnapshot(snapshot,container);
+ status.textContent='ข้อมูลสรุปที่ได้รับอนุมัติเผยแพร่';
+} catch (_) {
+ status.textContent='ยังไม่มีข้อมูลสรุปที่ผ่านการอนุมัติเผยแพร่';
+}
+</script>
+
 <footer>ระบบข้อมูลสิทธิในที่ดิน — LandRight</footer>
 </body></html>
