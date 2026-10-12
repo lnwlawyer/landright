@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบริหารงาน | LandRight</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- D3.js and TopoJSON for Map Chart -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Sarabun', 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 5px solid #3b82f6;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            color: #4b5563;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .nav-link:hover {
+            background-color: #e5e7eb;
+        }
+        .nav-link.active {
+            background-color: #3b82f6;
+            color: white;
+            font-weight: bold;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        .cell-content {
+            height: 12.5rem; /* ~10 lines */
+            display: -webkit-box;
+            -webkit-line-clamp: 10;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+        }
+        td {
+            vertical-align: top;
+        }
+        .chart-container {
+            position: relative;
+            height: 320px; /* 20rem */
+        }
+        .group-tab, .officer-tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+        .group-tab:hover, .officer-tab:hover {
+            color: #1f2937;
+            background-color: #f3f4f6;
+        }
+        .group-tab.active, .officer-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            font-weight: bold;
+        }
+        .group-pane, .dashboard-pane {
+            display: none;
+        }
+        .group-pane.active, .dashboard-pane.active {
+            display: block;
+        }
+        
+        /* --- Organization Chart Styles --- */
+        .org-chart {
+            text-align: center;
+            overflow-x: auto;
+        }
+        .org-chart ul {
+            padding-top: 15px; /* Adjusted padding */
+            position: relative;
+            display: inline-flex;
+        }
+        .org-chart li {
+            text-align: center;
+            list-style-type: none;
+            position: relative;
+            padding: 15px 5px 0 5px; /* Adjusted padding */
+        }
+        .org-chart li .node-card {
+            border: 1px solid #cbd5e1;
+            padding: 0.5rem; /* Reduced padding */
+            background-color: #ffffff;
+            display: inline-block;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            min-width: 150px; /* Reduced min-width */
+        }
+        .org-chart li::before, .org-chart li::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 50%;
+            border-top: 2px solid #94a3b8;
+            width: 50%;
+            height: 15px; /* Reduced height */
+        }
+        .org-chart li::after {
+            right: auto;
+            left: 50%;
+            border-left: 2px solid #94a3b8;
+        }
+        .org-chart li:only-child::before, .org-chart li:only-child::after {
+             display: none;
+        }
+        .org-chart li:first-child::before, .org-chart li:last-child::after {
+            border: 0 none;
+        }
+        .org-chart li:last-child::before {
+            border-right: 2px solid #94a3b8;
+            border-radius: 0 5px 0 0;
+        }
+        .org-chart li:first-child::after {
+            border-radius: 5px 0 0 0;
+        }
+        .org-chart ul ul::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            border-left: 2px solid #94a3b8;
+            width: 0;
+            height: 15px; /* Reduced height */
+        }
+    </style>
+</head>
+<body class="bg-slate-100">
+    <div class="sticky top-0 z-50 bg-blue-950 text-white px-4 py-3 flex items-center justify-between gap-3">
+        <span class="font-bold">LandRight <span class="font-normal text-blue-200">/ ระบบบริหารงาน SMT2</span></span>
+        <a href="../index.html" class="rounded-md bg-white/15 px-3 py-2 hover:bg-white/25 focus:outline focus:outline-2 focus:outline-white">กลับสู่ LandRight</a>
+    </div>
+
+    <div class="relative min-h-screen md:flex">
+        <!-- Mobile menu overlay -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden md:hidden z-30"></div>
+
+        <!-- Hamburger Menu Button (for mobile) -->
+        <button id="menu-toggle-btn" class="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-md shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+        </button>
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-white shadow-md flex-shrink-0 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-200 ease-in-out z-40">
+            <div class="p-4">
+                <h2 class="text-xl font-bold text-blue-600">เมนูหลัก</h2>
+            </div>
+            <nav class="p-2 space-y-2">
+                <a href="#org-structure" class="nav-link active">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H5a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd" /></svg>
+                    โครงสร้างองค์กร
+                </a>
+                <a href="#dashboard" class="nav-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+                    ระบบบริหารงาน
+                </a>
+                <a href="#table" class="nav-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM4 8h5v2H4V8z" clip-rule="evenodd" /></svg>
+                    ตารางข้อมูล
+                </a>
+            </nav>
+            <div id="table-view-controls" class="p-4 mt-auto hidden">
+                 <label for="sheet-select" class="block text-sm font-medium text-gray-700">เลือกชีทเจ้าหน้าที่</label>
+                 <select id="sheet-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"></select>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 md:p-6 overflow-y-auto">
+            
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="page">
+                <div id="dashboard-loader" class="flex justify-center items-center p-10"><div class="loader"></div></div>
+                <div id="dashboard-content" class="hidden">
+                    <!-- Overall Summary Section -->
+                    <div class="mb-8 p-6 bg-white rounded-lg shadow">
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">ภาพรวมทั้งหมด</h1>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-blue-100 p-6 rounded-lg"><h3 class="text-blue-800">จำนวนเจ้าหน้าที่ทั้งหมด</h3><p id="overall-total-officers" class="text-3xl md:text-4xl font-bold text-blue-600"></p></div>
+                            <div class="bg-green-100 p-6 rounded-lg">
+                                <h3 class="text-green-800 font-bold mb-2">จำนวนเรื่องทั้งหมด</h3>
+                                <p id="overall-total-records" class="text-2xl md:text-3xl font-bold text-green-600 mb-4"></p>
+                                <div id="overall-status-breakdown" class="space-y-1 text-sm">
+                                    <!-- Status breakdown will be injected here by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comparison Charts Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="font-bold text-center text-gray-700">เปรียบเทียบจำนวนงานของกลุ่มงาน</h3>
+                            <div class="chart-container h-80">
+                                <canvas id="overall-group-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="font-bold text-center text-gray-700">เปรียบเทียบจำนวนงานในกลุ่ม</h3>
+                            <h4 id="selected-group-name-title" class="text-center text-blue-600 font-semibold mb-2 h-6"></h4>
+                            <div class="chart-container h-80">
+                                <canvas id="selected-group-officer-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Tabbed interface for Groups and Officers -->
+                    <div id="group-dashboards-container" class="bg-white rounded-lg shadow">
+                        <div id="group-tabs" class="flex border-b border-gray-200 flex-wrap">
+                            <!-- Group tabs will be inserted here by JS -->
+                        </div>
+                        <div id="group-panes-container">
+                            <!-- Group panes (containing officer tabs and panes) will be inserted here by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Page -->
+            <div id="table" class="page">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">ตารางข้อมูลทั้งหมด</h1>
+                <!-- Controls Section -->
+                <div class="bg-white p-4 rounded-lg shadow-md mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label for="search-input" class="block text-sm font-medium text-gray-700">ค้นหา</label>
+                            <input type="text" id="search-input" placeholder="พิมพ์เพื่อค้นหา..." class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label for="filter-province" class="block text-sm font-medium text-gray-700">จังหวัด</label>
+                                <select id="filter-province" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="">ทั้งหมด</option></select>
+                            </div>
+                            <div>
+                                <label for="filter-status" class="block text-sm font-medium text-gray-700">สถานะ</label>
+                                <select id="filter-status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="">ทั้งหมด</option></select>
+                            </div>
+                        </div>
+                        <div>
+                             <button id="add-new-btn" class="w-full bg-blue-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">+ เพิ่มรายการใหม่</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Data Table Section -->
+                <div id="table-container" class="bg-white rounded-lg shadow-md overflow-x-auto">
+                    <div id="table-loader" class="flex justify-center items-center p-10"><div class="loader"></div></div>
+                    <table class="min-w-full divide-y divide-gray-200 hidden">
+                        <thead class="bg-gray-50" id="table-head"></thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="table-body"></tbody>
+                    </table>
+                </div>
+                <!-- Pagination Controls -->
+                <div id="pagination-controls" class="mt-6 flex flex-col sm:flex-row items-center justify-between hidden">
+                    <!-- Pagination content will be added by JS -->
+                </div>
+            </div>
+
+            <!-- Org Structure Page -->
+            <div id="org-structure" class="page active">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">สำนักมาตรฐานการทะเบียนที่ดิน</h1>
+                <div class="space-y-8">
+                    <!-- Vision & Mission Section -->
+                    <div class="bg-white p-6 md:p-8 rounded-lg shadow">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h2 class="text-xl md:text-2xl font-semibold text-blue-600 border-b-2 border-blue-200 pb-2 mb-4 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                                    วิสัยทัศน์ (Vision)
+                                </h2>
+                                <p class="text-gray-700 leading-relaxed">"เป็นหน่วยงานหลักที่สร้างมาตรฐานและความเชื่อมั่นด้านระบบการทะเบียนที่ดินและคุ้มครองสิทธิของประชาชน"</p>
+                            </div>
+                            <div>
+                                <h2 class="text-xl md:text-2xl font-semibold text-green-600 border-b-2 border-green-200 pb-2 mb-4 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                                    อำนาจหน้าที่
+                                </h2>
+                                <p class="text-gray-700 leading-relaxed">กำหนดระเบียบ ข้อบังคับ คำสั่ง กำกับ ดูแล ให้คำปรึกษาและสนับสนุนการปฏิบัติงานเกี่ยวกับการ​​จดทะเบียนสิทธิและนิติกรรมเกี่ยวกับอสังหาริมทรัพย์ตามประมวลกฎหมายแพ่งและพาณิชย์ รวมทั้งการเพิกถอนและแก้ไขการจดทะเบียนหรือรายการจดทะเบียนดำเนินการตามประมวลกฎหมายที่ดินเกี่ยวกับการขอเพิกถอนหนังสือแสดงสิทธิในที่ดินที่ถูกทอดทิ้งไม่ทำประโยชน์ หรือปล่อยให้เป็นที่รกร้างว่างเปล่า พิจารณาการขอให้ได้มาซึ่งที่ดินสำหรับการศาสนาคนต่างด้าว และนิติบุคคลบางประเภท ศึกษา วิเคราะห์ เพื่อพัฒนามาตรฐานด้านการทะเบียนที่ดิน และปฏิบัติงานร่วมกับหรือสนับสนุนการปฏิบัติงานของหน่วยงานอื่นที่เกี่ยวข้อง หรือที่ได้รับมอบหมาย</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Authority and Responsibility Section -->
+                    <div class="bg-white p-6 md:p-8 rounded-lg shadow">
+                        <h2 class="text-xl md:text-2xl font-semibold text-gray-700 border-b-2 border-gray-200 pb-2 mb-4">
+                           อำนาจหน้าที่และความรับผิดชอบของส่วนกำหนดสิทธิในที่ดินและควบคุมทะเบียนที่ดิน
+                        </h2>
+                        <p class="text-center text-lg text-gray-600 mt-4">"การพิจารณากำหนดสิทธิในที่ดิน และการควบคุมรักษาทะเ​บียนที่ดิน"</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                            <!-- Card 1: กลุ่มกำหนดสิทธิในที่ดิน -->
+                            <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                                <div class="flex items-center mb-4">
+                                    <div class="p-3 rounded-full bg-blue-200 text-blue-700 mr-4">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </div>
+                                    <h3 class="text-lg md:text-xl font-bold text-blue-800">1. กลุ่มกำหนดสิทธิในที่ดิน</h3>
+                                </div>
+                                <ul class="list-disc list-inside text-gray-700 space-y-2 pl-4">
+                                    <li>พิจารณาการขอได้มาซึ่งที่ดิน (ศาสนา, คนต่างด้าว, นิติบุคคล)</li>
+                                    <li>จัดทำทะเบียนสิทธิในที่ดิน</li>
+                                    <li>ดำเนินการเกี่ยวกับที่ดินที่ถูกทอดทิ้ง/รกร้างว่างเปล่า</li>
+                                </ul>
+                            </div>
+                            <!-- Card 2: ฝ่ายตรวจสอบและควบคุมทะเบียนที่ดิน -->
+                            <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200">
+                                <div class="flex items-center mb-4">
+                                    <div class="p-3 rounded-full bg-indigo-200 text-indigo-700 mr-4">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    </div>
+                                    <h3 class="text-lg md:text-xl font-bold text-indigo-800">2. ฝ่ายตรวจสอบและควบคุมทะเบียนที่ดิน</h3>
+                                </div>
+                                <ul class="list-disc list-inside text-gray-700 space-y-2 pl-4">
+                                    <li>ตรวจสอบเอกสารการจดทะเบียนสิทธิและนิติกรรม</li>
+                                    <li>ตรวจสอบและแก้ไขทะเบียนสิทธิครอบครอง</li>
+                                    <li>พัฒนาและวางระเบียบการจัดเก็บสารบบ</li>
+                                    <li>ทักท้วงข้อบกพร่องของคำขอจดทะเบียน</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Org Chart Section -->
+                    <div class="bg-white p-6 md:p-8 rounded-lg shadow">
+                         <h2 class="text-xl md:text-2xl font-semibold text-gray-700 border-b-2 border-gray-200 pb-2 mb-4">ผังโครงสร้างส่วนกำหนดสิทธิในที่ดินและควบคุมทะเบียนที่ดิน</h2>
+                        <div id="org-chart-container" class="org-chart py-4">
+                           <div class="flex justify-center items-center p-10"><div class="loader"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <!-- Edit/View Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">รายละเอียด/แก้ไขข้อมูล</h3>
+                <div id="modal-form-container" class="mt-2 px-7 py-3 max-h-[60vh] overflow-y-auto">
+                    <!-- Form fields will be dynamically inserted here -->
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="save-btn" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300">
+                        บันทึกการเปลี่ยนแปลง
+                    </button>
+                    <button id="close-modal-btn" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 ml-2">
+                        ปิด
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New Record Modal -->
+    <div id="add-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <form id="add-form">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">เพิ่มรายการใหม่</h3>
+                <div id="add-form-container" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-2">
+                    <!-- Add form fields will be dynamically inserted here -->
+                </div>
+                <div class="items-center px-4 py-3 mt-4 text-right">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                        เพิ่มข้อมูล
+                    </button>
+                    <button type="button" id="close-add-modal-btn" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 ml-2">
+                        ยกเลิก
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    // --- หมายเหตุสำคัญ ---
+    // โค้ดส่วน JavaScript นี้ถูกออกแบบมาเพื่อทำงานร่วมกับ Google Apps Script เป็นหลัก
+    // ฟังก์ชัน `google.script.run` ใช้สำหรับเรียกใช้ฟังก์ชันฝั่งเซิร์ฟเวอร์ (ในไฟล์ Code.gs)
+    // เพื่อดึงข้อมูลจาก Google Sheets และทำการบันทึกข้อมูล
+    //
+    // หากต้องการให้เว็บแอปนี้ทำงานได้อย่างสมบูรณ์ จะต้อง:
+    // 1. สร้างโปรเจกต์ Google Apps Script
+    // 2. นำโค้ด HTML นี้ไปใส่ในไฟล์ .html (เช่น Index.html)
+    // 3. สร้างไฟล์ Code.gs เพื่อเขียนฟังก์ชันฝั่งเซิร์ฟเวอร์ที่ถูกเรียกใช้โดย `google.script.run`
+    //    (เช่น getSheetNames, getServerData, getCombinedDashboardData, updateRecord, addRecord เป็นต้น)
+    // 4. Deploy โปรเจกต์เป็น Web App
+
+    // --- GLOBAL STATE ---
+    let currentPage = 1;
+    let currentSheet = '';
+    let headers = [];
+    let totalPages = 1;
+    let charts = {}; // To hold chart instances
+    let allDashboardData = null; // To cache dashboard data
+    
+    const STATUS_COLOR_MAP = {
+        "เสนอลงนาม": '#3b82f6', // blue
+        "ระหว่างพิจารณาของเจ้าหน้าที่": '#ef4444', // red
+        "รอผลจังหวัด/หน่วยงานอื่น": '#f97316', // orange
+        "ยกเลิก": '#f59e0b', // amber
+        "เสร็จแล้ว": '#8b5cf6', // violet
+        "ตรวจร่าง": '#10b981', // green
+        "default": '#64748b' // slate for any other status
+    };
+
+    // --- DOM ELEMENTS ---
+    const sheetSelect = document.getElementById('sheet-select');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const pages = document.querySelectorAll('.page');
+    const tableViewControls = document.getElementById('table-view-controls');
+
+    // Responsive Menu Elements
+    const menuToggleBtn = document.getElementById('menu-toggle-btn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+    // Dashboard elements
+    const dashboardLoader = document.getElementById('dashboard-loader');
+    const dashboardContent = document.getElementById('dashboard-content');
+    const groupTabsContainer = document.getElementById('group-tabs');
+    const groupPanesContainer = document.getElementById('group-panes-container');
+    const selectedGroupNameTitle = document.getElementById('selected-group-name-title');
+    const orgChartContainer = document.getElementById('org-chart-container');
+
+    // Table elements
+    const searchInput = document.getElementById('search-input');
+    const tableBody = document.getElementById('table-body');
+    const tableHead = document.getElementById('table-head');
+    const tableLoader = document.getElementById('table-loader');
+    const tableEl = document.querySelector('#table table');
+    const paginationControls = document.getElementById('pagination-controls');
+    const filterProvince = document.getElementById('filter-province');
+    const filterStatus = document.getElementById('filter-status');
+
+    const editModal = document.getElementById('edit-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const saveBtn = document.getElementById('save-btn');
+    const addModal = document.getElementById('add-modal');
+    const addNewBtn = document.getElementById('add-new-btn');
+    const closeAddModalBtn = document.getElementById('close-add-modal-btn');
+    const addForm = document.getElementById('add-form');
+
+    // --- UTILITY FUNCTIONS ---
+    function escapeHtml(unsafe) {
+        if (typeof unsafe !== 'string') {
+            return unsafe === null || unsafe === undefined ? '' : String(unsafe);
+        }
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;")
+            .replace(/`/g, "&#96;");
+    }
+
+    // --- NAVIGATION ---
+    function navigateTo(hash) {
+        hash = hash || '#org-structure';
+        pages.forEach(page => page.classList.toggle('active', `#${page.id}` === hash));
+        navLinks.forEach(link => link.classList.toggle('active', link.getAttribute('href') === hash));
+        
+        tableViewControls.style.display = (hash === '#table') ? 'block' : 'none';
+
+        if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+            handleNoBackend();
+            return;
+        }
+
+        if (hash === '#dashboard' && !allDashboardData) {
+            loadDashboardData();
+        } else if (hash === '#table') {
+            loadTableData();
+        } else if (hash === '#org-structure') {
+            loadOrgChartData();
+        }
+    }
+
+    // --- ORG CHART FUNCTIONS ---
+    function loadOrgChartData() {
+        orgChartContainer.innerHTML = `<div class="flex justify-center items-center p-10"><div class="loader"></div></div>`;
+        google.script.run
+            .withSuccessHandler(orgData => {
+                if (orgData && !orgData.error) {
+                    renderOrgChart(orgData, orgChartContainer);
+                } else {
+                    orgChartContainer.innerHTML = `<p class="text-red-500 text-center">${escapeHtml(orgData.error) || 'ไม่สามารถโหลดข้อมูลผังองค์กรได้'}</p>`;
+                }
+            })
+            .withFailureHandler(err => {
+                 orgChartContainer.innerHTML = `<p class="text-red-500 text-center">เกิดข้อผิดพลาด: ${escapeHtml(err.message)}</p>`;
+            })
+            .getOrgChartData();
+    }
+
+    function createNode(person) {
+        const hasChildren = person.children && person.children.length > 0;
+        let childrenHtml = '';
+        if (hasChildren) {
+            childrenHtml = '<ul>' + person.children.map(createNode).join('') + '</ul>';
+        }
+        
+        // Updated placeholder URL to match new smaller size
+        const imageUrl = person.imageUrl || 'https://placehold.co/48x48/e2e8f0/64748b?text=' + escapeHtml(String(person.name).charAt(0));
+
+        let nodeHtml = '<li>';
+        nodeHtml += '<div class="node-card text-center inline-block">';
+        // Reduced image size and margin
+        nodeHtml += '<img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(person.name) + '" class="w-12 h-12 rounded-full mx-auto mb-1 border-2 border-slate-200 object-cover">';
+        // Reduced font sizes
+        nodeHtml += '<h4 class="font-bold text-sm">' + escapeHtml(person.name) + '</h4>';
+        nodeHtml += '<p class="text-slate-500 text-xs">' + escapeHtml(person.position) + '</p>';
+        nodeHtml += '</div>';
+        nodeHtml += childrenHtml;
+        nodeHtml += '</li>';
+
+        return nodeHtml;
+    }
+
+    function renderOrgChart(data, container) {
+        container.innerHTML = `<ul>${createNode(data)}</ul>`;
+    }
+
+    // --- DASHBOARD FUNCTIONS ---
+    function loadDashboardData() {
+        dashboardLoader.style.display = 'flex';
+        dashboardContent.style.display = 'none';
+        
+        google.script.run
+            .withSuccessHandler(response => {
+                if (!response || response.error) {
+                    console.error('Error loading dashboard data: ' + (response ? response.error : 'No response'));
+                    dashboardLoader.innerHTML = `<p class="text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูลแดชบอร์ด</p>`;
+                    return;
+                }
+                
+                allDashboardData = response; 
+                
+                document.getElementById('overall-total-officers').textContent = response.overallSummary.totalOfficers;
+                document.getElementById('overall-total-records').textContent = response.overallSummary.totalAllRecords;
+                
+                const overallStatusBreakdown = {};
+                Object.values(allDashboardData.groupedDashboards).forEach(group => {
+                    group.officers.forEach(officer => {
+                        for (const status in officer.data.byStatus) {
+                            overallStatusBreakdown[status] = (overallStatusBreakdown[status] || 0) + officer.data.byStatus[status];
+                        }
+                    });
+                });
+
+                const breakdownContainer = document.getElementById('overall-status-breakdown');
+                breakdownContainer.innerHTML = '';
+                Object.keys(overallStatusBreakdown).sort().forEach(status => {
+                    const count = overallStatusBreakdown[status];
+                    const statusDiv = document.createElement('div');
+                    statusDiv.className = 'flex justify-between items-center';
+                    
+                    const statusSpan = document.createElement('span');
+                    statusSpan.className = 'text-green-700';
+                    statusSpan.textContent = status;
+                    
+                    const countSpan = document.createElement('span');
+                    countSpan.className = 'font-semibold text-green-900 bg-green-200 px-2 py-0.5 rounded-full';
+                    countSpan.textContent = count;
+                    
+                    statusDiv.appendChild(statusSpan);
+                    statusDiv.appendChild(countSpan);
+                    breakdownContainer.appendChild(statusDiv);
+                });
+
+                createOverallGroupChart(response.groupedDashboards);
+                renderGroupTabs(response.groupedDashboards);
+
+                dashboardLoader.style.display = 'none';
+                dashboardContent.style.display = 'block';
+            })
+            .withFailureHandler(err => {
+                console.error('Failed to load dashboard: ' + err.message);
+                dashboardLoader.innerHTML = `<p class="text-red-500">ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้</p>`;
+            })
+            .getCombinedDashboardData();
+    }
+    
+    function createOverallGroupChart(groupedData) {
+        if (charts.overallGroup) charts.overallGroup.destroy();
+
+        const desiredOrder = ["กลุ่มต่างด้าว", "กลุ่มศาสนา", "ฝ่ายตรวจสอบ", "ตรวจสอบหลักทรัพย์"];
+        const groupNames = Object.keys(groupedData).sort((a, b) => {
+            const indexA = desiredOrder.indexOf(a);
+            const indexB = desiredOrder.indexOf(b);
+            if (indexA > -1 && indexB > -1) return indexA - indexB;
+            if (indexA > -1) return -1;
+            if (indexB > -1) return 1;
+            return a.localeCompare(b);
+        });
+        
+        const allStatuses = new Set();
+        groupNames.forEach(groupName => {
+            groupedData[groupName].officers.forEach(officer => {
+                Object.keys(officer.data.byStatus).forEach(status => allStatuses.add(status));
+            });
+        });
+        const sortedStatuses = [...allStatuses].sort();
+
+        const datasets = sortedStatuses.map(status => {
+            const data = groupNames.map(groupName => {
+                let count = 0;
+                groupedData[groupName].officers.forEach(officer => {
+                    count += officer.data.byStatus[status] || 0;
+                });
+                return count;
+            });
+
+            return {
+                label: status,
+                data: data,
+                backgroundColor: STATUS_COLOR_MAP[status] || STATUS_COLOR_MAP.default,
+            };
+        });
+
+        const chartData = {
+            labels: groupNames,
+            datasets: datasets,
+        };
+
+        charts.overallGroup = createChart('overall-group-chart', 'bar', chartData, {
+            plugins: { legend: { position: 'top' } },
+            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+        });
+    }
+    
+    function updateSelectedGroupChart(officers, groupName) {
+        const chartId = 'selected-group-officer-chart';
+        if (charts[chartId]) charts[chartId].destroy();
+
+        const officerNames = officers.map(o => o.sheetName);
+        const allStatuses = new Set();
+        officers.forEach(officer => {
+            Object.keys(officer.data.byStatus).forEach(status => allStatuses.add(status));
+        });
+        const sortedStatuses = [...allStatuses].sort();
+
+        const datasets = sortedStatuses.map(status => {
+            return {
+                label: status,
+                data: officers.map(officer => officer.data.byStatus[status] || 0),
+                backgroundColor: STATUS_COLOR_MAP[status] || STATUS_COLOR_MAP.default,
+            };
+        });
+
+        charts[chartId] = createChart(chartId, 'bar', {
+            labels: officerNames,
+            datasets: datasets,
+        }, {
+            plugins: { legend: { position: 'top' } },
+            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+        });
+        selectedGroupNameTitle.textContent = groupName;
+    }
+
+    function renderGroupTabs(groupedData) {
+        groupTabsContainer.innerHTML = '';
+        groupPanesContainer.innerHTML = '';
+        Object.keys(charts).forEach(key => {
+            if (!['overallGroup', 'selected-group-officer-chart'].includes(key) && charts[key]) {
+                 charts[key].destroy();
+            }
+        });
+        charts = { overallGroup: charts.overallGroup, 'selected-group-officer-chart': charts['selected-group-officer-chart'] };
+        
+        const desiredOrder = ["กลุ่มต่างด้าว", "กลุ่มศาสนา", "ฝ่ายตรวจสอบ", "ตรวจสอบหลักทรัพย์"];
+        const sortedGroupNames = Object.keys(groupedData).sort((a, b) => {
+            const indexA = desiredOrder.indexOf(a);
+            const indexB = desiredOrder.indexOf(b);
+            if (indexA > -1 && indexB > -1) return indexA - indexB;
+            if (indexA > -1) return -1;
+            if (indexB > -1) return 1;
+            return a.localeCompare(b);
+        });
+
+        sortedGroupNames.forEach((groupName, index) => {
+            const sanitizedGroupName = groupName.replace(/[^a-zA-Z0-9]/g, '');
+            
+            const tabButton = document.createElement('button');
+            tabButton.className = 'group-tab';
+            tabButton.textContent = groupName;
+            tabButton.dataset.target = `group-pane-${sanitizedGroupName}`;
+            groupTabsContainer.appendChild(tabButton);
+
+            const pane = document.createElement('div');
+            pane.id = `group-pane-${sanitizedGroupName}`;
+            pane.className = 'group-pane p-4 md:p-6';
+            pane.innerHTML = `
+                <div id="officer-tabs-${sanitizedGroupName}" class="flex border-b border-gray-200 flex-wrap"></div>
+                <div id="officer-panes-${sanitizedGroupName}" class="mt-4"></div>
+            `;
+            groupPanesContainer.appendChild(pane);
+
+            if (index === 0) {
+                tabButton.classList.add('active');
+                pane.classList.add('active');
+                renderOfficerTabsForGroup(sanitizedGroupName, groupedData[groupName].officers);
+                updateSelectedGroupChart(groupedData[groupName].officers, groupName);
+            }
+        });
+
+        document.querySelectorAll('.group-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.group-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.group-pane').forEach(p => p.classList.remove('active'));
+                
+                tab.classList.add('active');
+                const targetPane = document.getElementById(tab.dataset.target);
+                targetPane.classList.add('active');
+
+                const groupName = tab.textContent;
+                const officersInGroup = allDashboardData.groupedDashboards[groupName].officers;
+                const sanitizedGroupName = groupName.replace(/[^a-zA-Z0-9]/g, '');
+                
+                updateSelectedGroupChart(officersInGroup, groupName);
+                renderOfficerTabsForGroup(sanitizedGroupName, officersInGroup);
+            });
+        });
+    }
+
+    function renderOfficerTabsForGroup(sanitizedGroupName, officers) {
+        const officerTabs = document.getElementById(`officer-tabs-${sanitizedGroupName}`);
+        const officerPanes = document.getElementById(`officer-panes-${sanitizedGroupName}`);
+        officerTabs.innerHTML = '';
+        officerPanes.innerHTML = '';
+
+        officers.forEach((officer, index) => {
+            const { sheetName } = officer;
+            const sanitizedSheetName = sheetName.replace(/[^a-zA-Z0-9]/g, '');
+
+            const tabButton = document.createElement('button');
+            tabButton.className = 'officer-tab';
+            tabButton.textContent = sheetName;
+            tabButton.dataset.target = `officer-pane-${sanitizedSheetName}`;
+            tabButton.dataset.officerIndex = index;
+            tabButton.dataset.groupSanitizedName = sanitizedGroupName;
+            officerTabs.appendChild(tabButton);
+
+            const pane = document.createElement('div');
+            pane.id = `officer-pane-${sanitizedSheetName}`;
+            pane.className = 'dashboard-pane';
+            officerPanes.appendChild(pane);
+
+            if (index === 0) {
+                tabButton.classList.add('active');
+                pane.classList.add('active');
+                updateOfficerPaneContent(sanitizedSheetName, officer.data, officer.sheetName);
+            }
+        });
+
+        officerTabs.querySelectorAll('.officer-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const groupSanitizedName = tab.dataset.groupSanitizedName;
+                document.querySelectorAll(`#officer-tabs-${groupSanitizedName} .officer-tab`).forEach(t => t.classList.remove('active'));
+                document.querySelectorAll(`#officer-panes-${groupSanitizedName} .dashboard-pane`).forEach(p => p.classList.remove('active'));
+
+                tab.classList.add('active');
+                const targetPane = document.getElementById(tab.dataset.target);
+                targetPane.classList.add('active');
+                
+                const groupName = document.querySelector('.group-tab.active').textContent;
+                const officerIndex = tab.dataset.officerIndex;
+                const officerData = allDashboardData.groupedDashboards[groupName].officers[officerIndex].data;
+                const officerSheetName = allDashboardData.groupedDashboards[groupName].officers[officerIndex].sheetName;
+                const sanitizedSheetName = tab.textContent.replace(/[^a-zA-Z0-9]/g, '');
+
+                updateOfficerPaneContent(sanitizedSheetName, officerData, officerSheetName);
+            });
+        });
+    }
+    
+    function updateOfficerPaneContent(sanitizedSheetName, data, officerSheetName) {
+        const pane = document.getElementById(`officer-pane-${sanitizedSheetName}`);
+        pane.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-gray-100 p-4 rounded-lg"><h3 class="text-gray-500">เรื่องทั้งหมด</h3><p class="text-2xl font-bold">${data.totalRecords}</p></div>
+                <div class="bg-gray-100 p-4 rounded-lg"><h3 class="text-gray-500">จังหวัด</h3><p class="text-2xl font-bold">${Object.keys(data.byProvince).length}</p></div>
+                <div class="bg-gray-100 p-4 rounded-lg"><h3 class="text-gray-500">ประเภทงาน</h3><p class="text-2xl font-bold">${Object.keys(data.byType).length}</p></div>
+                <div class="bg-gray-100 p-4 rounded-lg"><h3 class="text-gray-500">สถานะ</h3><p class="text-2xl font-bold">${Object.keys(data.byStatus).length}</p></div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="p-4 rounded-lg border"><h3 class="font-bold mb-2 text-center">สรุปตามสถานะ</h3><div class="chart-container"><canvas id="status-chart-${sanitizedSheetName}"></canvas></div></div>
+                <div class="p-4 rounded-lg border"><h3 class="font-bold mb-2 text-center">สรุปตามประเภท</h3><div class="chart-container"><canvas id="type-chart-${sanitizedSheetName}"></canvas></div></div>
+                <div class="p-4 rounded-lg border col-span-1 lg:col-span-2"><h3 class="font-bold mb-2 text-center">สรุปตามจังหวัด</h3><div class="chart-container"><canvas id="province-chart-${sanitizedSheetName}"></canvas></div></div>
+            </div>
+            <div class="mt-8 border-t pt-6">
+                <h3 class="text-xl font-bold text-gray-700 mb-4">รายการงานของ ${escapeHtml(officerSheetName)}</h3>
+                <div class="max-h-96 overflow-y-auto border rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>${data.headers.map(h => `<th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${escapeHtml(h)}</th>`).join('')}</tr>
+                        </thead>
+                        <tbody id="records-table-body-${sanitizedSheetName}" class="bg-white divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        
+        const recordsTableBody = pane.querySelector(`#records-table-body-${sanitizedSheetName}`);
+        if (recordsTableBody) {
+            recordsTableBody.innerHTML = ''; 
+            if (data.records.length === 0) {
+                recordsTableBody.innerHTML = `<tr><td colspan="${data.headers.length}" class="text-center py-4">ไม่พบข้อมูล</td></tr>`;
+            } else {
+                data.records.forEach(item => { 
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-100 cursor-pointer';
+                    row.dataset.rowData = JSON.stringify(item.rowData);
+                    row.dataset.rowIndex = item.originalIndex;
+                    row.innerHTML = item.rowData.map(cell => `<td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${escapeHtml(cell)}</td>`).join('');
+                    row.addEventListener('click', () => openEditModal(item, officerSheetName));
+                    recordsTableBody.appendChild(row);
+                });
+            }
+        }
+        
+        createChartsForPane(sanitizedSheetName, data);
+    }
+
+    function createChartsForPane(sanitizedSheetName, data) {
+        ['status', 'type', 'province'].forEach(chartType => {
+            const chartId = `${chartType}-${sanitizedSheetName}`;
+            if (charts[chartId]) charts[chartId].destroy();
+        });
+
+        const statusData = { labels: Object.keys(data.byStatus), values: Object.values(data.byStatus) };
+        const typeData = { labels: Object.keys(data.byType), values: Object.values(data.byType) };
+        const provinceData = { labels: Object.keys(data.byProvince), values: Object.values(data.byProvince) };
+        
+        const statusColors = statusData.labels.map(label => STATUS_COLOR_MAP[label] || STATUS_COLOR_MAP.default);
+        
+        charts[`status-${sanitizedSheetName}`] = createChart(`status-chart-${sanitizedSheetName}`, 'bar', {
+            labels: statusData.labels,
+            datasets: [{ label: 'จำนวนเรื่อง', data: statusData.values, backgroundColor: statusColors }]
+        }, { scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } });
+        
+        charts[`type-${sanitizedSheetName}`] = createChart(`type-chart-${sanitizedSheetName}`, 'pie', {
+            labels: typeData.labels,
+            datasets: [{ label: 'จำนวนเรื่อง', data: typeData.values, backgroundColor: generateColors(typeData.labels.length) }]
+        }, { plugins: { legend: { position: 'top' } } });
+
+        const provinceChartOptions = {
+            indexAxis: provinceData.labels.length > 10 ? 'y' : 'x',
+            scales: { y: { beginAtZero: true } },
+            plugins: { legend: { display: false } }
+        };
+        charts[`province-${sanitizedSheetName}`] = createChart(`province-chart-${sanitizedSheetName}`, 'bar', {
+            labels: provinceData.labels,
+            datasets: [{ label: 'จำนวนเรื่อง', data: provinceData.values, backgroundColor: generateColors(provinceData.labels.length) }]
+        }, provinceChartOptions);
+    }
+
+    function createChart(canvasId, type, chartData, chartOptions = {}) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+
+        const defaultConfig = {
+            responsive: true,
+            maintainAspectRatio: false,
+        };
+        const finalOptions = { ...defaultConfig, ...chartOptions };
+        
+        if (type === 'pie' || type === 'doughnut') {
+            delete finalOptions.scales;
+        }
+
+        return new Chart(ctx, { type, data: chartData, options: finalOptions });
+    }
+
+    function generateColors(count) {
+        const colors = [];
+        const baseColors = ['#3b82f6', '#10b981', '#f97316', '#ef4444', '#8b5cf6', '#ec4899', '#64748b', '#f59e0b'];
+        for (let i = 0; i < count; i++) {
+            colors.push(baseColors[i % baseColors.length]);
+        }
+        return colors;
+    }
+
+    // --- TABLE FUNCTIONS ---
+    function loadTableData() {
+        showTableLoading(true);
+        google.script.run
+            .withSuccessHandler(response => {
+                if (!response || response.error) {
+                    showTableLoading(false);
+                    return;
+                }
+                headers = response.headers;
+                totalPages = response.totalPages;
+                renderTable(response.data);
+                renderPagination(response.currentPage, response.totalPages, response.totalRecords);
+                showTableLoading(false);
+            })
+            .withFailureHandler(err => showTableLoading(false))
+            .getServerData(currentSheet, currentPage, searchInput.value, filterProvince.value, filterStatus.value);
+    }
+    
+    function renderTable(dataRows) {
+        tableHead.innerHTML = `<tr>${headers.map(h => `<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${escapeHtml(h)}</th>`).join('')}</tr>`;
+        tableBody.innerHTML = '';
+        if (dataRows.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="${headers.length}" class="text-center py-4">ไม่พบข้อมูล</td></tr>`;
+        } else {
+            dataRows.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-100 cursor-pointer';
+                row.dataset.rowData = JSON.stringify(item.rowData);
+                row.dataset.rowIndex = item.originalIndex;
+                row.innerHTML = item.rowData.map((cell, index) => {
+                    return `<td class="p-2 text-sm text-gray-500"><div class="cell-content">${escapeHtml(cell)}</div></td>`;
+                }).join('');
+                row.addEventListener('click', () => openEditModal(item));
+                tableBody.appendChild(row);
+            });
+        }
+    }
+    
+    function renderPagination(currentPageNum, totalPagesNum, totalRecords) {
+        paginationControls.className = 'mt-6 flex flex-col sm:flex-row items-center justify-between gap-4';
+        if (totalRecords <= 0) {
+            paginationControls.classList.add('hidden');
+            return;
+        }
+        
+        const startRecord = (currentPageNum - 1) * 10 + 1;
+        const endRecord = Math.min(currentPageNum * 10, totalRecords);
+        paginationControls.innerHTML = `
+            <div><p class="text-sm text-gray-700">แสดง ${startRecord} - ${endRecord} จาก ${totalRecords} รายการ</p></div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    <button id="prev-btn" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">ก่อนหน้า</button>
+                    <span class="bg-white border-gray-300 text-gray-500 relative inline-flex items-center px-4 py-2 border text-sm font-medium">หน้า ${currentPageNum} / ${totalPagesNum}</span>
+                    <button id="next-btn" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">ถัดไป</button>
+                </nav>
+            </div>`;
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        prevBtn.disabled = currentPageNum <= 1;
+        nextBtn.disabled = currentPageNum >= totalPagesNum;
+        prevBtn.addEventListener('click', () => { currentPage--; loadTableData(); });
+        nextBtn.addEventListener('click', () => { currentPage++; loadTableData(); });
+    }
+
+    function showTableLoading(isLoading) {
+        tableLoader.style.display = isLoading ? 'flex' : 'none';
+        tableEl.classList.toggle('hidden', isLoading);
+        paginationControls.classList.toggle('hidden', isLoading);
+    }
+    
+    function createSelectElement(name, options, selectedValue = "") {
+        const select = document.createElement('select');
+        select.name = name;
+        select.className = 'mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm';
+        
+        select.innerHTML = `<option value="">เลือก${name}...</option>` +
+            options.map(opt => `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`).join('');
+        
+        select.value = selectedValue;
+        return select;
+    }
+
+    function openEditModal(item, sheetName) {
+        const { rowData, originalIndex } = item;
+        const formContainer = document.getElementById('modal-form-container');
+        formContainer.innerHTML = '';
+        const formGrid = document.createElement('div');
+        formGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4 text-left';
+        
+        headers.forEach((header, index) => {
+            const fieldWrapper = document.createElement('div');
+            fieldWrapper.className = 'mb-2';
+            const label = document.createElement('label');
+            label.className = 'block text-sm font-bold text-gray-700';
+            label.textContent = header;
+            fieldWrapper.appendChild(label);
+
+            let inputElement;
+            if (header === 'สถานะปัจจุบัน') {
+                const statusOptions = ["เสนอลงนาม", "ระหว่างพิจารณาของเจ้าหน้าที่", "รอผลจังหวัด/หน่วยงานอื่น", "ยกเลิก", "เสร็จแล้ว", "ตรวจร่าง"];
+                inputElement = createSelectElement(header, statusOptions, rowData[index]);
+            } else if (header === 'หมายเหตุ') {
+                inputElement = document.createElement('textarea');
+                inputElement.rows = 3;
+                inputElement.className = 'mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm';
+                inputElement.value = rowData[index];
+            } else {
+                inputElement = document.createElement('p');
+                inputElement.className = 'mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded-md min-h-[38px]';
+                inputElement.textContent = rowData[index] || '(ไม่มีข้อมูล)';
+            }
+            
+            inputElement.id = `modal-field-${index}`;
+            fieldWrapper.appendChild(inputElement);
+            formGrid.appendChild(fieldWrapper);
+        });
+        
+        formContainer.appendChild(formGrid);
+        saveBtn.dataset.rowIndex = originalIndex;
+        saveBtn.dataset.sheetName = sheetName || currentSheet; 
+        editModal.classList.remove('hidden');
+    }
+
+    function handleSaveChanges() {
+        const rowIndex = saveBtn.dataset.rowIndex;
+        const sheetToUpdate = saveBtn.dataset.sheetName;
+
+        const formContainer = document.getElementById('modal-form-container');
+        const newValues = [];
+        headers.forEach((header, index) => {
+            const input = formContainer.querySelector(`#modal-field-${index}`);
+            newValues.push(input.tagName === 'P' ? input.textContent : input.value);
+        });
+        
+        showTableLoading(true);
+        google.script.run
+            .withSuccessHandler(response => {
+                if (response.success) {
+                    alert('บันทึกข้อมูลสำเร็จ!');
+                    editModal.classList.add('hidden');
+                    if (window.location.hash === '#table') {
+                        loadTableData(); 
+                    } else if (window.location.hash === '#dashboard') {
+                        allDashboardData = null;
+                        loadDashboardData();
+                    }
+                } else {
+                    alert('เกิดข้อผิดพลาดในการบันทึก: ' + response.message);
+                    showTableLoading(false);
+                }
+            })
+            .withFailureHandler(err => {
+                alert('ไม่สามารถบันทึกได้: ' + err.message);
+                showTableLoading(false);
+            })
+            .updateRecord({ sheetName: sheetToUpdate, rowIndex: parseInt(rowIndex), newValues: newValues });
+    }
+
+    function openAddModal() {
+        const container = document.getElementById('add-form-container');
+        container.innerHTML = '';
+        addForm.reset();
+        
+        const provinceOptions = ["กระบี่", "กรุงเทพมหานคร", "กาญจนบุรี", "กาฬสินธุ์", "กำแพงเพชร", "ขอนแก่น", "จันทบุรี", "ฉะเชิงเทรา", "ชลบุรี", "ชัยนาท", "ชัยภูมิ", "ชุมพร", "เชียงราย", "เชียงใหม่", "ตรัง", "ตราด", "ตาก", "นครนายก", "นครปฐม", "นครพนม", "นครราชสีมา", "นครศรีธรรมราช", "นครสวรรค์", "นนทบุรี", "นราธิวาส", "น่าน", "บึงกาฬ", "บุรีรัมย์", "ปทุมธานี", "ประจวบคีรีขันธ์", "ปราจีนบุรี", "ปัตตานี", "พระนครศรีอยุธยา", "พะเยา", "พังงา", "พัทลุง", "พิจิตร", "พิษณุโลก", "เพชรบุรี", "เพชรบูรณ์", "แพร่", "ภูเก็ต", "มหาสารคาม", "มุกดาหาร", "แม่ฮ่องสอน", "ยโสธร", "ยะลา", "ร้อยเอ็ด", "ระนอง", "ระยอง", "ราชบุรี", "ลพบุรี", "ลำปาง", "ลำพูน", "เลย", "ศรีสะเกษ", "สกลนคร", "สงขลา", "สตูล", "สมุทรปราการ", "สมุทรสงคราม", "สมุทรสาคร", "สระแก้ว", "สระบุรี", "สิงห์บุรี", "สุโขทัย", "สุพรรณบุรี", "สุราษฎร์ธานี", "สุรินทร์", "หนองคาย", "หนองบัวลำภู", "อ่างทอง", "อำนาจเจริญ", "อุดรธานี", "อุตรดิตถ์", "อุทัยธานี", "อุบลราชธานี", "อื่นๆ"];
+
+        headers.forEach(header => {
+            const fieldWrapper = document.createElement('div');
+            const label = document.createElement('label');
+            label.className = 'block text-sm font-medium text-gray-700';
+            label.textContent = header;
+            
+            let inputElement;
+
+            if (header === 'จังหวัด') {
+                inputElement = createSelectElement(header, provinceOptions);
+            } else if (header === 'ประเภท') {
+                const typeOptions = ["ร้องเรียน", "หารือ", "ตรวจสอบ", "จำหน่ายที่ดิน", "อื่นๆ"];
+                inputElement = createSelectElement(header, typeOptions);
+            } else if (header === 'สถานะปัจจุบัน') {
+                const statusOptions = ["เสนอลงนาม", "ระหว่างพิจารณาของเจ้าหน้าที่", "รอผลจังหวัด/หน่วยงานอื่น", "ยกเลิก", "เสร็จแล้ว", "ตรวจร่าง"];
+                inputElement = createSelectElement(header, statusOptions);
+            } else {
+                inputElement = document.createElement('input');
+                inputElement.type = 'text';
+                inputElement.name = header;
+                inputElement.className = 'mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm';
+                if (header === 'ลำดับ') {
+                    inputElement.placeholder = 'จะถูกสร้างอัตโนมัติหากเว้นว่าง';
+                }
+            }
+            
+            fieldWrapper.appendChild(label);
+            fieldWrapper.appendChild(inputElement);
+            container.appendChild(fieldWrapper);
+        });
+        addModal.classList.remove('hidden');
+    }
+
+    function handleAddRecord(e) {
+        e.preventDefault();
+        const formData = new FormData(addForm);
+        const rowData = headers.map(header => formData.get(header));
+        showTableLoading(true);
+        google.script.run
+            .withSuccessHandler(response => {
+                if (response.success) {
+                    alert('เพิ่มข้อมูลสำเร็จ!');
+                    addModal.classList.add('hidden');
+                    currentPage = 1; 
+                    loadTableData();
+                } else {
+                    alert('เกิดข้อผิดพลาดในการเพิ่มข้อมูล: ' + response.message);
+                    showTableLoading(false);
+                }
+            })
+            .withFailureHandler(err => {
+                alert('ไม่สามารถเพิ่มข้อมูลได้: ' + err.message);
+                showTableLoading(false);
+            })
+            .addRecord({ sheetName: currentSheet, rowData: rowData });
+    }
+
+    // --- INITIALIZATION ---
+    function initializeApp() {
+        if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+            handleNoBackend();
+            return;
+        }
+
+        google.script.run.withSuccessHandler(sheetNames => {
+            if (!sheetNames || sheetNames.length === 0 || (sheetNames.error)) {
+                alert('ไม่พบชีทในสเปรดชีตนี้ หรือเกิดข้อผิดพลาด: ' + (sheetNames.error || ''));
+                return;
+            }
+            sheetSelect.innerHTML = '';
+            sheetNames.forEach(name => sheetSelect.add(new Option(name, name)));
+            currentSheet = sheetNames[0];
+            navigateTo(window.location.hash);
+            populateTableFilters();
+        }).getSheetNames();
+    }
+    
+    function populateTableFilters() {
+        google.script.run.withSuccessHandler(values => {
+            if (!values || values.error) return;
+            filterProvince.innerHTML = '<option value="">ทั้งหมด</option>';
+            values.forEach(val => filterProvince.add(new Option(val, val)));
+        }).getUniqueColumnValues(currentSheet, 'จังหวัด');
+
+        google.script.run.withSuccessHandler(values => {
+            if (!values || values.error) return;
+            filterStatus.innerHTML = '<option value="">ทั้งหมด</option>';
+            values.forEach(val => filterStatus.add(new Option(val, val)));
+        }).getUniqueColumnValues(currentSheet, 'สถานะปัจจุบัน');
+    }
+
+    function handleNoBackend() {
+        console.warn("SMT2 backend is unavailable on GitHub Pages; write operations are disabled.");
+        addNewBtn.disabled = true;
+        addNewBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        addNewBtn.title = 'ต้องเชื่อมต่อ Backend และยืนยันสิทธิ์ก่อนเพิ่มข้อมูล';
+        saveBtn.disabled = true;
+        document.querySelectorAll('.loader').forEach(loader => {
+            loader.parentElement.innerHTML = '<p class="text-center text-red-500 py-4">ยังไม่ได้เชื่อมต่อ Backend ที่ปลอดภัยสำหรับ GitHub Pages — ข้อมูลและการแก้ไขยังไม่พร้อมใช้งาน</p>';
+        });
+        document.getElementById('dashboard-content').style.display = 'block';
+        document.querySelector('#table table').classList.remove('hidden');
+        document.querySelector('#table-body').innerHTML = `<tr><td colspan="5" class="text-center py-4">ไม่สามารถโหลดข้อมูลได้</td></tr>`;
+    }
+
+    // --- EVENT LISTENERS ---
+    document.addEventListener('DOMContentLoaded', initializeApp);
+    window.addEventListener('hashchange', () => navigateTo(window.location.hash));
+    
+    // Responsive menu toggling
+    menuToggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('-translate-x-full');
+        sidebarOverlay.classList.toggle('hidden');
+    });
+    sidebarOverlay.addEventListener('click', () => {
+        sidebar.classList.add('-translate-x-full');
+        sidebarOverlay.classList.add('hidden');
+    });
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.hash = link.getAttribute('href');
+            if (window.innerWidth < 768) { // md breakpoint
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+            }
+        });
+    });
+
+    sheetSelect.addEventListener('change', (e) => {
+        currentSheet = e.target.value;
+        currentPage = 1;
+        if (window.location.hash === '#table') {
+            loadTableData();
+            populateTableFilters();
+        }
+    });
+    
+    searchInput.addEventListener('keyup', e => {
+        if (e.key === 'Enter' || searchInput.value.length === 0 || searchInput.value.length > 2) {
+            currentPage = 1;
+            loadTableData();
+        }
+    });
+    filterProvince.addEventListener('change', () => { currentPage = 1; loadTableData(); });
+    filterStatus.addEventListener('change', () => { currentPage = 1; loadTableData(); });
+
+    addNewBtn.addEventListener('click', openAddModal);
+    closeModalBtn.addEventListener('click', () => editModal.classList.add('hidden'));
+    closeAddModalBtn.addEventListener('click', () => addModal.classList.add('hidden'));
+    saveBtn.addEventListener('click', handleSaveChanges);
+    addForm.addEventListener('submit', handleAddRecord);
+    
+</script>
+</body>
+</html>
