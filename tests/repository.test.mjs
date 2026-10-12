@@ -196,3 +196,9 @@ test('dashboard preserves active subtab and announces selected state', () => {
  assert.ok(html.includes("activeTabButton.setAttribute('aria-selected', 'true')"));
  assert.ok(html.includes("button.setAttribute('aria-selected', 'false')"));
 });
+
+test('wide data tables are keyboard accessible scroll regions', () => {
+ const regions = html.match(/role="region" aria-label="ตารางข้อมูล เลื่อนในแนวนอนเพื่อดูคอลัมน์เพิ่มเติม" tabindex="0"/g) || [];
+ assert.ok(regions.length >= 10);
+ assert.ok(html.includes('overscroll-x-contain'));
+});
