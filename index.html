@@ -2100,18 +2100,24 @@
         // --- Data Processing and Dashboard Update Functions ---
 
         function convertAreaToWah(areaString) {
-            if (!areaString || typeof areaString !== 'string') return 0;
-            const parts = areaString.split('-').map(Number);
-            const [rai = 0, ngan = 0, wah = 0] = parts;
-            return (rai * 400) + (ngan * 100) + wah;
+            if (typeof areaString !== 'string' || !areaString.trim()) return 0;
+            const parts = areaString.trim().replace(/,/g, '').split('-');
+            if (parts.length !== 3 || parts.some(part => !/^\d+(?:\.\d+)?$/.test(part))) return 0;
+            const [rai, ngan, wah] = parts.map(Number);
+            if (!Number.isSafeInteger(rai) || !Number.isInteger(ngan) || ngan > 3 ||
+                !Number.isFinite(wah) || wah >= 100) return 0;
+            return rai * 400 + ngan * 100 + wah;
         }
 
         function convertWahToRaiNganWah(totalWah) {
-            const rai = Math.floor(totalWah / 400);
-            const remainingWahAfterRai = totalWah % 400;
-            const ngan = Math.floor(remainingWahAfterRai / 100);
-            const wah = remainingWahAfterRai % 100;
-            return `${rai.toLocaleString()}-${ngan}-${wah.toFixed(0)}`;
+            if (!Number.isFinite(totalWah) || totalWah < 0) return '0-0-0';
+            const rounded = Math.round((totalWah + Number.EPSILON) * 100) / 100;
+            const rai = Math.floor(rounded / 400);
+            const remaining = Math.round((rounded - rai * 400) * 100) / 100;
+            const ngan = Math.floor(remaining / 100);
+            const wah = Math.round((remaining - ngan * 100) * 100) / 100;
+            const wahText = wah.toFixed(2).replace(/\.?0+$/, '');
+            return `${rai.toLocaleString()}-${ngan}-${wahText}`;
         }
 
         function updateSection93Dashboard(data) {
