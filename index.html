@@ -1921,6 +1921,7 @@
                 if (!Array.isArray(originalData)) return [];
 
                 return originalData.filter(item => {
+                    if (!item || typeof item !== 'object') return false;
                     const nationalityMatch = !nationalityFilter || item.nationality === nationalityFilter;
                     if (!nationalityMatch) return false;
                     if (!searchTerm) return true;
