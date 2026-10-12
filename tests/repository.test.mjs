@@ -62,3 +62,13 @@ test('PWA permits landscape orientation on tablets', () => {
  assert.equal(manifest.orientation, undefined);
  assert.equal(manifest.short_name, 'LandRight');
 });
+
+test('table search does not match records with missing fields', () => {
+ const match = html.match(/            function filterData\(prefix, originalData\) \{[\s\S]*?\n            \}\n/);
+ assert.ok(match);
+ const document = { getElementById: id => id.startsWith('searchInput') ? { value: 'bangkok' } : null };
+ const filterData = new Function('document', match[0] + '; return filterData;')(document);
+ const rows = [{ province: 'Bangkok' }, { province: 'Chiang Mai' }, { id: '123' }];
+ assert.deepEqual(filterData('Abandoned', rows), [rows[0]]);
+ assert.deepEqual(filterData('Securities', rows), [rows[0]]);
+});
