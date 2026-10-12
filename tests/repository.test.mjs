@@ -242,7 +242,7 @@ test('public SMT2 route does not expose case data or editing controls', () => {
 
 test('public SMT2 summary accepts only approved, reconciled aggregates', async () => {
  const {validatePublicSnapshot} = await import('../smt2/public-dashboard.mjs');
- const valid = {schemaVersion:1,approvedForPublic:true,asOf:'2026-10-01',approvedOn:'2026-10-12',summary:{totalRecords:10,completedRecords:7,pendingRecords:3},byStatus:[{label:'เสร็จ',count:7},{label:'ค้าง',count:3}],byGroup:[{label:'กลุ่ม 1',count:10}]};
+ const valid = {schemaVersion:1,approvedForPublic:true,asOf:'2026-10-01',approvedOn:'2026-10-12',summary:{totalRecords:10,completedRecords:5,pendingRecords:5},byStatus:[{label:'เสร็จ',count:5},{label:'ค้าง',count:5}],byGroup:[{label:'กลุ่ม 1',count:10}]};
  assert.equal(validatePublicSnapshot(valid),true);
  for (const change of [
   {approvedForPublic:false},
@@ -259,4 +259,17 @@ test('public SMT2 page fetches only approved local JSON', () => {
  assert.match(page,/validatePublicSnapshot\(snapshot\)/);
  assert.ok(!page.includes('script.google.com/macros/'));
  assert.ok(!page.includes('google.script.run'));
+});
+
+test('SMT2 public snapshots reject invalid dates, future approvals and small cells', async () => {
+ const {validatePublicSnapshot} = await import('../smt2/public-dashboard.mjs');
+ const valid = {schemaVersion:1,approvedForPublic:true,asOf:'2026-10-01',approvedOn:'2026-10-12',summary:{totalRecords:10,completedRecords:5,pendingRecords:5},byStatus:[{label:'เสร็จ',count:5},{label:'ค้าง',count:5}],byGroup:[{label:'กลุ่ม ก',count:10}]};
+ assert.equal(validatePublicSnapshot(valid),true);
+ for (const change of [
+  {asOf:'2026-02-30'},
+  {approvedOn:'2099-01-01'},
+  {byStatus:[{label:'เสร็จ',count:9},{label:'ค้าง',count:1}]},
+  {byGroup:[{label:'กลุ่ม ก ',count:10}]},
+  {byGroup:[{label:'กลุ่ม ก\\n',count:10}]}
+ ]) assert.equal(validatePublicSnapshot({...valid,...change}),false);
 });
