@@ -1914,27 +1914,18 @@
             function filterData(prefix, originalData) {
                 const searchInput = document.getElementById(`searchInput${prefix}`);
                 const nationalityFilterSelect = document.getElementById(`nationalityFilter${prefix}`);
-                
-                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-                const nationalityFilter = nationalityFilterSelect ? nationalityFilterSelect.value : '';
-
-                if (!originalData) return [];
+                const searchTerm = (searchInput?.value ?? '').trim().toLocaleLowerCase();
+                const nationalityFilter = nationalityFilterSelect?.value ?? '';
+                if (!Array.isArray(originalData)) return [];
 
                 return originalData.filter(item => {
-                    const nameMatch = item.name ? item.name.toLowerCase().includes(searchTerm) : true;
-                    const clientNameMatch = item.client_name ? item.client_name.toLowerCase().includes(searchTerm) : true;
-                    const provinceMatch = item.province ? item.province.toLowerCase().includes(searchTerm) : true;
-                    const idMatch = item.id ? item.id.toLowerCase().includes(searchTerm) : true;
-                    const nationalityMatch = nationalityFilter === '' || (item.nationality && item.nationality === nationalityFilter);
-                    
-                    if (prefix === 'Abandoned' || prefix === 'DocSearch') {
-                         return provinceMatch || idMatch || clientNameMatch;
-                    }
-                    if (prefix === 'Securities') {
-                         return clientNameMatch || provinceMatch || idMatch;
-                    }
-
-                    return (nameMatch || provinceMatch) && nationalityMatch;
+                    const nationalityMatch = !nationalityFilter || item.nationality === nationalityFilter;
+                    if (!nationalityMatch) return false;
+                    if (!searchTerm) return true;
+                    const fields = prefix === 'Abandoned' || prefix === 'DocSearch' || prefix === 'Securities'
+                        ? ['id', 'client_name', 'province', 'name']
+                        : ['name', 'client_name', 'province', 'id'];
+                    return fields.some(field => String(item[field] ?? '').toLocaleLowerCase().includes(searchTerm));
                 });
             }
 
