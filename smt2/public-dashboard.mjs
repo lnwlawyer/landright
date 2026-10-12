@@ -6,8 +6,8 @@ export const SNAPSHOT_SCHEMA_VERSION = 1;
 const safeInteger = n => Number.isSafeInteger(n) && n >= 0 && n <= 100000000;
 const plainObject = o => o !== null && typeof o === 'object' && !Array.isArray(o);
 const permitted = (obj, keys) => Object.keys(obj).every(k => keys.includes(k));
-const safeLabel = value => typeof value === 'string' && value.trim() === value && value.length > 0 && value.length <= 80 && !/[<>\\x00-\\x1f\\x7f]/.test(value);
-const isoDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value + 'T00:00:00Z'));
+const safeLabel = value => typeof value === 'string' && value.trim() === value && value.length > 0 && value.length <= 80 && !/[<>\x00-\x1f\x7f]/.test(value);
+const isoDate = value => { if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false; const date = new Date(value + 'T00:00:00Z'); return !Number.isNaN(date.getTime()) && date.toISOString().slice(0,10) === value; };
 export function validatePublicSnapshot(s) {
  if (!plainObject(s) || !permitted(s, ['schemaVersion','approvedForPublic','asOf','approvedOn','summary','byStatus','byGroup'])) return false;
  if (s.schemaVersion !== SNAPSHOT_SCHEMA_VERSION || s.approvedForPublic !== true || !isoDate(s.asOf) || !isoDate(s.approvedOn)) return false;
