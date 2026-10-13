@@ -1,5 +1,9 @@
 # SMT2 OAuth Integration — รายงานตรวจรับ PR #43
 
+> รายงานรอบแรก เก็บเพื่ออ้างอิง ผลปัจจุบันอยู่ใน
+> [รายงานตรวจต่อเนื่อง](smt2-security-followup.md) และ
+> [คู่มือทดสอบบัญชีจริง](smt2-google-account-testing.md)
+
 วันที่ตรวจ: 13 ตุลาคม 2569 (Asia/Bangkok)
 Repository: `lnwlawyer/landright`
 Branch: `feature/smt2-private-sheets-oauth`
