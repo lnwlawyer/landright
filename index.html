@@ -2155,6 +2155,12 @@
 
         // --- Data Processing and Dashboard Update Functions ---
 
+        function getLandAreaWah(item) {
+            const value = item?.area_rai || item?.area;
+            if (value == null || String(value).trim() === '') return 0;
+            return convertAreaToWah(String(value));
+        }
+
         function convertAreaToWah(areaString) {
             if (typeof areaString !== 'string' || !areaString.trim()) return 0;
             const parts = areaString.trim().replace(/,/g, '').split('-');
@@ -2182,7 +2188,7 @@
             // 1. Update Summary Cards
             const totalRecords = data.length;
             const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
-            const totalWah = data.reduce((sum, item) => sum + convertAreaToWah(item.area), 0);
+            const totalWah = data.reduce((sum, item) => sum + getLandAreaWah(item), 0);
             
             document.getElementById('s93-total-records').textContent = totalRecords.toLocaleString();
             document.getElementById('s93-total-plots').textContent = totalPlots.toLocaleString();
@@ -2216,7 +2222,7 @@
                     acc[prov] = { plots: 0, totalWah: 0 };
                 }
                 acc[prov].plots += (parseInt(item.plot_count, 10) || 0);
-                acc[prov].totalWah += convertAreaToWah(item.area);
+                acc[prov].totalWah += getLandAreaWah(item);
                 return acc;
             }, {});
             const sortedProvinces = Object.entries(provinceData).sort((a, b) => b[1].plots - a[1].plots);
@@ -2232,7 +2238,7 @@
                     acc[useType] = { plots: 0, totalWah: 0 };
                 }
                 acc[useType].plots += (parseInt(item.plot_count, 10) || 0);
-                acc[useType].totalWah += convertAreaToWah(item.area);
+                acc[useType].totalWah += getLandAreaWah(item);
                 return acc;
             }, {});
             const sortedLandUse = Object.entries(landUseData).sort((a, b) => b[1].plots - a[1].plots);
@@ -2247,7 +2253,7 @@
             const stackedData = data.reduce((acc, item) => {
                 const nat = item.nationality || 'ไม่ระบุ';
                 const useType = item.land_use_type || 'ไม่ระบุ';
-                const areaRai = convertAreaToWah(item.area) / 400;
+                const areaRai = getLandAreaWah(item) / 400;
 
                 if (!acc[nat]) {
                     acc[nat] = {};
@@ -2274,7 +2280,7 @@
             // 1. Update Summary Cards
             const totalRecords = data.length;
             const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
-            const totalWah = data.reduce((sum, item) => sum + convertAreaToWah(item.area), 0);
+            const totalWah = data.reduce((sum, item) => sum + getLandAreaWah(item), 0);
             
             document.getElementById('s96-total-records').textContent = totalRecords.toLocaleString();
             document.getElementById('s96-total-plots').textContent = totalPlots.toLocaleString();
@@ -2319,7 +2325,7 @@
                     acc[prov] = { plots: 0, totalWah: 0 };
                 }
                 acc[prov].plots += (parseInt(item.plot_count, 10) || 0);
-                acc[prov].totalWah += convertAreaToWah(item.area);
+                acc[prov].totalWah += getLandAreaWah(item);
                 return acc;
             }, {});
             const sortedProvinces = Object.entries(provinceData).sort((a, b) => b[1].plots - a[1].plots);
@@ -2335,7 +2341,7 @@
             // 1. Update Summary Cards
             const totalRecords = data.length;
             const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
-            const totalWah = data.reduce((sum, item) => sum + convertAreaToWah(item.area), 0);
+            const totalWah = data.reduce((sum, item) => sum + getLandAreaWah(item), 0);
             
             document.getElementById('boi-total-records').textContent = totalRecords.toLocaleString();
             document.getElementById('boi-total-plots').textContent = totalPlots.toLocaleString();
@@ -2364,7 +2370,7 @@
                     acc[prov] = { plots: 0, totalWah: 0 };
                 }
                 acc[prov].plots += (parseInt(item.plot_count, 10) || 0);
-                acc[prov].totalWah += convertAreaToWah(item.area);
+                acc[prov].totalWah += getLandAreaWah(item);
                 return acc;
             }, {});
             const sortedProvinces = Object.entries(provinceData).sort((a, b) => b[1].plots - a[1].plots);
@@ -2382,7 +2388,7 @@
             // 1. Update Summary Cards
             const totalRecords = data.length;
             const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
-            const totalWah = data.reduce((sum, item) => sum + convertAreaToWah(item.area), 0);
+            const totalWah = data.reduce((sum, item) => sum + getLandAreaWah(item), 0);
             
             document.getElementById('commercial-total-records').textContent = totalRecords.toLocaleString();
             document.getElementById('commercial-total-plots').textContent = totalPlots.toLocaleString();
@@ -2411,7 +2417,7 @@
                     acc[useType] = { plots: 0, totalWah: 0 };
                 }
                 acc[useType].plots += (parseInt(item.plot_count, 10) || 0);
-                acc[useType].totalWah += convertAreaToWah(item.area);
+                acc[useType].totalWah += getLandAreaWah(item);
                 return acc;
             }, {});
             const sortedLandUse = Object.entries(landUseData).sort((a, b) => b[1].plots - a[1].plots);
@@ -2429,7 +2435,7 @@
                     acc[prov] = { plots: 0, totalWah: 0 };
                 }
                 acc[prov].plots += (parseInt(item.plot_count, 10) || 0);
-                acc[prov].totalWah += convertAreaToWah(item.area);
+                acc[prov].totalWah += getLandAreaWah(item);
                 return acc;
             }, {});
             const sortedProvinces = Object.entries(provinceData).sort((a, b) => b[1].plots - a[1].plots);
