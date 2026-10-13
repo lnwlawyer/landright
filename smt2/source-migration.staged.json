@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "status": "staged-not-active",
+  "sourceSpreadsheetId": "1QR9jddn5EjfOyMRVGkwz31eppY_L9vZAnqO6I9mNLgc",
+  "publicSourceMode": "approved-export-required",
+  "publicSheets": {
+    "section93": "มาตรา 93",
+    "section96": "มาตรา 96 ทวิ",
+    "boi": "BOI",
+    "commercial": "เช่าเพื่อพาณิชยกรรม",
+    "temple": "วัด",
+    "mosque": "มัสยิด",
+    "christian": "มูลนิธิคริสต์",
+    "catholic": "วัดคาทอลิก",
+    "abandoned": "ที่ดินทอดทิ้ง",
+    "securities": "ตรวจสอบหลักทรัพย์",
+    "documentSearch": "ค้นหาเอกสาร"
+  },
+  "privateSheets": [
+    "การะเกด",
+    "ชยาน์ขวัญ",
+    "ฉัตรพร",
+    "ภทรพงค์",
+    "สกุลวรรณ",
+    "ปิยะพงษ์",
+    "เทอดพงศ์",
+    "โสภา"
+  ],
+  "excludedSheets": [
+    "Config",
+    "OrgChart"
+  ],
+  "allowPublicRawRecords": false
+}
