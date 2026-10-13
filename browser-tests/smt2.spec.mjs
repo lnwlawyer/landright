@@ -1,27 +1,5 @@
 import {test,expect} from '@playwright/test';
-const sheets=['การะเกด','ชยาน์ขวัญ','ฉัตรพร','ภทรพงค์','สกุลวรรณ','ปิยะพงษ์','เทอดพงศ์','โสภา'];
-const scope='https://www.googleapis.com/auth/spreadsheets.readonly';
-const fakeResponse=()=>({valueRanges:sheets.map((s,i)=>({range:`'${s}'!A1:E62`,values:[['จังหวัด','ชื่อเรื่อง','เลขที่รับ','ผู้รับผิดชอบ','สถานะ'],...Array.from({length:61},(_,n)=>['จังหวัดจำลอง',n===0?'<img src=x onerror="window.xss=true">':`เรื่องจำลอง ${i}-${n}`,'TEST-'+n,'เจ้าหน้าที่จำลอง',n%2?'เสร็จแล้ว':'รอ'])]}))});
-async function setup(page,{status=200,mode='success',delay=0,expires=3600}={}) {
- const requests=[];
- await page.route('https://**/*',async route=>{
-  const url=route.request().url();
-  if(url.startsWith('https://sheets.googleapis.com/')){
-   requests.push(route.request()); if(delay) await new Promise(r=>setTimeout(r,delay));
-   await route.fulfill({status,contentType:'application/json',body:JSON.stringify(status===200?fakeResponse():{error:{message:'not authorized'}})}); return;
-  }
-  if(url.startsWith('https://accounts.google.com/gsi/')){
-   await route.fulfill({contentType:'text/javascript',body:`window.google={accounts:{oauth2:{initTokenClient:opts=>({requestAccessToken:()=>{window.oauthOptions=opts;${mode==='popup'?'opts.error_callback({type:"popup_closed"})':mode==='deny'?'opts.callback({error:"access_denied"})':mode==='hold'?'window.finishOAuth=()=>opts.callback({access_token:"FAKE_BROWSER_TOKEN",expires_in:'+expires+',scope:"'+scope+'"})':'opts.callback({access_token:"FAKE_BROWSER_TOKEN",expires_in:'+expires+',scope:"'+scope+'"})'}}}),revoke:()=>{window.wasRevoked=true}}}};`}); return;
-  }
-  // Never contact production data or other third parties in synthetic acceptance tests.
-  if(url.includes('docs.google.com/')) await route.fulfill({body:'name,province\n',contentType:'text/csv'});
-  else if(url.includes('chart.js')) await route.fulfill({contentType:'text/javascript',body:'window.Chart=class {constructor(){this.data={datasets:[]}} destroy(){} resize(){} update(){}};'});
-  else await route.fulfill({body:'',contentType:'text/plain'});
- });
- await page.goto('/index.html'); await expect(page.locator('#smt2-login')).toBeAttached();
- return requests;
-}
-async function login(page) {await page.locator('#smt2-admin-entry').click();}
+import {sheets, fakeResponse, setup, login} from './helpers.mjs';
 test('anonymous users see login but no private API requests or records',async({page})=>{
  const requests=await setup(page); await page.goto('/index.html?view=smt2');
  await expect(page.locator('#smt2-content')).toBeVisible(); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
@@ -104,4 +82,32 @@ test('page exit cancels a pending OAuth response instead of restoring a session'
  const requests=await setup(page,{mode:'hold'}); await login(page);
  await page.evaluate(()=>{window.dispatchEvent(new Event('pagehide'));window.finishOAuth();});
  await expect(page.locator('#smt2-data')).toBeEmpty(); expect(requests).toHaveLength(0); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
+});
+test('all eleven legacy CSV feeds populate tables and charts using synthetic rows',async({page})=>{
+ const errors=[]; const feeds=new Set();
+ page.on('pageerror',e=>errors.push(e.message));
+ page.on('request',r=>{if(r.url().includes('docs.google.com/spreadsheets/')) feeds.add(r.url());});
+ await setup(page,{legacyData:true});
+ for(const id of ['dataTableBody','dataTableBody96','dataTableBodyBoi','dataTableBodyCommercial','abandonedTableBody','securitiesTableBody','docSearchTableBody']){
+  await expect(page.locator('#'+id)).toContainText('จังหวัดจำลอง');
+ }
+ for(const kind of ['temple','mosque','christian','catholic']){
+  await page.evaluate(()=>window.showContent('religious'));
+  await page.evaluate(t=>window.showReligiousTab(t),kind);
+  await expect(page.locator('#'+kind+'-top10-plots-body')).toContainText('จังหวัดจำลอง');
+  await expect(page.locator('#'+kind+'-top10-area-body')).toContainText('จังหวัดจำลอง');
+ }
+ await page.evaluate(()=>{window.showContent('foreigners');window.showTab('section93');});
+ await expect.poll(()=>page.evaluate(()=>window.myCharts.nationalityChart?.data.datasets[0].data)).toEqual([1]);
+ await expect(page.locator('#abandoned-total-plots')).toHaveText('2');
+ await expect(page.locator('#securities-total-cases')).toHaveText('1');
+ await expect(page.locator('#docsearch-total-cases')).toHaveText('1');
+ expect(feeds.size).toBe(11); expect(errors).toEqual([]);
+});
+test('mobile menu opens and closes with Escape after the stylesheet migration',async({page})=>{
+ await setup(page);
+ if(page.viewportSize().width>=1024){await expect(page.locator('#sidebar')).toBeVisible();return;}
+ await page.locator('#mobile-menu-button').click();
+ await expect(page.locator('#mobile-overlay')).toBeVisible();
+ await page.keyboard.press('Escape'); await expect(page.locator('#mobile-overlay')).toBeHidden();
 });
