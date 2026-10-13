@@ -191,22 +191,6 @@
                 </div>
 
                 <div id="smt2-content" class="content-section hidden">
-                    <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-gray-100 mb-5">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Dashboard ระบบบริหารงาน SMT2</h3>
-                        <p class="text-sm text-gray-600 mb-4">ข้อมูลสรุปสำหรับสาธารณะเท่านั้น ไม่แสดงข้อมูลรายเรื่องหรือข้อมูลส่วนบุคคล</p>
-                        <p id="smt2-public-status" class="rounded-lg border-l-4 border-blue-500 bg-blue-50 px-4 py-3 text-blue-900 text-sm" role="status">ยังไม่มีชุดข้อมูลสรุป SMT2 ที่ได้รับการอนุมัติให้เผยแพร่</p>
-                        <div class="flex flex-wrap items-center justify-between gap-3 my-4">
-                            <p id="smt2-public-meta" class="text-xs text-slate-500">แสดงเฉพาะข้อมูลสรุปที่ผ่านการอนุมัติ</p>
-                            <button id="smt2-refresh" type="button" class="px-4 py-2 min-h-11 rounded-lg border border-blue-300 bg-white text-blue-800 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"><i class="fas fa-sync-alt mr-2" aria-hidden="true"></i>ตรวจสอบข้อมูลล่าสุด</button>
-                        </div>
-                        <div id="smt2-public-dashboard" class="mt-4" aria-live="polite">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div class="rounded-lg border border-slate-200 p-4"><p class="text-sm text-gray-600">จำนวนเรื่องทั้งหมด</p><p class="mt-2 font-semibold text-gray-800">รอข้อมูลที่อนุมัติเผยแพร่</p></div>
-                                <div class="rounded-lg border border-slate-200 p-4"><p class="text-sm text-gray-600">สถานะการดำเนินงาน</p><p class="mt-2 font-semibold text-gray-800">รอข้อมูลที่อนุมัติเผยแพร่</p></div>
-                                <div class="rounded-lg border border-slate-200 p-4"><p class="text-sm text-gray-600">ภาพรวมกลุ่มงาน</p><p class="mt-2 font-semibold text-gray-800">รอข้อมูลที่อนุมัติเผยแพร่</p></div>
-                            </div>
-                        </div>
-                    </div>
                     <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-gray-100">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">ข้อมูลสำหรับเจ้าหน้าที่</h3>
                         <p class="text-sm text-gray-600 mb-4">เปิดระบบ SMT2 สำหรับเจ้าหน้าที่ผ่าน Google Apps Script ที่เผยแพร่ล่าสุด การอ่านข้อมูลรายเรื่องและการแก้ไขต้องผ่านการตรวจสิทธิ์ในระบบปลายทาง ไม่ส่งข้อมูลรายเรื่องมายังเว็บไซต์สาธารณะนี้</p>
@@ -1532,7 +1516,6 @@
                 }
             }
 
-            if (section === 'smt2') loadSmt2PublicDashboard();
 
             // Redraw charts for the default tab when its parent section becomes visible
             setTimeout(() => {
@@ -3076,15 +3059,7 @@
             // Keep the section the user selected while asynchronous data was loading.
         });
     </script>
-    <script type="module">
-        import {createInlineController} from './smt2/inline-dashboard.mjs';
-        const controller = createInlineController({
-            root:document.getElementById('smt2-public-dashboard'),
-            status:document.getElementById('smt2-public-status'),
-            button:document.getElementById('smt2-refresh'),
-            meta:document.getElementById('smt2-public-meta')
-        });
-        window.loadSmt2PublicDashboard = () => controller.load();
+    <script>
         if (new URLSearchParams(location.search).get('view') === 'smt2') {
             const menu = document.querySelector('a[aria-label="เปิดระบบบริหารงาน SMT2"]');
             if (menu) menu.click();
