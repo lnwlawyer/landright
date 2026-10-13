@@ -1467,6 +1467,15 @@
     <script>
         // Store chart instances to prevent duplicates and memory leaks
         window.myCharts = {};
+        const foreignersChartData = Object.create(null);
+        function renderVisibleForeignersCharts(tabId) {
+            const data = foreignersChartData[tabId];
+            if (!data || document.getElementById('foreigners-content').classList.contains('hidden')) return;
+            if (tabId === 'section93') updateSection93Dashboard(data);
+            if (tabId === 'section96') updateSection96Dashboard(data);
+            if (tabId === 'boi') updateBoiDashboard(data);
+            if (tabId === 'commercial') updateCommercialDashboard(data);
+        }
 
         function destroyChart(canvasId) {
             if (window.myCharts[canvasId]) {
@@ -1562,7 +1571,7 @@
                 activeTabButton.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
             }
             
-            // NOTE: Chart drawing is now handled after data is loaded in DOMContentLoaded
+            requestAnimationFrame(() => renderVisibleForeignersCharts(tabId));
         }
 
         function showReligiousTab(tabId, event) {
@@ -2778,7 +2787,8 @@
             const section93Data = await loadDataFromSheet(section93SheetUrl);
             
             if(section93Data.length > 0) {
-                updateSection93Dashboard(section93Data);
+                foreignersChartData['section93'] = section93Data;
+                if (!document.getElementById('foreigners-content').classList.contains('hidden') && !document.getElementById('section93-tab').classList.contains('hidden')) updateSection93Dashboard(section93Data);
                  setupPagination('', section93Data, (data, currentPage, itemsPerPage) => {
                     const tbody = document.getElementById('dataTableBody');
                     tbody.innerHTML = '';
@@ -2815,7 +2825,8 @@
             const section96Data = await loadDataFromSheet(section96SheetUrl);
 
             if(section96Data.length > 0) {
-                updateSection96Dashboard(section96Data);
+                foreignersChartData['section96'] = section96Data;
+                if (!document.getElementById('foreigners-content').classList.contains('hidden') && !document.getElementById('section96-tab').classList.contains('hidden')) updateSection96Dashboard(section96Data);
                 setupPagination('96', section96Data, (data, currentPage, itemsPerPage) => {
                     const tbody = document.getElementById('dataTableBody96');
                     tbody.innerHTML = '';
@@ -2844,7 +2855,8 @@
             const boiData = await loadDataFromSheet(boiSheetUrl);
 
             if(boiData.length > 0) {
-                updateBoiDashboard(boiData);
+                foreignersChartData['boi'] = boiData;
+                if (!document.getElementById('foreigners-content').classList.contains('hidden') && !document.getElementById('boi-tab').classList.contains('hidden')) updateBoiDashboard(boiData);
                 setupPagination('Boi', boiData, (data, currentPage, itemsPerPage) => {
                     const tbody = document.getElementById('dataTableBodyBoi');
                     tbody.innerHTML = '';
@@ -2881,7 +2893,8 @@
             const commercialData = await loadDataFromSheet(commercialSheetUrl);
 
             if(commercialData.length > 0) {
-                updateCommercialDashboard(commercialData);
+                foreignersChartData['commercial'] = commercialData;
+                if (!document.getElementById('foreigners-content').classList.contains('hidden') && !document.getElementById('commercial-tab').classList.contains('hidden')) updateCommercialDashboard(commercialData);
                 setupPagination('Commercial', commercialData, (data, currentPage, itemsPerPage) => {
                     const tbody = document.getElementById('dataTableBodyCommercial');
                     tbody.innerHTML = '';
