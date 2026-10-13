@@ -38,6 +38,6 @@ The CSS build now uses Tailwind 4.3.3 through `@tailwindcss/postcss`, with
 PostCSS 8.5.30. `styles/legacy-theme.json` and `styles/legacy-preflight.css`
 retain the previous static palette/reset; they contain no Tailwind 3 compiler.
 The frozen Tailwind 3 stylesheet in browser test fixtures is a visual reference
-only and is not shipped by the application. Browser tests compare both styles
+only and is not loaded by the application. Browser tests compare both styles
 in the same Chromium using synthetic data. `npm audit` checks the complete
 dependency tree in CI, including development packages.

@@ -12,10 +12,13 @@ Repository: `lnwlawyer/landright` — Branch: `feature/smt2-private-sheets-oauth
 
 - ก่อนเริ่ม: `e3652c4be228cb552392821279585922ee60a887`
   Local/remote branch/PR head ตรงกัน และ working tree สะอาด
-- Code ที่ตรวจรอบนี้: **`0a5800d6d57c49c1bbb9230c6110d86d1773014f`**
-  Commit `Remove vulnerable Tailwind build dependencies and verify legacy rendering`
+- Code ที่ตรวจรอบนี้: **`179552e0df7b9976b41fc8c87fd18ef7907c1ebd`**
+  Dependency migration อยู่ที่ `0a5800d`; การรอ fixture/ควบคุมเวลาอยู่ที่ `c6bd393`;
+  การเปรียบเทียบพิกเซลที่ถอดรหัสและ diagnostics อยู่ที่ `b6fa287`;
+  การตรวจ DOM/layout/color ที่เข้มขึ้นพร้อมข้อจำกัด noise อยู่ที่ `179552e`
 - การทดสอบในเครื่องรันกับ code tree ที่ถูก Commit เป็น SHA นี้
-  หลัง Commit เหลือเฉพาะการปรับ README/รายงาน ไม่มี application code ที่ยังค้างแก้
+  ผล local ล่าสุดยังเป็น 74 Node + 68 Browser ผ่านทั้งหมด
+  การเปลี่ยนถัดจาก SHA นี้เป็นการปรับรายงาน/หลักฐาน audit เท่านั้น
 - เอกสารฉบับนี้และลิงก์ README ถูกบันทึกใน documentation commit ถัดมา
   SHA ของ documentation commit ดูได้จากประวัติ PR; ไม่มีการอ้างว่าไฟล์นี้รู้ SHA ของตัวเอง
 
@@ -136,7 +139,44 @@ OAuth errors, API 401/403/404/429/500, network failure, logout/expiry และ 
 
 workflow รัน Node 22, full audit, build verification, unit/regression,
 public preflight และ browser tests ผล hosted Actions ไม่ได้อาศัยผล local แทน
-ไม่มี failed checks ที่ต้องแก้ในผลรอบนี้
+รันระหว่างทางที่ล้มเหลวไม่ได้ถูกตัดออกจากรายงาน:
+
+- `d43e22f`: [run 38417250622](https://github.com/lnwlawyer/landright/actions/runs/38417250622)
+  **Failure** ที่ browser step; install/audit/build/unit/preflight ผ่าน
+  endpoint log ของ GitHub ตอบ 404 ต่อ session สาธารณะ จึงไม่ทราบชื่อ testcase
+- `c6bd393`: [run 38418164110](https://github.com/lnwlawyer/landright/actions/runs/38418164110)
+  **Failure**, GitHub reporter ยืนยัน **66 Passed / 2 Failed**
+  เป็น visual comparison ของ desktop SMT2 และ mobile viewport BOI;
+  functional/security cases ผ่าน ไม่มี test ถูก skip หรือ retries
+- `b6fa287`: [run 38418834608](https://github.com/lnwlawyer/landright/actions/runs/38418834608)
+  **Failure**, **67 Passed / 1 Failed** เป็น mobile viewport BOI
+  diagnostics ยืนยันต่าง **4 pixels**, max channel delta **1/255**
+  พิกเซลแรกอยู่ที่ขอบปุ่ม `smt2-admin-entry` ไม่ใช่ข้อมูล/ตารางหรือสิทธิ์ API
+- `179552e`: [run 38420446223](https://github.com/lnwlawyer/landright/actions/runs/38420446223)
+  **Success**, total duration **1m 7s**; GitHub Run Summary ยืนยัน
+  **68 Browser Passed** (28.6s) และทุกขั้นก่อนหน้า audit/build/unit/preflight ผ่าน
+
+ปรับ test ให้รอ render ของ CSV แหล่งสุดท้ายจริง และใช้ browser clock จำลอง expiry
+แทนการแข่งกับเซสชัน 1 วินาที เพิ่ม GitHub reporter เพื่ออ่าน failure annotations
+โดยไม่ต้องเข้าถึง private logs และแก้การเทียบ PNG bytes ให้ถอดรหัสเป็น RGBA
+แล้วตรวจพิกเซลจริงด้วย `pngjs` 7.0.0 พร้อมจำนวน/ตำแหน่ง/ค่าที่ต่าง
+ผล diagnostic ในเครื่องพบ noise อีกครั้ง **17 pixels**, delta **1/255**
+บนมุมโค้งของปุ่มเดียวกัน ขณะ DOM metrics/color checks ตรงกันทั้งหมด
+จึงไม่ถือว่าการเทียบไฟล์ PNG bytes หรือ exact raster bytes เป็น acceptance ที่เหมาะสม
+
+เกณฑ์ visual สุดท้ายตรวจ visible DOM ทุก node ให้ tag/id/class, ตำแหน่ง/ขนาด
+(ความละเอียด 0.001 CSS pixel), สีตัวอักษร/พื้น/ขอบ, font family/size/weight,
+line-height และ border-radius ตรงกับ reference
+ภาพส่วนอื่นต้องตรงทุกพิกเซล อนุญาตเฉพาะ rounding noise ที่มุมโค้งของปุ่ม
+`smt2-admin-entry` ไม่เกิน **32 pixels** และแต่ละ channel ต่างไม่เกิน **1/255**
+ไม่มี tolerance นอกตำแหน่งนี้ หรือ tolerance ของ geometry/colors/data/security
+baseline ไม่ถูกแก้, assertions ยังคงทำงาน, retries = 0 และ audit ยังเป็นศูนย์
+เกณฑ์นี้มีหลักฐานเชิงปริมาณประกอบ ไม่ใช่การลดการตรวจสิทธิ์หรือความปลอดภัย
+ไม่ได้สรุปว่า failure เดิมเป็น PNG metadata; diagnostics ยืนยันว่ามี pixel noise จริง
+
+การดาวน์โหลด Playwright Chromium 141 มาตรวจในเครื่องนี้ถูก proxy ตอบ
+403 Domain forbidden จึงคง local Chromium 154 พร้อมระบุข้อจำกัดนี้ และใช้ผล
+hosted Actions ที่ใช้ browser ของ Playwright ประกอบ ไม่ปิด TLS หรือเปลี่ยน archive
 
 มี warning ของ `actions/checkout@v4`/`setup-node@v4` ที่ runner เปลี่ยน bootstrap
 Node 20 เป็น Node 24 และ notice เรื่อง `ubuntu-latest` จะเปลี่ยนเป็น Ubuntu 26
