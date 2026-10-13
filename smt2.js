@@ -19,10 +19,12 @@
     token = null; records = []; $('smt2-data').replaceChildren();
     $('smt2-logout').classList.add('hidden'); $('smt2-login').classList.remove('hidden');
     if (menu) menu.hidden = true;
+    if($('smt2-admin-entry')) $('smt2-admin-entry').textContent = 'เข้าสู่ระบบผู้ดูแล';
     if (!root.classList.contains('hidden') && typeof showContent === 'function') showContent('overview');
     message('ออกจากระบบแล้ว');
   };
   $('smt2-logout').addEventListener('click', revoke);
+  $('smt2-admin-entry')?.addEventListener('click', () => $('smt2-login').click());
   function render() {
     const container = $('smt2-data');
     container.innerHTML = '<div class="flex flex-wrap gap-3 mb-4"><input id="smt2-search" class="border rounded-lg p-2 flex-1 min-w-48" placeholder="ค้นหาเรื่อง จังหวัด เจ้าหน้าที่ หรือสถานะ"><span id="smt2-count" class="p-2 text-sm"></span></div><div id="smt2-results" class="overflow-x-auto"></div>';
@@ -58,6 +60,7 @@
     records=result; render(); message('เชื่อมต่อ Google Sheets สำเร็จ (อ่านอย่างเดียว)');
     $('smt2-login').classList.add('hidden'); $('smt2-logout').classList.remove('hidden');
     if(menu) menu.hidden=false;
+    if($('smt2-admin-entry')) $('smt2-admin-entry').textContent = 'ผู้ดูแล: SMT2';
   }
   $('smt2-login').addEventListener('click', () => {
     if(!cfg.oauthClientId || !cfg.spreadsheetId){message('ยังไม่ได้ตั้งค่า OAuth Client ID ของเว็บไซต์');return;}
