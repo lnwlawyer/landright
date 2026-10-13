@@ -357,3 +357,10 @@ test('SMT2 private migration documentation requires legacy entry-point lockdown 
  const guide=readFileSync(new URL('../docs/smt2-private-backend-ten-workstreams.md',import.meta.url),'utf8');
  for(const required of ['getServerData','getUniqueColumnValues','getCombinedDashboardData','addRecord','updateRecord','rollback','Anyone','disposable test spreadsheet']) assert.ok(guide.includes(required),required);
 });
+
+test('land area dashboards read area_rai consistently with table rows', () => {
+ assert.ok(html.includes('function getLandAreaWah(item)'));
+ assert.ok(html.includes('item?.area_rai || item?.area'));
+ assert.ok(!html.includes('convertAreaToWah(item.area)'));
+ assert.ok((html.match(/getLandAreaWah\\(item\\)/g) || []).length >= 10);
+});
