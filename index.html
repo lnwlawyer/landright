@@ -100,6 +100,10 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>[data-smt2-menu][hidden]{display:none!important}</style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="smt2-config.example.js" defer></script>
+    <script src="smt2.js" defer></script>
 </head>
 <body class="bg-gray-50 font-thai">
     <!-- Mobile Menu Overlay -->
@@ -149,7 +153,7 @@
                         <i class="fas fa-users mr-3"></i>
                         ฝ่ายควบคุมทะเบียนที่ดิน
                     </a>
-                    <a href="#" onclick="showContent('smt2', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200" aria-label="เปิดระบบบริหารงาน SMT2">
+                    <a data-smt2-menu hidden href="#" onclick="showContent('smt2', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200" aria-label="เปิดระบบบริหารงาน SMT2">
                         <i class="fas fa-clipboard-list mr-3" aria-hidden="true"></i>
                         ระบบบริหารงาน SMT2
                     </a>
@@ -190,14 +194,7 @@
                     </div>
                 </div>
 
-                <div id="smt2-content" class="content-section hidden">
-                    <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-gray-100">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">ข้อมูลสำหรับเจ้าหน้าที่</h3>
-                        <p class="text-sm text-gray-600 mb-4">เปิดระบบ SMT2 สำหรับเจ้าหน้าที่ผ่าน Google Apps Script ที่เผยแพร่ล่าสุด การอ่านข้อมูลรายเรื่องและการแก้ไขต้องผ่านการตรวจสิทธิ์ในระบบปลายทาง ไม่ส่งข้อมูลรายเรื่องมายังเว็บไซต์สาธารณะนี้</p>
-                         <a id="smt2-staff-app-link" href="https://script.google.com/macros/s/AKfycbzmLvYRRxdhMP-OissyRxDSMqkAd3zabFRHO55wsf66zYQYJpF2PmQpK0BXAJVIplwD9g/exec" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center min-h-11 rounded-lg bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"><i class="fas fa-external-link-alt mr-2" aria-hidden="true"></i>เปิดระบบ SMT2 สำหรับเจ้าหน้าที่</a>
-                         <p class="text-xs text-slate-500 mt-3">ระบบนี้เปิดในแท็บใหม่ หากบัญชีของคุณไม่มีสิทธิ์ โปรดติดต่อผู้ดูแลระบบ</p>
-                    </div>
-                </div>
+                <div id="smt2-content" class="content-section hidden"></div>
                 <!-- Foreigners Content -->
                 <div id="foreigners-content" class="content-section hidden">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
