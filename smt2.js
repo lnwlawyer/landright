@@ -7,7 +7,7 @@
   let token = null, tokenClient = null, records = [];
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const normalize = s => String(s ?? '').replace(/\\s+/g,'').trim();
+  const normalize = s => String(s ?? '').replace(/\s+/g,'').trim();
   const menu = document.querySelector('[data-smt2-menu]');
   const root = $('smt2-content');
   if (!root) return;
@@ -24,7 +24,7 @@
     message('ออกจากระบบแล้ว');
   };
   $('smt2-logout').addEventListener('click', revoke);
-  $('smt2-admin-entry')?.addEventListener('click', () => $('smt2-login').click());
+  $('smt2-admin-entry')?.addEventListener('click', () => { if (typeof showContent === 'function') showContent('smt2'); $('smt2-login').click(); });
   function render() {
     const container = $('smt2-data');
     container.innerHTML = '<div class="flex flex-wrap gap-3 mb-4"><input id="smt2-search" class="border rounded-lg p-2 flex-1 min-w-48" placeholder="ค้นหาเรื่อง จังหวัด เจ้าหน้าที่ หรือสถานะ"><span id="smt2-count" class="p-2 text-sm"></span></div><div id="smt2-results" class="overflow-x-auto"></div>';
@@ -70,7 +70,7 @@
       callback: async response => {
         if(response.error || !response.access_token){message('การเข้าสู่ระบบไม่สำเร็จ');return;}
         token=response.access_token;
-        try { await load(); } catch(err) { revoke(); message(err.message); }
+        try { await load(); } catch(err) { const reason=err.message; revoke(); if (typeof showContent === 'function') showContent('smt2'); message(reason); }
       }
     });
     tokenClient.requestAccessToken({prompt:'consent'});
