@@ -362,5 +362,5 @@ test('land area dashboards read area_rai consistently with table rows', () => {
  assert.ok(html.includes('function getLandAreaWah(item)'));
  assert.ok(html.includes('item?.area_rai || item?.area'));
  assert.ok(!html.includes('convertAreaToWah(item.area)'));
- assert.ok((html.match(/getLandAreaWah\\(item\\)/g) || []).length >= 10);
+ assert.ok(html.split('getLandAreaWah(item)').length >= 11);
 });
