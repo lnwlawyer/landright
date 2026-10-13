@@ -2163,12 +2163,8 @@
 
         function convertAreaToWah(areaString) {
             if (typeof areaString !== 'string' || !areaString.trim()) return 0;
-            const raw = areaString.trim().replace(/,/g, '').replace(/\s*(?:ไร่|งาน|ตารางวา|ตร\\.?ว\\.?)/g, '-').replace(/-+$/,'');
-            const parts = raw.split('-').map(part => part.trim());
-            if (parts.length === 1 && /^\\d+(?:\\.\\d+)?$/.test(parts[0])) {
-                return Number(parts[0]) * 400;
-            }
-            if (parts.length !== 3 || parts.some(part => !/^\\d+(?:\\.\\d+)?$/.test(part))) return 0;
+            const parts = areaString.trim().replace(/,/g, '').split('-');
+            if (parts.length !== 3 || parts.some(part => !/^\d+(?:\.\d+)?$/.test(part))) return 0;
             const [rai, ngan, wah] = parts.map(Number);
             if (!Number.isSafeInteger(rai) || !Number.isInteger(ngan) || ngan > 3 ||
                 !Number.isFinite(wah) || wah >= 100) return 0;
