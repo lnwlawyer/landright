@@ -209,7 +209,9 @@
                     </div>
                     <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-gray-100">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">ข้อมูลสำหรับเจ้าหน้าที่</h3>
-                        <p class="text-sm text-gray-600">ข้อมูลรายเรื่อง การเพิ่มและแก้ไขข้อมูล ต้องผ่านการยืนยันตัวตนและตรวจสอบสิทธิ์ฝั่ง Backend จึงยังไม่เปิดใช้งานใน Dashboard สาธารณะ</p>
+                        <p class="text-sm text-gray-600 mb-4">เปิดระบบ SMT2 สำหรับเจ้าหน้าที่ผ่าน Google Apps Script ที่เผยแพร่ล่าสุด การอ่านข้อมูลรายเรื่องและการแก้ไขต้องผ่านการตรวจสิทธิ์ในระบบปลายทาง ไม่ส่งข้อมูลรายเรื่องมายังเว็บไซต์สาธารณะนี้</p>
+                         <a id="smt2-staff-app-link" href="https://script.google.com/macros/s/AKfycbzmLvYRRxdhMP-OissyRxDSMqkAd3zabFRHO55wsf66zYQYJpF2PmQpK0BXAJVIplwD9g/exec" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center min-h-11 rounded-lg bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"><i class="fas fa-external-link-alt mr-2" aria-hidden="true"></i>เปิดระบบ SMT2 สำหรับเจ้าหน้าที่</a>
+                         <p class="text-xs text-slate-500 mt-3">ระบบนี้เปิดในแท็บใหม่ หากบัญชีของคุณไม่มีสิทธิ์ โปรดติดต่อผู้ดูแลระบบ</p>
                     </div>
                 </div>
                 <!-- Foreigners Content -->
@@ -3084,7 +3086,7 @@
         });
         window.loadSmt2PublicDashboard = () => controller.load();
         if (new URLSearchParams(location.search).get('view') === 'smt2') {
-            const menu = document.querySelector('#sidebar a[aria-label="เปิดระบบบริหารงาน SMT2"]');
+            const menu = document.querySelector('a[aria-label="เปิดระบบบริหารงาน SMT2"]');
             if (menu) menu.click();
         }
     </script>
