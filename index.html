@@ -20,9 +20,9 @@
     <!-- Link to external Manifest file -->
     <link rel="manifest" href="manifest.json">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="assets/landright.css">
     <!-- เพิ่ม Chart.js library -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="assets/chart.js"></script>
     <style>
         :root { color-scheme: light; }
         html { scroll-behavior: smooth; }
@@ -88,22 +88,23 @@
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             })[char]);
         }
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'thai': ['Prompt', 'sans-serif']
-                    }
-                }
-            }
-        }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>[data-smt2-menu][hidden]{display:none!important}</style>
+    <style>
+    [data-smt2-menu][hidden], #smt2-content [hidden]{display:none!important}
+    .smt2-panel{background:white;padding:1rem;border-radius:1rem;min-width:0}
+    .smt2-panel h3{font-size:1.25rem;font-weight:600}.smt2-panel h4{font-weight:600}
+    .smt2-panel p{margin:.75rem 0}.smt2-panel button,.smt2-panel input,.smt2-panel select{border:1px solid #94a3b8;border-radius:.5rem;padding:.65rem;min-height:44px;max-width:100%}
+    .smt2-panel button{margin:.25rem;background:#eff6ff}.smt2-panel button:disabled{opacity:.5}
+    .smt2-filters,.smt2-dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:1rem;margin:1rem 0}
+    .smt2-filters label{display:flex;flex-direction:column;gap:.25rem}.smt2-dashboard section{background:#f1f5f9;border-radius:.5rem;padding:1rem;overflow-wrap:anywhere}
+    #smt2-results{overflow-x:auto;max-width:100%}#smt2-results table{width:100%;min-width:700px;font-size:.875rem}#smt2-results th,#smt2-results td{padding:.6rem;text-align:left;border-bottom:1px solid #e2e8f0;overflow-wrap:anywhere;max-width:260px}
+    .smt2-pages{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap}.smt2-panel a{text-decoration:underline}
+    </style>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="smt2-config.example.js" defer></script>
-    <script src="smt2.js" defer></script>
+    <script src="smt2.js" type="module"></script>
 </head>
 <body class="bg-gray-50 font-thai">
     <!-- Mobile Menu Overlay -->

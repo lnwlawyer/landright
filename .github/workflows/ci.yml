@@ -13,6 +13,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm ci
+      - run: npm run build:assets
+      - run: git diff --exit-code -- assets/
       - run: npm test
       - run: node scripts/check-smt2-public.mjs
       - run: node scripts/smt2-public-preflight.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser

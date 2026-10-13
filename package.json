@@ -5,6 +5,13 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "npm test"
+    "check": "npm test",
+    "test:browser": "playwright test",
+    "build:assets": "node scripts/build-assets.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "chart.js": "4.5.1",
+    "tailwindcss": "3.4.19"
   }
 }

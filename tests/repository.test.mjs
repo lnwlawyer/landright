@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -292,11 +293,13 @@ test('SMT2 is a native LandRight section without separate-page navigation', () =
  assert.ok(!html.includes('href="smt2/public.html"'));
 });
 
-test('SMT2 inline dashboard offers refresh, deep link and no private backend', () => {
+test('SMT2 public snapshot module remains isolated from the OAuth staff entry', () => {
  assert.ok(!html.includes('id="smt2-refresh"'));
  assert.ok(!html.includes('id="smt2-public-meta"'));
- assert.ok(html.includes('id="smt2-staff-app-link"'));
- assert.ok(html.includes('ข้อมูลสำหรับเจ้าหน้าที่'));
+ assert.ok(html.includes('id="smt2-admin-entry"'));
+ assert.ok(!html.includes('script.google.com/macros/'));
+ assert.ok(html.includes('src="smt2.js" type="module"'));
+ assert.match(html, /data-smt2-menu hidden/);
  assert.ok(html.includes("new URLSearchParams(location.search).get('view') === 'smt2'"));
  assert.ok(!html.includes("window.loadSmt2PublicDashboard = () => controller.load()"));
  const module = readFileSync(new URL('../smt2/inline-dashboard.mjs',import.meta.url),'utf8');
@@ -363,4 +366,11 @@ test('land area dashboards read area_rai consistently with table rows', () => {
  assert.ok(html.includes('item?.area_rai || item?.area'));
  assert.ok(!html.includes('convertAreaToWah(item.area)'));
  assert.ok(html.split('getLandAreaWah(item)').length >= 11);
+});
+
+// Freeze the existing public feed connections while SMT2 adopts a separate private API.
+test('all eleven legacy published CSV feed URLs remain unchanged', () => {
+ const urls = html.match(/https:\/\/docs\.google\.com\/spreadsheets\/[^'"\s<>]+/g).sort();
+ assert.equal(urls.length, 11);
+ assert.equal(createHash('sha256').update(urls.join('\n')).digest('hex'), 'c0ea01cb7edfb3cb7218b2735238189cd6f7449a97df52f9006942333eed285e');
 });
