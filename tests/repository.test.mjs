@@ -286,17 +286,19 @@ test('SMT2 is a native LandRight section without separate-page navigation', () =
  assert.ok(html.includes('id="smt2-content" class="content-section hidden"'));
  assert.ok(html.includes('showContent(\'smt2\', event)'));
  assert.ok(html.includes("'smt2': 'ระบบบริหารงาน SMT2'"));
- assert.ok(html.includes("if (section === 'smt2') loadSmt2PublicDashboard()"));
- assert.ok(html.includes("import {createInlineController} from './smt2/inline-dashboard.mjs'"));
+ assert.ok(!html.includes("if (section === 'smt2') loadSmt2PublicDashboard()"));
+ assert.ok(!html.includes("import {createInlineController} from './smt2/inline-dashboard.mjs'"));
  assert.ok(readFileSync(new URL('../smt2/inline-dashboard.mjs',import.meta.url),'utf8').includes("SMT2_SNAPSHOT_PATH = './smt2/approved-summary.json'"));
  assert.ok(!html.includes('href="smt2/public.html"'));
 });
 
 test('SMT2 inline dashboard offers refresh, deep link and no private backend', () => {
- assert.ok(html.includes('id="smt2-refresh"'));
- assert.ok(html.includes('id="smt2-public-meta"'));
+ assert.ok(!html.includes('id="smt2-refresh"'));
+ assert.ok(!html.includes('id="smt2-public-meta"'));
+ assert.ok(html.includes('id="smt2-staff-app-link"'));
+ assert.ok(html.includes('ข้อมูลสำหรับเจ้าหน้าที่'));
  assert.ok(html.includes("new URLSearchParams(location.search).get('view') === 'smt2'"));
- assert.ok(html.includes("window.loadSmt2PublicDashboard = () => controller.load()"));
+ assert.ok(!html.includes("window.loadSmt2PublicDashboard = () => controller.load()"));
  const module = readFileSync(new URL('../smt2/inline-dashboard.mjs',import.meta.url),'utf8');
  for (const text of ['validatePublicSnapshot(data)','redirect:\'error\'','credentials:\'omit\'','AbortController','clearTimeout(timeout)','root.replaceChildren()','button.disabled=true','button.disabled=false']) assert.ok(module.includes(text),text);
  for (const secret of ['google.script.run','updateRecord(', 'addRecord(', 'getServerData(', 'script.google.com/macros/']) assert.ok(!module.includes(secret),secret);
