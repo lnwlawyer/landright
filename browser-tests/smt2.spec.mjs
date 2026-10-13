@@ -47,7 +47,8 @@ test('logout during request prevents late private response restoring session',as
  await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
 });
 test('expiry clears private DOM and requires a fresh login',async({page})=>{
- await setup(page,{expires:1}); await login(page); await expect(page.locator('#smt2-count')).toContainText('488');
+ await setup(page); await page.clock.install(); await login(page); await expect(page.locator('#smt2-count')).toContainText('488');
+ await page.clock.fastForward(3600001);
  await expect(page.locator('#smt2-message')).toContainText('หมดอายุ'); await expect(page.locator('#smt2-data')).toBeEmpty();
 });
 test('legacy LandRight menu and foreigner subtabs continue working',async({page})=>{
