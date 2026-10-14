@@ -2763,18 +2763,6 @@
         }
 
         // --- Table Initialization ---
-        document.addEventListener('DOMContentLoaded', () => {
-          const bar=document.createElement('div');bar.id='landright-auth-status';
-          bar.style.cssText='position:sticky;top:0;z-index:30;background:#eaf2ff;padding:12px;border-bottom:1px solid #93a8cb';
-          const label=document.createElement('span');label.textContent='เข้าสู่ระบบ Google ครั้งเดียวเพื่อดู Dashboard ทั้ง 11 เมนู ';
-          const button=document.createElement('button');button.textContent='เข้าสู่ระบบ Google';button.type='button';
-          button.style.cssText='padding:8px 14px;background:#1d4ed8;color:white;border-radius:8px';
-          button.addEventListener('click',()=>window.landrightLogin?.());bar.append(label,button);document.body.prepend(bar);
-          const showConnected=()=>{label.textContent='เชื่อมต่อ Google Sheets แล้ว — กำลังโหลด Dashboard';button.hidden=true;};
-          window.addEventListener('landright-auth-ready',showConnected);
-          if(window.landrightAuthIsReady?.())showConnected();
-          window.addEventListener('landright-auth-cleared',()=>{label.textContent='เซสชันหมดอายุ กรุณาโหลดหน้าใหม่และเข้าสู่ระบบ';button.hidden=false;document.querySelectorAll('.content-section:not(#smt2-content)').forEach(section=>{section.querySelectorAll('tbody').forEach(body=>body.replaceChildren());section.querySelectorAll('canvas').forEach(canvas=>{const chart=window.Chart?.getChart?.(canvas);if(chart)chart.destroy();canvas.getContext('2d')?.clearRect(0,0,canvas.width,canvas.height);});section.querySelectorAll('[id$="total-cases"],[id$="total-clients"],[id$="total-copies"]').forEach(el=>el.textContent='—');});});
-        });
         document.addEventListener('DOMContentLoaded', async function() {
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const sidebar = document.getElementById('sidebar');
