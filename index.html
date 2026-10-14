@@ -169,9 +169,9 @@
                         <i class="fas fa-users mr-3"></i>
                         ฝ่ายควบคุมทะเบียนที่ดิน
                     </a>
-                    <a data-smt2-menu hidden href="#" onclick="showContent('smt2', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200" aria-label="เปิดระบบบริหารงาน SMT2">
+                    <a data-smt2-menu hidden href="#" onclick="showContent('smt2', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200" aria-label="เปิดข้อมูลงาน">
                         <i class="fas fa-clipboard-list mr-3" aria-hidden="true"></i>
-                        ระบบบริหารงาน SMT2
+                        ข้อมูลงาน
                     </a>
                     <a href="#" onclick="showContent('settings', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200">
                         <i class="fas fa-cog mr-3"></i>
@@ -1514,7 +1514,7 @@
                 'religious': 'นิติบุคคลเพื่อการศาสนา',
                 'abandoned': 'ที่ดินทอดทิ้ง',
                 'users': 'ฝ่ายควบคุมทะเบียนที่ดิน',
-                'smt2': 'ระบบบริหารงาน SMT2',
+                'smt2': 'ข้อมูลงาน',
                 'settings': 'ตั้งค่า'
             };
             document.getElementById('page-title').textContent = titles[section] || 'Dashboard';
@@ -3104,7 +3104,7 @@
     </script>
     <script>
         if (new URLSearchParams(location.search).get('view') === 'smt2') {
-            const menu = document.querySelector('a[aria-label="เปิดระบบบริหารงาน SMT2"]');
+            const menu = document.querySelector('a[aria-label="เปิดข้อมูลงาน"]');
             if (menu) menu.click();
         }
     </script>
