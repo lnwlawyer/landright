@@ -2147,13 +2147,29 @@
          */
         // Restore original dashboards using the authenticated SMT2 data source.
         const menuPromises = new Map();
-        const authReady = new Promise(resolve => window.addEventListener('landright-auth-ready',resolve,{once:true}));
+        let authWaiters = [];
+        function awaitLandRightAuth() {
+          if (window.landrightAuthIsReady?.()) return Promise.resolve();
+          return new Promise(resolve => authWaiters.push(resolve));
+        }
+        window.addEventListener('landright-auth-ready', () => {
+          authWaiters.splice(0).forEach(resolve => resolve());
+        });
+        window.addEventListener('landright-auth-cleared', () => menuPromises.clear());
         async function loadDataFromSheet(menuId) {
-          if (!menuPromises.has(menuId)) menuPromises.set(menuId, (async()=>{
-            await authReady;
-            try { return await window.landrightReadMenu(menuId); }
-            catch(error) { console.error('Menu read failed:',menuId,error);return []; }
-          })());
+          if (!menuPromises.has(menuId)) {
+            const task = (async () => {
+              await awaitLandRightAuth();
+              return window.landrightReadMenu(menuId);
+            })();
+            menuPromises.set(menuId,task);
+            task.catch(error => {
+              menuPromises.delete(menuId);
+              console.error('ไม่สามารถอ่าน Google Sheets:',menuId,error);
+              const bar = document.getElementById('landright-auth-status');
+              if(bar) bar.textContent = 'โหลดข้อมูล '+menuId+' ไม่สำเร็จ: '+error.message;
+            });
+          }
           return menuPromises.get(menuId);
         }
 
@@ -2748,13 +2764,15 @@
 
         // --- Table Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-          const bar=document.createElement('div');
+          const bar=document.createElement('div');bar.id='landright-auth-status';
           bar.style.cssText='position:sticky;top:0;z-index:30;background:#eaf2ff;padding:12px;border-bottom:1px solid #93a8cb';
           const label=document.createElement('span');label.textContent='เข้าสู่ระบบ Google ครั้งเดียวเพื่อดู Dashboard ทั้ง 11 เมนู ';
           const button=document.createElement('button');button.textContent='เข้าสู่ระบบ Google';button.type='button';
           button.style.cssText='padding:8px 14px;background:#1d4ed8;color:white;border-radius:8px';
           button.addEventListener('click',()=>window.landrightLogin?.());bar.append(label,button);document.body.prepend(bar);
-          window.addEventListener('landright-auth-ready',()=>{label.textContent='เชื่อมต่อ Google Sheets แล้ว — กำลังโหลด Dashboard';button.hidden=true;});
+          const showConnected=()=>{label.textContent='เชื่อมต่อ Google Sheets แล้ว — กำลังโหลด Dashboard';button.hidden=true;};
+          window.addEventListener('landright-auth-ready',showConnected);
+          if(window.landrightAuthIsReady?.())showConnected();
           window.addEventListener('landright-auth-cleared',()=>{label.textContent='เซสชันหมดอายุ กรุณาโหลดหน้าใหม่และเข้าสู่ระบบ';button.hidden=false;document.querySelectorAll('.content-section:not(#smt2-content)').forEach(section=>{section.querySelectorAll('tbody').forEach(body=>body.replaceChildren());section.querySelectorAll('canvas').forEach(canvas=>{const chart=window.Chart?.getChart?.(canvas);if(chart)chart.destroy();canvas.getContext('2d')?.clearRect(0,0,canvas.width,canvas.height);});section.querySelectorAll('[id$="total-cases"],[id$="total-clients"],[id$="total-copies"]').forEach(el=>el.textContent='—');});});
         });
         document.addEventListener('DOMContentLoaded', async function() {
