@@ -45,6 +45,25 @@ const smt2ValueLabels = {
     ctx.restore();
   }
 };
+// Central status palette: keep colors stable across filters and staff groups.
+const SMT2_STATUS_COLORS = Object.freeze({
+  'เสร็จแล้ว':'#15803d',
+  'รอผลจังหวัด/หน่วยงานอื่น':'#d97706',
+  'ระหว่างพิจารณาของเจ้าหน้าที่':'#2563eb',
+  'ตรวจร่าง':'#7c3aed',
+  'เสนอรองนาม':'#0891b2',
+  'ไม่ระบุ':'#64748b',
+  'ไม่ระบุสถานะ':'#64748b'
+});
+function smt2StatusColor(value) {
+  const name=String(value??'').trim().replace(/\\s+/g,' ');
+  if(Object.prototype.hasOwnProperty.call(SMT2_STATUS_COLORS,name)) return SMT2_STATUS_COLORS[name];
+  // Deterministic fallback for future statuses, without relying on sort order.
+  const palette=['#be185d','#0f766e','#a16207','#4338ca','#b45309','#0369a1','#7e22ce'];
+  let hash=0;
+  for(const char of name) hash=(Math.imul(hash,31)+char.codePointAt(0))>>>0;
+  return palette[hash%palette.length];
+}
 function drawSmt2Charts(found) {
   destroySmt2Charts();
   const ChartClass=window.Chart;
@@ -58,7 +77,7 @@ function drawSmt2Charts(found) {
     const canvas=$(id);if(!canvas)continue;
     const pairs=group(key);
     if(!pairs.length)continue;
-    smt2Charts.push(new ChartClass(canvas,{plugins:[smt2ValueLabels],type:'bar',data:{labels:pairs.map(x=>x[0]),datasets:[{label:'จำนวนเรื่อง',data:pairs.map(x=>x[1]),backgroundColor:'#2563eb',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:42}},plugins:{legend:{display:false},title:{display:false},tooltip:{enabled:true}},scales:{x:{beginAtZero:true,grace:'15%',ticks:{precision:0}},y:{ticks:{autoSkip:false}}}}}));
+    smt2Charts.push(new ChartClass(canvas,{plugins:[smt2ValueLabels],type:'bar',data:{labels:pairs.map(x=>x[0]),datasets:[{label:'จำนวนเรื่อง',data:pairs.map(x=>x[1]),backgroundColor:key==='status'?pairs.map(([label])=>smt2StatusColor(label)):'#2563eb',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:42}},plugins:{legend:{display:false},title:{display:false},tooltip:{enabled:true}},scales:{x:{beginAtZero:true,grace:'15%',ticks:{precision:0}},y:{ticks:{autoSkip:false}}}}}));
   }
 }
 const accountButton = $('smt2-admin-entry');
