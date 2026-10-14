@@ -77,7 +77,7 @@ function smt2AgeBucket(record) {
   if(String(record.status||'').trim()==='เสร็จแล้ว')return null;
   const columns=record.columns||{};
   const raw=String(columns['เจ้าหน้าที่ รับเรื่อง']||'').trim();
-  const match=raw.match(/^(\\d{1,2})\\s+([ก-๙.]+)\\s+(\\d{4})$/);
+  const match=raw.match(/^(\d{1,2})\s+([ก-๙.]+)\s+(\d{4})$/);
   if(!match)return 5;
   const month=SMT2_MONTHS.indexOf(match[2].replace(/\\./g,''));
   const year=Number(match[3]);const day=Number(match[1]);
