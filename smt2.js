@@ -85,8 +85,9 @@ function smt2AgeBucket(record) {
   const y=year>=2500?year-543:year;
   const date=new Date(Date.UTC(y,month,day));
   if(date.getUTCFullYear()!==y||date.getUTCMonth()!==month||date.getUTCDate()!==day)return 5;
-  const today=new Date();
-  const current=Date.UTC(today.getFullYear(),today.getMonth(),today.getDate());
+  const bangkokDate=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+  const datePart=type=>Number(bangkokDate.find(p=>p.type===type)?.value);
+  const current=Date.UTC(datePart('year'),datePart('month')-1,datePart('day'));
   const age=Math.floor((current-date.getTime())/86400000);
   if(age<0)return 5;
   return SMT2_AGE_BUCKETS.findIndex(bucket=>bucket.max!==null&&age<=bucket.max);
