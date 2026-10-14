@@ -7,6 +7,7 @@ const menu = document.querySelector('[data-smt2-menu]');
 // The token remains private to this module; other LandRight menus receive only
 // an authenticated read function, never the bearer token.
 import {readMenuSheet} from './smt2/landright-menu-source.mjs';
+window.landrightAuthIsReady = () => Boolean(token && Date.now() < expiresAt);
 window.landrightReadMenu = async menuId => {
   if (!token || Date.now() >= expiresAt) throw new Error('กรุณาเข้าสู่ระบบ Google');
   return readMenuSheet({spreadsheetId:cfg.spreadsheetId,accessToken:token,menuId});
