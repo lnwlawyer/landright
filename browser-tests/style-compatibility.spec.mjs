@@ -16,6 +16,9 @@ for(const [section,tab] of views) test(`Tailwind migration preserves ${section}$
    await p.evaluate(s=>window.showContent(s),section);
    if(tab){await p.evaluate(([s,t])=>s==='foreigners'?window.showTab(t):window.showReligiousTab(t),[section,tab]);}
   }
+  // Browser workers reuse a cursor; compare both documents in the same hover state.
+  await p.bringToFront();
+  await p.mouse.move(-10,-10);
   await p.waitForTimeout(100);
  }
  const metrics=p=>p.evaluate(()=>Array.from(document.querySelectorAll('body *')).filter(e=>e.getClientRects().length).map(e=>{
@@ -24,8 +27,15 @@ for(const [section,tab] of views) test(`Tailwind migration preserves ${section}$
   return {tag:e.tagName,id:e.id,class:e.getAttribute('class'),rect:[r.x,r.y,r.width,r.height].map(n=>Math.round(n*1000)/1000),...Object.fromEntries(properties.map(key=>[key,css[key]]))};
  }));
  // Geometry (to 0.001 CSS px), colors and text metrics must be identical.
- expect(await metrics(page)).toEqual(await metrics(old));
+ const settle=async p=>{
+  await p.bringToFront();await p.mouse.move(-10,-10);
+  await p.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ };
+ await settle(page);const actualMetrics=await metrics(page);
+ await settle(old);const expectedMetrics=await metrics(old);
+ expect(actualMetrics).toEqual(expectedMetrics);
  const expected=await old.screenshot({animations:'disabled'});
+ await settle(page);
  const actual=await page.screenshot({animations:'disabled'});
  const a=PNG.sync.read(expected),b=PNG.sync.read(actual);
  expect([b.width,b.height]).toEqual([a.width,a.height]);

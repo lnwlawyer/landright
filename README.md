@@ -41,3 +41,14 @@ The frozen Tailwind 3 stylesheet in browser test fixtures is a visual reference
 only and is not loaded by the application. Browser tests compare both styles
 in the same Chromium using synthetic data. `npm audit` checks the complete
 dependency tree in CI, including development packages.
+
+## Isolated SMT2 UAT
+
+Run `python3 scripts/serve-smt2-uat.py` on the administrator's own machine for
+loopback-only synthetic UAT. Real OAuth mode requires an explicitly selected,
+existing restricted UAT spreadsheet containing synthetic data, with an OAuth
+client registered for that local origin. Direct selection of the Production spreadsheet ID is refused;
+`--use-approved-source` explicitly enables browser-only readonly UAT against the
+Restricted source already confirmed by the administrator. Default mode stays synthetic. See [local UAT guide](docs/smt2-uat-local-guide.md) and
+[blank UAT checklist](docs/smt2-uat-checklist.md). Synthetic login is not a real
+Google-account test. Do not expose this server through LAN bindings or tunnels.
