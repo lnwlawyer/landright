@@ -1535,7 +1535,11 @@
             }
 
 
-            // Unified Sheets views manage their own rendering; do not redraw retired tabs.
+            // Redraw original charts when the selected section becomes visible.
+            setTimeout(() => {
+                if (section === 'foreigners') showTab(document.querySelector('#foreigners-content .tab-button[aria-selected="true"]')?.getAttribute('data-tab') || 'section93');
+                if (section === 'religious') showReligiousTab(document.querySelector('#religious-content .religious-tab-button[aria-selected="true"]')?.getAttribute('data-tab') || 'temple');
+            }, 50);
 
         }
 
@@ -2751,7 +2755,7 @@
           button.style.cssText='padding:8px 14px;background:#1d4ed8;color:white;border-radius:8px';
           button.addEventListener('click',()=>window.landrightLogin?.());bar.append(label,button);document.body.prepend(bar);
           window.addEventListener('landright-auth-ready',()=>{label.textContent='เชื่อมต่อ Google Sheets แล้ว — กำลังโหลด Dashboard';button.hidden=true;});
-          window.addEventListener('landright-auth-cleared',()=>{label.textContent='เซสชันหมดอายุ กรุณาโหลดหน้าใหม่และเข้าสู่ระบบ';button.hidden=false;});
+          window.addEventListener('landright-auth-cleared',()=>{label.textContent='เซสชันหมดอายุ กรุณาโหลดหน้าใหม่และเข้าสู่ระบบ';button.hidden=false;document.querySelectorAll('.content-section:not(#smt2-content)').forEach(section=>section.querySelectorAll('tbody').forEach(body=>body.replaceChildren()));});
         });
         document.addEventListener('DOMContentLoaded', async function() {
             const mobileMenuButton = document.getElementById('mobile-menu-button');
