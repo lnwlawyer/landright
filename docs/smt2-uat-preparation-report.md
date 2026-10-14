@@ -13,6 +13,11 @@ Branch `feature/smt2-private-sheets-oauth` / [PR #43](https://github.com/lnwlawy
 Restricted sharing/สิทธิ์เข้าถึง และ OAuth Client/Authorized Origins/Sheets API/
 Test users ถูกต้องแล้ว เป็น **ผู้ดูแลยืนยัน** ไม่ใช่ Codex เข้า Console ตรวจเอง
 
+UAT code ที่ส่งขึ้น PR: `d0d324575b5a3617d5b19bcf1719d8ef9d7dfbda`
+[Actions run 38495385422](https://github.com/lnwlawyer/landright/actions/runs/38495385422)
+เป็น **Success** (1m 20s), GitHub Run Summary ยืนยัน **74 Browser Passed**
+ทุกขั้น audit/build/unit/public preflight ผ่าน ยังมี platform warning/notice เดิม
+
 ## สภาพแวดล้อมที่จัดเตรียม
 
 `python3 scripts/serve-smt2-uat.py` เป็น server localhost ของเครื่องผู้ดูแล
