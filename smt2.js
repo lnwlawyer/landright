@@ -151,14 +151,50 @@ if (root) {
     if (revoke && oldToken) { try { window.google?.accounts?.oauth2.revoke(oldToken, () => {}); } catch {} }
   }
   function render(warnings) {
-    $('smt2-data').innerHTML = `<div class="smt2-filters"><label>กลุ่มงาน<select id="smt2-group"><option value="">ทุกกลุ่ม</option><option value="กลุ่มต่างด้าว">กลุ่มต่างด้าว</option><option value="กลุ่มศาสนา">กลุ่มศาสนา</option><option value="ฝ่ายตรวจสอบ">ฝ่ายตรวจสอบ</option></select></label><label>ค้นหา<input id="smt2-search" type="search" placeholder="เรื่อง จังหวัด เลขหนังสือ เจ้าหน้าที่"></label><label>ชีตเจ้าหน้าที่<select id="smt2-sheet"></select></label><label>สถานะ<select id="smt2-status"></select></label><label>จังหวัด<select id="smt2-province"></select></label></div><p id="smt2-warning"></p><div id="smt2-dashboard" class="smt2-dashboard"></div><div class="smt2-chart-grid" aria-label="กราฟสรุป SMT2"><section><h4>อายุงานค้างนับจากวันที่เจ้าหน้าที่รับเรื่อง</h4><div class="smt2-chart-frame" style="height:330px"><canvas id="smt2-chart-aging" role="img" aria-label="กราฟอายุงานค้างตามช่วงเวลา"></canvas></div><p>ไม่นับงานสถานะเสร็จแล้ว · เกณฑ์ 30 / 60 / 90 / 180 วัน</p></section><section><h4>จำนวนเรื่องตามสถานะ</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-status" role="img" aria-label="กราฟจำนวนเรื่องตามสถานะ"></canvas></div></section><section><h4>จำนวนเรื่องตามชีตเจ้าหน้าที่</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-sheet" role="img" aria-label="กราฟจำนวนเรื่องตามชีตเจ้าหน้าที่"></canvas></div></section><section><h4>จำนวนเรื่องตามจังหวัด (12 อันดับแรก)</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-province" role="img" aria-label="กราฟจำนวนเรื่องตามจังหวัด"></canvas></div></section></div><p id="smt2-count" role="status"></p><div id="smt2-results" role="region" aria-label="ตารางข้อมูล SMT2" tabindex="0"></div><div class="smt2-pages"><button id="smt2-prev" type="button">หน้าก่อนหน้า</button><span id="smt2-page"></span><button id="smt2-next" type="button">หน้าถัดไป</button></div>`;
+    $('smt2-data').innerHTML = `<div class="smt2-filters"><label>กลุ่มงาน<select id="smt2-group"><option value="">ทุกกลุ่ม</option><option value="กลุ่มต่างด้าว">กลุ่มต่างด้าว</option><option value="กลุ่มศาสนา">กลุ่มศาสนา</option><option value="ฝ่ายตรวจสอบ">ฝ่ายตรวจสอบ</option></select></label><label>ค้นหา<input id="smt2-search" type="search" placeholder="เรื่อง จังหวัด เลขหนังสือ เจ้าหน้าที่"></label><label>ชีตเจ้าหน้าที่<select id="smt2-sheet"></select></label><label>สถานะ<select id="smt2-status"></select></label><label>จังหวัด<select id="smt2-province"></select></label></div><p id="smt2-warning"></p><div id="smt2-dashboard" class="smt2-dashboard"></div><div class="smt2-chart-grid" aria-label="กราฟสรุป SMT2"><section><h4>อายุงานค้างนับจากวันที่เจ้าหน้าที่รับเรื่อง</h4><div class="smt2-chart-frame" style="height:330px"><canvas id="smt2-chart-aging" role="img" aria-label="กราฟอายุงานค้างตามช่วงเวลา"></canvas></div><p>ไม่นับงานสถานะเสร็จแล้ว · เกณฑ์ 30 / 60 / 90 / 180 วัน</p></section><section><h4>จำนวนเรื่องตามสถานะ</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-status" role="img" aria-label="กราฟจำนวนเรื่องตามสถานะ"></canvas></div></section><section><h4>จำนวนเรื่องตามชีตเจ้าหน้าที่</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-sheet" role="img" aria-label="กราฟจำนวนเรื่องตามชีตเจ้าหน้าที่"></canvas></div></section><section><h4>จำนวนเรื่องตามจังหวัด (12 อันดับแรก)</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-province" role="img" aria-label="กราฟจำนวนเรื่องตามจังหวัด"></canvas></div></section></div><p id="smt2-count" role="status"></p><div id="smt2-results" role="region" aria-label="ตารางข้อมูล SMT2" tabindex="0"></div><dialog id="smt2-detail-dialog" aria-labelledby="smt2-detail-title" style="width:min(920px,calc(100vw - 24px));max-height:85vh;border:1px solid #cbd5e1;border-radius:12px;padding:0;color:#0f172a;background:#fff"><div style="padding:18px 20px;display:flex;justify-content:space-between;gap:16px;align-items:center;position:sticky;top:0;background:#fff;border-bottom:1px solid #e2e8f0;z-index:1"><h3 id="smt2-detail-title" style="font-size:1.2rem;font-weight:700">รายละเอียดรายการ</h3><button id="smt2-detail-close" type="button" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:8px">ปิด</button></div><div id="smt2-detail-content" style="padding:16px 20px;overflow:auto"></div></dialog><div class="smt2-pages"><button id="smt2-prev" type="button">หน้าก่อนหน้า</button><span id="smt2-page"></span><button id="smt2-next" type="button">หน้าถัดไป</button></div>`;
     const options = (id,key,fallback='') => {
       const values = [...new Set(records.map(r => r[key] || fallback).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
       $(id).innerHTML = '<option value="">ทั้งหมด</option>' + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
     };
     options('smt2-sheet','sheet'); options('smt2-status','status','ไม่ระบุสถานะ'); options('smt2-province','province');
     $('smt2-warning').textContent = warnings.length ? 'บางชีตขาดคอลัมน์ที่รู้จัก (ช่องจะแสดง —): ' + warnings.join('; ') : '';
+      const normalizeHeader = value => String(value||'').normalize('NFKC').replace(/\\s+/g,'').toLocaleLowerCase('th');
+      const thaiDateMonths = 'ม.ค. ก.พ. มี.ค. เม.ย. พ.ค. มิ.ย. ก.ค. ส.ค. ก.ย. ต.ค. พ.ย. ธ.ค.'.split(' ');
+      const buddhistDateDisplay = (value, header) => {
+        const original=String(value??'');
+        if (!/วันที่|วันรับ|วันส่ง|วันตอบ|date/i.test(header)) return original;
+        const monthPattern='(ม\\.?ค\\.?|ก\\.?พ\\.?|มี\\.?ค\\.?|เม\\.?ย\\.?|พ\\.?ค\\.?|มิ\\.?ย\\.?|ก\\.?ค\\.?|ส\\.?ค\\.?|ก\\.?ย\\.?|ต\\.?ค\\.?|พ\\.?ย\\.?|ธ\\.?ค\\.?)';
+        const re=new RegExp('(^|[^0-9])([0-3]?\\d)\\s+'+monthPattern+'\\s*(20\\d{2}|25\\d{2})(?=$|[^0-9])','g');
+        return original.replace(re,(whole,prefix,day,month,year)=>{
+          const y=Number(year),d=Number(day);
+          const monthIndex=thaiDateMonths.findIndex(m=>m.replace(/\\./g,'')===month.replace(/\\./g,''));
+          if(d<1||d>31||monthIndex<0)return whole;
+          const gregorianYear=y>=2500?y-543:y;
+          const check=new Date(Date.UTC(gregorianYear,monthIndex,d));
+          if(check.getUTCFullYear()!==gregorianYear||check.getUTCMonth()!==monthIndex||check.getUTCDate()!==d)return whole;
+          return prefix+day+' '+thaiDateMonths[monthIndex]+' '+String(y>=2500?y:y+543);
+        });
+      };
     let page = 1;
+    // Keep record references in memory only; never embed private field values in attributes.
+    let visiblePageRows = [];
+    const detailDialog = $('smt2-detail-dialog');
+    const showDetail = (record) => {
+      if (!record || !detailDialog || typeof detailDialog.showModal !== 'function') return;
+      const cells = Object.entries(record.columns || {});
+      $('smt2-detail-title').textContent = 'รายละเอียดรายการ — ชีต ' + record.sheet;
+      $('smt2-detail-content').innerHTML = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th scope="col" style="text-align:left;padding:10px;border-bottom:2px solid #cbd5e1">ชื่อข้อมูล</th><th scope="col" style="text-align:left;padding:10px;border-bottom:2px solid #cbd5e1">รายละเอียด</th></tr></thead><tbody>' +
+        cells.map(([header,value])=>'<tr><th scope="row" style="text-align:left;vertical-align:top;min-width:170px;padding:10px;border-bottom:1px solid #e2e8f0;overflow-wrap:anywhere">'+esc(header)+'</th><td style="vertical-align:top;padding:10px;border-bottom:1px solid #e2e8f0;white-space:pre-wrap;overflow-wrap:anywhere">'+esc(buddhistDateDisplay(value,header)||'—')+'</td></tr>').join('') +
+        '</tbody></table></div>';
+      if (!detailDialog.open) detailDialog.showModal();
+    };
+    $('smt2-detail-close').addEventListener('click',()=>detailDialog.close());
+    $('smt2-results').addEventListener('click',event=>{
+      const trigger=event.target.closest('button[data-smt2-row]');
+      if (!trigger || !$('smt2-results').contains(trigger)) return;
+      const index=Number(trigger.dataset.smt2Row);
+      if (Number.isInteger(index) && index>=0 && index<visiblePageRows.length) showDetail(visiblePageRows[index]);
+    });
     const draw = () => {
       const group=$('smt2-group').value;
       const matchingGroup=group ? records.filter(r=>groupForRecord(r)===group) : records;
@@ -182,30 +218,14 @@ if (root) {
         ['สถานะปัจจุบัน',['สถานะปัจจุบัน']],
         ['เลขที่หนังสือจังหวัดตอบล่าสุด',['เลขที่หนังสือจังหวัดตอบล่าสุด']]
       ];
-      const normalizeHeader = value => String(value||'').normalize('NFKC').replace(/\\s+/g,'').toLocaleLowerCase('th');
-      const thaiDateMonths = 'ม.ค. ก.พ. มี.ค. เม.ย. พ.ค. มิ.ย. ก.ค. ส.ค. ก.ย. ต.ค. พ.ย. ธ.ค.'.split(' ');
-      const buddhistDateDisplay = (value, header) => {
-        const original=String(value??'');
-        if (!/วันที่|วันรับ|วันส่ง|วันตอบ|date/i.test(header)) return original;
-        const monthPattern='(ม\\.?ค\\.?|ก\\.?พ\\.?|มี\\.?ค\\.?|เม\\.?ย\\.?|พ\\.?ค\\.?|มิ\\.?ย\\.?|ก\\.?ค\\.?|ส\\.?ค\\.?|ก\\.?ย\\.?|ต\\.?ค\\.?|พ\\.?ย\\.?|ธ\\.?ค\\.?)';
-        const re=new RegExp('(^|[^0-9])([0-3]?\\d)\\s+'+monthPattern+'\\s*(20\\d{2}|25\\d{2})(?=$|[^0-9])','g');
-        return original.replace(re,(whole,prefix,day,month,year)=>{
-          const y=Number(year),d=Number(day);
-          const monthIndex=thaiDateMonths.findIndex(m=>m.replace(/\\./g,'')===month.replace(/\\./g,''));
-          if(d<1||d>31||monthIndex<0)return whole;
-          const gregorianYear=y>=2500?y-543:y;
-          const check=new Date(Date.UTC(gregorianYear,monthIndex,d));
-          if(check.getUTCFullYear()!==gregorianYear||check.getUTCMonth()!==monthIndex||check.getUTCDate()!==d)return whole;
-          return prefix+day+' '+thaiDateMonths[monthIndex]+' '+String(y>=2500?y:y+543);
-        });
-      };
       const pageRows=found.slice((page-1)*10,page*10);
+      visiblePageRows=pageRows;
       const getColumn=(record,names)=>{
         const cols=record.columns||{};
         const match=Object.keys(cols).find(header=>names.some(name=>normalizeHeader(header)===normalizeHeader(name)));
         return match ? buddhistDateDisplay(cols[match],match) : '';
       };
-      $('smt2-results').innerHTML = found.length ? '<div style="overflow-x:auto"><table><caption>รายการข้อมูล SMT2 (10 รายการต่อหน้า)</caption><thead><tr>' + displayedColumns.map(([label])=>'<th scope="col">'+esc(label)+'</th>').join('') + '</tr></thead><tbody>' + pageRows.map(r=>'<tr>'+displayedColumns.map(([,names])=>'<td>'+esc(getColumn(r,names)||'—')+'</td>').join('')+'</tr>').join('') + '</tbody></table></div>' : '<p>ไม่พบรายการตามตัวกรอง</p>';
+      $('smt2-results').innerHTML = found.length ? '<div style="overflow-x:auto"><table><caption>รายการข้อมูล SMT2 (10 รายการต่อหน้า)</caption><thead><tr>' + displayedColumns.map(([label])=>'<th scope="col">'+esc(label)+'</th>').join('') + '</tr></thead><tbody>' + pageRows.map((r,i)=>'<tr>'+displayedColumns.map(([,names],col)=>'<td><button type="button" data-smt2-row="'+i+'" aria-label="เปิดรายละเอียดรายการ '+esc(getColumn(r,['ลำดับ'])||String(i+1))+' จากชีต '+esc(r.sheet)+'" style="display:block;width:100%;height:100%;text-align:left;background:transparent;border:0;color:inherit;padding:8px 4px;cursor:pointer;white-space:normal;overflow-wrap:anywhere">'+esc(getColumn(r,names)||'—')+'</button></td>').join('')+'</tr>').join('') + '</tbody></table></div>' : '<p>ไม่พบรายการตามตัวกรอง</p>';
       $('smt2-page').textContent = `หน้า ${page} / ${pages}`;
       $('smt2-prev').disabled = page === 1; $('smt2-next').disabled = page === pages;
     };
