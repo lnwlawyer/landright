@@ -17,6 +17,27 @@ let token = null, expiresAt = 0, tokenClient = null, records = [], generation = 
 let accountEmail = null;
 let smt2Charts = [];
 function destroySmt2Charts() { for (const chart of smt2Charts) chart.destroy(); smt2Charts=[]; }
+const smt2ValueLabels = {
+  id:'smt2ValueLabels',
+  afterDatasetsDraw(chart) {
+    const {ctx}=chart;
+    ctx.save();
+    ctx.fillStyle='#1e293b';
+    ctx.font='600 12px sans-serif';
+    ctx.textAlign='left';
+    ctx.textBaseline='middle';
+    chart.data.datasets.forEach((dataset, datasetIndex)=>{
+      const meta=chart.getDatasetMeta(datasetIndex);
+      meta.data.forEach((element,index)=>{
+        const value=Number(dataset.data[index]);
+        if(!Number.isFinite(value))return;
+        const x=Math.min(element.x+7,chart.chartArea.right+4);
+        ctx.fillText(value.toLocaleString('th-TH'),x,element.y);
+      });
+    });
+    ctx.restore();
+  }
+};
 function drawSmt2Charts(found) {
   destroySmt2Charts();
   const ChartClass=window.Chart;
@@ -30,7 +51,7 @@ function drawSmt2Charts(found) {
     const canvas=$(id);if(!canvas)continue;
     const pairs=group(key);
     if(!pairs.length)continue;
-    smt2Charts.push(new ChartClass(canvas,{type:'bar',data:{labels:pairs.map(x=>x[0]),datasets:[{label:'จำนวนเรื่อง',data:pairs.map(x=>x[1]),backgroundColor:'#2563eb',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},title:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{ticks:{autoSkip:false}}}}}));
+    smt2Charts.push(new ChartClass(canvas,{plugins:[smt2ValueLabels],type:'bar',data:{labels:pairs.map(x=>x[0]),datasets:[{label:'จำนวนเรื่อง',data:pairs.map(x=>x[1]),backgroundColor:'#2563eb',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:42}},plugins:{legend:{display:false},title:{display:false},tooltip:{enabled:true}},scales:{x:{beginAtZero:true,grace:'15%',ticks:{precision:0}},y:{ticks:{autoSkip:false}}}}}));
   }
 }
 const accountButton = $('smt2-admin-entry');
@@ -79,8 +100,7 @@ if (root) {
       const found = filterRecords(records, {query:$('smt2-search').value,sheet:$('smt2-sheet').value,status:$('smt2-status').value,province:$('smt2-province').value});
       const summary = summarize(found), pages = Math.max(1,Math.ceil(found.length/10));
       page = Math.min(page,pages);
-      const list = entries => '<ul>' + entries.map(([label,count])=>`<li>${esc(label)}: <strong>${count.toLocaleString('th-TH')}</strong></li>`).join('') + '</ul>';
-      $('smt2-dashboard').innerHTML = `<section><h4>รายการตามตัวกรอง</h4><strong>${summary.total.toLocaleString('th-TH')}</strong></section><section><h4>สถานะปัจจุบัน</h4>${list(summary.byStatus)}</section><section><h4>ชีตเจ้าหน้าที่</h4>${list(summary.bySheet)}</section>`;
+      $('smt2-dashboard').replaceChildren();
       drawSmt2Charts(found);
       $('smt2-count').textContent = `พบ ${found.length.toLocaleString('th-TH')} จาก ${records.length.toLocaleString('th-TH')} รายการ`;
       const displayedColumns = [
