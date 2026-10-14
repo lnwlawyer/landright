@@ -80,6 +80,16 @@
             height: 192px;
             margin-bottom: 1rem;
         }
+            .smt2-unified-panel { background:white; border:1px solid #e2e8f0; border-radius:16px; padding:24px; }
+        .smt2-unified-panel h2 {font-size:1.3rem;font-weight:700;margin-bottom:12px;}
+        .smt2-unified-panel p {margin:10px 0;}
+        .smt2-unified-nav {display:flex;flex-wrap:wrap;gap:10px;margin:20px 0;}
+        .smt2-unified-nav button,.smt2-unified-logout {padding:10px 14px;border:1px solid #93a8cb;border-radius:8px;background:#eef4ff;color:#172554;cursor:pointer;}
+        .smt2-unified-logout {background:white;}
+        .smt2-unified-scroll {overflow:auto;max-height:65vh;margin-top:12px;}
+        .smt2-unified-table {border-collapse:collapse;min-width:700px;width:100%;}
+        .smt2-unified-table th,.smt2-unified-table td {padding:8px;border:1px solid #e2e8f0;text-align:left;white-space:pre-wrap;}
+        .smt2-unified-table th {position:sticky;top:0;background:#f1f5f9;}
     </style>
     <script>
         // Encode values from published spreadsheets before inserting into HTML templates.
@@ -1525,15 +1535,8 @@
             }
 
 
-            // Redraw charts for the default tab when its parent section becomes visible
-            setTimeout(() => {
-                if (section === 'foreigners') {
-                    showTab(document.querySelector('#foreigners-content .tab-button[aria-selected="true"]')?.getAttribute('data-tab') || 'section93');
-                }
-                if (section === 'religious') {
-                    showReligiousTab(document.querySelector('#religious-content .religious-tab-button[aria-selected="true"]')?.getAttribute('data-tab') || 'temple');
-                }
-            }, 50); 
+            // Unified Sheets views manage their own rendering; do not redraw retired tabs.
+
         }
 
         function toggleSubmenu(submenuId, event) {
