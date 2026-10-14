@@ -126,11 +126,27 @@ if (root) {
         ['เลขที่หนังสือจังหวัดตอบล่าสุด',['เลขที่หนังสือจังหวัดตอบล่าสุด']]
       ];
       const normalizeHeader = value => String(value||'').normalize('NFKC').replace(/\\s+/g,'').toLocaleLowerCase('th');
+      const thaiDateMonths = 'ม.ค. ก.พ. มี.ค. เม.ย. พ.ค. มิ.ย. ก.ค. ส.ค. ก.ย. ต.ค. พ.ย. ธ.ค.'.split(' ');
+      const buddhistDateDisplay = (value, header) => {
+        const original=String(value??'');
+        if (!/วันที่|วันรับ|วันส่ง|วันตอบ|date/i.test(header)) return original;
+        const monthPattern='(ม\\.?ค\\.?|ก\\.?พ\\.?|มี\\.?ค\\.?|เม\\.?ย\\.?|พ\\.?ค\\.?|มิ\\.?ย\\.?|ก\\.?ค\\.?|ส\\.?ค\\.?|ก\\.?ย\\.?|ต\\.?ค\\.?|พ\\.?ย\\.?|ธ\\.?ค\\.?)';
+        const re=new RegExp('(^|[^0-9])([0-3]?\\d)\\s+'+monthPattern+'\\s*(20\\d{2}|25\\d{2})(?=$|[^0-9])','g');
+        return original.replace(re,(whole,prefix,day,month,year)=>{
+          const y=Number(year),d=Number(day);
+          const monthIndex=thaiDateMonths.findIndex(m=>m.replace(/\\./g,'')===month.replace(/\\./g,''));
+          if(d<1||d>31||monthIndex<0)return whole;
+          const gregorianYear=y>=2500?y-543:y;
+          const check=new Date(Date.UTC(gregorianYear,monthIndex,d));
+          if(check.getUTCFullYear()!==gregorianYear||check.getUTCMonth()!==monthIndex||check.getUTCDate()!==d)return whole;
+          return prefix+day+' '+thaiDateMonths[monthIndex]+' '+String(y>=2500?y:y+543);
+        });
+      };
       const pageRows=found.slice((page-1)*10,page*10);
       const getColumn=(record,names)=>{
         const cols=record.columns||{};
         const match=Object.keys(cols).find(header=>names.some(name=>normalizeHeader(header)===normalizeHeader(name)));
-        return match ? cols[match] : '';
+        return match ? buddhistDateDisplay(cols[match],match) : '';
       };
       $('smt2-results').innerHTML = found.length ? '<div style="overflow-x:auto"><table><caption>รายการข้อมูล SMT2 (10 รายการต่อหน้า)</caption><thead><tr>' + displayedColumns.map(([label])=>'<th scope="col">'+esc(label)+'</th>').join('') + '</tr></thead><tbody>' + pageRows.map(r=>'<tr>'+displayedColumns.map(([,names])=>'<td>'+esc(getColumn(r,names)||'—')+'</td>').join('')+'</tr>').join('') + '</tbody></table></div>' : '<p>ไม่พบรายการตามตัวกรอง</p>';
       $('smt2-page').textContent = `หน้า ${page} / ${pages}`;
