@@ -79,7 +79,7 @@ function smt2AgeBucket(record) {
   const raw=String(columns['เจ้าหน้าที่ รับเรื่อง']||'').trim();
   const match=raw.match(/^(\d{1,2})\s+([ก-๙.]+)\s+(\d{4})$/);
   if(!match)return 5;
-  const month=SMT2_MONTHS.indexOf(match[2].replace(/\\./g,''));
+  const month=SMT2_MONTHS.indexOf(match[2].replace(/\./g,''));
   const year=Number(match[3]);const day=Number(match[1]);
   if(month<0||day<1||day>31||!(year>=2000&&year<=2099||year>=2500&&year<=2699))return 5;
   const y=year>=2500?year-543:year;
