@@ -50,7 +50,7 @@ async function resolveAccountEmail(currentToken, currentGeneration) {
 }
 if (root) {
   root.innerHTML = `<div class="smt2-panel"><p id="smt2-message" role="status" aria-live="polite" hidden></p><button id="smt2-login" type="button">เข้าสู่ระบบด้วย Google</button><button id="smt2-logout" type="button" hidden>ออกจากระบบ SMT2</button><button id="smt2-refresh" type="button" hidden>รีเฟรชข้อมูล</button><div id="smt2-data"></div></div>`;
-  const message = text => { $('smt2-message').textContent = text; };
+  const message = text => { const el=$('smt2-message');el.textContent=text;el.hidden = !text || text.startsWith('เชื่อมต่อ Google Sheets สำเร็จ') || text.startsWith('กำลังอ่านข้อมูล'); };
   const open = () => { if (typeof window.showContent === 'function') window.showContent('smt2'); };
   function clearSession(text, revoke = true) {
     const oldToken = token;
