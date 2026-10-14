@@ -45,17 +45,6 @@ const smt2ValueLabels = {
     ctx.restore();
   }
 };
-function drawSmt2GroupComparison(found) {
-  const canvas=$('smt2-chart-groups');
-  if(!canvas || typeof window.Chart!=='function') return;
-  const counts=SMT2_GROUP_ORDER.map(group=>found.filter(row=>groupForRecord(row)===group).length);
-  smt2Charts.push(new window.Chart(canvas,{
-    plugins:[smt2ValueLabels],
-    type:'bar',
-    data:{labels:SMT2_GROUP_ORDER,datasets:[{label:'จำนวนเรื่อง',data:counts,backgroundColor:['#2563eb','#0d9488','#7c3aed']}]},
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:48}},plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grace:'15%',ticks:{precision:0}},y:{ticks:{autoSkip:false}}}}
-  }));
-}
 function drawSmt2Charts(found) {
   destroySmt2Charts();
   const ChartClass=window.Chart;
@@ -106,7 +95,7 @@ if (root) {
     if (revoke && oldToken) { try { window.google?.accounts?.oauth2.revoke(oldToken, () => {}); } catch {} }
   }
   function render(warnings) {
-    $('smt2-data').innerHTML = `<div class="smt2-filters"><label>กลุ่มงาน<select id="smt2-group"><option value="">ทุกกลุ่ม</option><option value="กลุ่มต่างด้าว">กลุ่มต่างด้าว</option><option value="กลุ่มศาสนา">กลุ่มศาสนา</option><option value="ฝ่ายตรวจสอบ">ฝ่ายตรวจสอบ</option></select></label><label>ค้นหา<input id="smt2-search" type="search" placeholder="เรื่อง จังหวัด เลขหนังสือ เจ้าหน้าที่"></label><label>ชีตเจ้าหน้าที่<select id="smt2-sheet"></select></label><label>สถานะ<select id="smt2-status"></select></label><label>จังหวัด<select id="smt2-province"></select></label></div><p id="smt2-warning"></p><div id="smt2-dashboard" class="smt2-dashboard"></div><section class="smt2-comparison"><label><input type="checkbox" id="smt2-compare" checked> เปรียบเทียบงานทั้ง 3 กลุ่ม</label><div class="smt2-chart-frame"><canvas id="smt2-chart-groups" role="img" aria-label="กราฟเปรียบเทียบจำนวนเรื่องตามกลุ่มงาน"></canvas></div></section><div class="smt2-chart-grid" aria-label="กราฟสรุป SMT2"><section><h4>จำนวนเรื่องตามสถานะ</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-status" role="img" aria-label="กราฟจำนวนเรื่องตามสถานะ"></canvas></div></section><section><h4>จำนวนเรื่องตามชีตเจ้าหน้าที่</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-sheet" role="img" aria-label="กราฟจำนวนเรื่องตามชีตเจ้าหน้าที่"></canvas></div></section><section><h4>จำนวนเรื่องตามจังหวัด (12 อันดับแรก)</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-province" role="img" aria-label="กราฟจำนวนเรื่องตามจังหวัด"></canvas></div></section></div><p id="smt2-count" role="status"></p><div id="smt2-results" role="region" aria-label="ตารางข้อมูล SMT2" tabindex="0"></div><div class="smt2-pages"><button id="smt2-prev" type="button">หน้าก่อนหน้า</button><span id="smt2-page"></span><button id="smt2-next" type="button">หน้าถัดไป</button></div>`;
+    $('smt2-data').innerHTML = `<div class="smt2-filters"><label>กลุ่มงาน<select id="smt2-group"><option value="">ทุกกลุ่ม</option><option value="กลุ่มต่างด้าว">กลุ่มต่างด้าว</option><option value="กลุ่มศาสนา">กลุ่มศาสนา</option><option value="ฝ่ายตรวจสอบ">ฝ่ายตรวจสอบ</option></select></label><label>ค้นหา<input id="smt2-search" type="search" placeholder="เรื่อง จังหวัด เลขหนังสือ เจ้าหน้าที่"></label><label>ชีตเจ้าหน้าที่<select id="smt2-sheet"></select></label><label>สถานะ<select id="smt2-status"></select></label><label>จังหวัด<select id="smt2-province"></select></label></div><p id="smt2-warning"></p><div id="smt2-dashboard" class="smt2-dashboard"></div><div class="smt2-chart-grid" aria-label="กราฟสรุป SMT2"><section><h4>จำนวนเรื่องตามสถานะ</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-status" role="img" aria-label="กราฟจำนวนเรื่องตามสถานะ"></canvas></div></section><section><h4>จำนวนเรื่องตามชีตเจ้าหน้าที่</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-sheet" role="img" aria-label="กราฟจำนวนเรื่องตามชีตเจ้าหน้าที่"></canvas></div></section><section><h4>จำนวนเรื่องตามจังหวัด (12 อันดับแรก)</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-province" role="img" aria-label="กราฟจำนวนเรื่องตามจังหวัด"></canvas></div></section></div><p id="smt2-count" role="status"></p><div id="smt2-results" role="region" aria-label="ตารางข้อมูล SMT2" tabindex="0"></div><div class="smt2-pages"><button id="smt2-prev" type="button">หน้าก่อนหน้า</button><span id="smt2-page"></span><button id="smt2-next" type="button">หน้าถัดไป</button></div>`;
     const options = (id,key,fallback='') => {
       const values = [...new Set(records.map(r => r[key] || fallback).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
       $(id).innerHTML = '<option value="">ทั้งหมด</option>' + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
@@ -122,9 +111,6 @@ if (root) {
       page = Math.min(page,pages);
       $('smt2-dashboard').replaceChildren();
       drawSmt2Charts(found);
-      const comparison=$('smt2-compare').checked;
-      $('smt2-chart-groups').parentElement.parentElement.hidden=!comparison;
-      if(comparison) drawSmt2GroupComparison(filterRecords(records,{query:$('smt2-search').value,sheet:$('smt2-sheet').value,status:$('smt2-status').value,province:$('smt2-province').value}));
       $('smt2-count').textContent = `พบ ${found.length.toLocaleString('th-TH')} จาก ${records.length.toLocaleString('th-TH')} รายการ`;
       const displayedColumns = [
         ['ลำดับ',['ลำดับ']],
@@ -151,7 +137,6 @@ if (root) {
       $('smt2-prev').disabled = page === 1; $('smt2-next').disabled = page === pages;
     };
     $('smt2-search').addEventListener('input',()=>{page=1;draw();});
-    $('smt2-compare').addEventListener('change',draw);
     for (const id of ['smt2-group','smt2-sheet','smt2-status','smt2-province']) $(id).addEventListener('change',()=>{page=1;draw();});
     $('smt2-prev').addEventListener('click',()=>{page--;draw();});
     $('smt2-next').addEventListener('click',()=>{page++;draw();}); draw();
