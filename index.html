@@ -2179,20 +2179,34 @@
 
         // --- Data Processing and Dashboard Update Functions ---
 
-        function getLandAreaWah(item) {
-            const value = item?.area_rai || item?.area;
-            if (value == null || String(value).trim() === '') return 0;
-            return convertAreaToWah(String(value));
+        // Normalize all supported land-area formats to square wah before charting.
+        function convertAreaToWah(value) {
+            if (value == null) return 0;
+            const text = String(value).trim().replace(/,/g, '').replace(/\s*ไร่\s*$/u, '').trim();
+            if (!text) return 0;
+            const parts = text.split(/\s*-\s*/);
+            if (parts.length === 3 && parts.every(part => /^\d+(?:\.\d+)?$/.test(part))) {
+                const [rai, ngan, wah] = parts.map(Number);
+                if (!Number.isSafeInteger(rai) || !Number.isInteger(ngan) || ngan < 0 || ngan > 3 || !Number.isFinite(wah) || wah < 0 || wah >= 100) return 0;
+                return rai * 400 + ngan * 100 + wah;
+            }
+            // Plain numeric values in area_rai / area are decimal rai.
+            if (/^\d+(?:\.\d+)?$/.test(text)) return Number(text) * 400;
+            return 0;
         }
-
-        function convertAreaToWah(areaString) {
-            if (typeof areaString !== 'string' || !areaString.trim()) return 0;
-            const parts = areaString.trim().replace(/,/g, '').split('-');
-            if (parts.length !== 3 || parts.some(part => !/^\d+(?:\.\d+)?$/.test(part))) return 0;
-            const [rai, ngan, wah] = parts.map(Number);
-            if (!Number.isSafeInteger(rai) || !Number.isInteger(ngan) || ngan > 3 ||
-                !Number.isFinite(wah) || wah >= 100) return 0;
-            return rai * 400 + ngan * 100 + wah;
+        function getLandAreaWah(item) {
+            if (!item) return 0;
+            // Source column "เนื้อที่ตารางวา" is already in square wah.
+            const wah = String(item['เนื้อที่ตารางวา'] ?? item['เนื้อที่ (ตารางวา)'] ?? '').replace(/,/g, '').trim();
+            if (/^\d+(?:\.\d+)?$/.test(wah)) return Number(wah);
+            for (const key of ['area_rai', 'area', 'เนื้อที่']) {
+                if (item[key] != null && String(item[key]).trim() !== '') return convertAreaToWah(item[key]);
+            }
+            return 0;
+        }
+        function getSummaryAreaRai(item) {
+            // Religious summary tables have a distinct area field, sometimes as "70-0-85.2 ไร่".
+            return convertAreaToWah(item?.['เนื้อที่'] ?? item?.area_rai ?? item?.area) / 400;
         }
 
         function convertWahToRaiNganWah(totalWah) {
@@ -2475,7 +2489,7 @@
             // 1. Update Summary Cards
             const totalRecords = data.reduce((sum, item) => sum + (parseInt(item.จำนวนวัด, 10) || 0), 0);
             const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.จำนวนแปลง, 10) || 0), 0);
-            const totalArea = data.reduce((sum, item) => sum + (parseFloat(item.เนื้อที่) || 0), 0);
+            const totalArea = data.reduce((sum, item) => sum + (getSummaryAreaRai(item)), 0);
 
             document.getElementById('temple-total-records').textContent = totalRecords.toLocaleString();
             document.getElementById('temple-total-plots').textContent = totalPlots.toLocaleString();
@@ -2497,7 +2511,7 @@
             });
 
             // Top 10 by Area
-            const sortedByArea = [...data].sort((a, b) => (parseFloat(b.area_rai) || 0) - (parseFloat(a.area_rai) || 0));
+            const sortedByArea = [...data].sort((a, b) => (getLandAreaWah(b) / 400) - (getLandAreaWah(a) / 400));
             const top10AreaBody = document.getElementById('temple-top10-area-body');
             top10AreaBody.innerHTML = '';
             sortedByArea.slice(0, 10).forEach((item, index) => {
@@ -2517,7 +2531,7 @@
                     acc[prov] = { temples: 0, totalArea: 0 };
                 }
                 acc[prov].temples += (parseFloat(item.จำนวนวัด) || 0);
-                acc[prov].totalArea += (parseFloat(item.เนื้อที่) || 0);
+                acc[prov].totalArea += (getSummaryAreaRai(item));
                 return acc;
             }, {});
             const sortedProvinces = Object.entries(provinceData).sort((a, b) => b[1].temples - a[1].plots);
@@ -2533,7 +2547,7 @@
             // 1. Update Summary Cards
             const totalRecords = data.reduce((sum, item) => sum + (parseInt(item.จำนวนมัสยิด, 10) || 0), 0);
             const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.จำนวนแปลง, 10) || 0), 0);
-            const totalArea = data.reduce((sum, item) => sum + (parseFloat(item.เนื้อที่) || 0), 0);
+            const totalArea = data.reduce((sum, item) => sum + (getSummaryAreaRai(item)), 0);
 
             document.getElementById('mosque-total-records').textContent = totalRecords.toLocaleString();
             document.getElementById('mosque-total-plots').textContent = totalPlots.toLocaleString();
@@ -2555,7 +2569,7 @@
             });
 
             // Top 10 by Area
-            const sortedByArea = [...data].sort((a, b) => (parseFloat(b.area_rai) || 0) - (parseFloat(a.area_rai) || 0));
+            const sortedByArea = [...data].sort((a, b) => (getLandAreaWah(b) / 400) - (getLandAreaWah(a) / 400));
             const top10AreaBody = document.getElementById('mosque-top10-area-body');
             top10AreaBody.innerHTML = '';
             sortedByArea.slice(0, 10).forEach((item, index) => {
@@ -2575,7 +2589,7 @@
                     acc[prov] = { mosques: 0, totalArea: 0 };
                 }
                 acc[prov].mosques += (parseFloat(item.จำนวนมัสยิด) || 0);
-                acc[prov].totalArea += (parseFloat(item.เนื้อที่) || 0);
+                acc[prov].totalArea += (getSummaryAreaRai(item));
                 return acc;
             }, {});
             const sortedProvinces = Object.entries(provinceData).sort((a, b) => {
@@ -2595,7 +2609,7 @@
             // 1. Update Summary Cards
             const totalRecords = data.reduce((sum, item) => sum + (parseInt(item.จำนวนมูลนิธิ, 10) || 0), 0);
             const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.จำนวนแปลง, 10) || 0), 0);
-            const totalArea = data.reduce((sum, item) => sum + (parseFloat(item.เนื้อที่) || 0), 0);
+            const totalArea = data.reduce((sum, item) => sum + (getSummaryAreaRai(item)), 0);
 
             document.getElementById('christian-total-records').textContent = totalRecords.toLocaleString();
             document.getElementById('christian-total-plots').textContent = totalPlots.toLocaleString();
@@ -2617,7 +2631,7 @@
             });
 
             // Top 10 by Area
-            const sortedByArea = [...data].sort((a, b) => (parseFloat(b.area_rai) || 0) - (parseFloat(a.area_rai) || 0));
+            const sortedByArea = [...data].sort((a, b) => (getLandAreaWah(b) / 400) - (getLandAreaWah(a) / 400));
             const top10AreaBody = document.getElementById('christian-top10-area-body');
             top10AreaBody.innerHTML = '';
             sortedByArea.slice(0, 10).forEach((item, index) => {
@@ -2637,7 +2651,7 @@
                     acc[prov] = { foundations: 0, totalArea: 0 };
                 }
                 acc[prov].foundations += (parseFloat(item.จำนวนมูลนิธิ) || 0);
-                acc[prov].totalArea += (parseFloat(item.เนื้อที่) || 0);
+                acc[prov].totalArea += (getSummaryAreaRai(item));
                 return acc;
             }, {});
             const sortedProvinces = Object.entries(provinceData).sort((a, b) => {
@@ -2657,7 +2671,7 @@
             // 1. Update Summary Cards
             const totalRecords = data.reduce((sum, item) => sum + (parseInt(item.จำนวนวัดบาดหลวง, 10) || 0), 0);
             const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
-            const totalArea = data.reduce((sum, item) => sum + (parseFloat(item.area_rai) || 0), 0);
+            const totalArea = data.reduce((sum, item) => sum + (getLandAreaWah(item) / 400), 0);
 
             document.getElementById('catholic-total-records').textContent = totalRecords.toLocaleString();
             document.getElementById('catholic-total-plots').textContent = totalPlots.toLocaleString();
@@ -2679,7 +2693,7 @@
             });
 
             // Top 10 by Area
-            const sortedByArea = [...data].sort((a, b) => (parseFloat(b.area_rai) || 0) - (parseFloat(a.area_rai) || 0));
+            const sortedByArea = [...data].sort((a, b) => (getLandAreaWah(b) / 400) - (getLandAreaWah(a) / 400));
             const top10AreaBody = document.getElementById('catholic-top10-area-body');
             top10AreaBody.innerHTML = '';
             sortedByArea.slice(0, 10).forEach((item, index) => {
@@ -2699,7 +2713,7 @@
                     acc[prov] = { churches: 0, totalArea: 0 };
                 }
                 acc[prov].churches += (parseFloat(item.จำนวนวัดบาดหลวง) || 0);
-                acc[prov].totalArea += (parseFloat(item.เนื้อที่) || 0);
+                acc[prov].totalArea += (getSummaryAreaRai(item));
                 return acc;
             }, {});
             const sortedProvinces = Object.entries(provinceData).sort((a, b) => {
@@ -2718,7 +2732,7 @@
 
             // 1. Update Summary Cards
             const totalPlots = data.reduce((sum, item) => sum + (parseInt(item.plot_count, 10) || 0), 0);
-            const totalArea = data.reduce((sum, item) => sum + (parseFloat(item.area_rai) || 0), 0);
+            const totalArea = data.reduce((sum, item) => sum + (getLandAreaWah(item) / 400), 0);
             const pendingCases = data.filter(item => item.status === 'รอดำเนินการ').length;
 
             document.getElementById('abandoned-total-plots').textContent = totalPlots.toLocaleString();
@@ -2732,7 +2746,7 @@
                     acc[prov] = { plots: 0, totalArea: 0 };
                 }
                 acc[prov].plots += (parseInt(item.plot_count, 10) || 0);
-                acc[prov].totalArea += (parseFloat(item.area_rai) || 0);
+                acc[prov].totalArea += (getLandAreaWah(item) / 400);
                 return acc;
             }, {});
             const sortedProvincesByPlot = Object.entries(provinceData).sort((a, b) => b[1].plots - a[1].plots);
@@ -3023,7 +3037,7 @@
                             <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.id)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${escapeSheetHtml(item.province)}</td>
                             <td class="px-4 py-3 text-sm text-gray-900">${(parseInt(item.plot_count, 10) || 0).toLocaleString()}</td>
-                            <td class="px-4 py-3 text-sm text-gray-900">${(parseFloat(item.area_rai) || 0).toLocaleString()}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">${(getLandAreaWah(item) / 400).toLocaleString()}</td>
                             <td class="px-4 py-3 text-sm text-gray-900"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${escapeSheetHtml(item.status)}</span></td>
                         `;
                         tbody.appendChild(row);
