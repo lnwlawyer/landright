@@ -42,7 +42,7 @@ if (root) {
     $('smt2-data').replaceChildren(); $('smt2-login').hidden = false; $('smt2-login').disabled = false;
     $('smt2-logout').hidden = true; $('smt2-refresh').hidden = true; $('smt2-refresh').disabled = false;
     if (menu) menu.hidden = true;
-    if ($('smt2-admin-entry')) $('smt2-admin-entry').textContent = 'เข้าสู่ระบบผู้ดูแล';
+    if ($('smt2-admin-entry')) $('smt2-admin-entry').textContent = 'เข้าสู่ระบบ Google';
     message(text);
     // Clear local state even if the external identity library fails to revoke.
     if (revoke && oldToken) { try { window.google?.accounts?.oauth2.revoke(oldToken, () => {}); } catch {} }
@@ -89,7 +89,7 @@ if (root) {
       message('เชื่อมต่อ Google Sheets สำเร็จ (อ่านอย่างเดียว)');
       $('smt2-login').hidden = true; $('smt2-logout').hidden = false; $('smt2-refresh').hidden = false;
       if (menu) menu.hidden = false;
-      showAccountEmail();
+      if ($('smt2-admin-entry')) $('smt2-admin-entry').textContent = 'Google Sheets: เชื่อมต่อแล้ว';
     } catch (error) {
       if (current !== generation) return;
       const reason = error.name === 'AbortError' ? 'การอ่านข้อมูลใช้เวลานานเกินไป กรุณาเข้าสู่ระบบแล้วลองใหม่' : error instanceof TypeError ? 'เชื่อมต่อ Google Sheets ไม่สำเร็จ กรุณาตรวจเครือข่าย' : error.message;
@@ -104,7 +104,7 @@ if (root) {
     }
   }
   function login() {
-    if (!window.landrightMenuLogin) open();
+    open();
     if (token && Date.now() < expiresAt) { window.dispatchEvent(new Event('landright-auth-ready')); return; }
     if (pending) return;
     if (!/^[0-9]+-[A-Za-z0-9]+\.apps\.googleusercontent\.com$/.test(cfg.oauthClientId || '') || !/^[A-Za-z0-9_-]+$/.test(cfg.spreadsheetId || '')) { message('ยังไม่ได้ตั้งค่า OAuth Client ID หรือรหัส Google Sheets ที่ถูกต้อง'); return; }
@@ -114,7 +114,7 @@ if (root) {
     const attempt = ++generation;
     try {
       // Each attempt gets callbacks bound to its generation. Late responses cannot restore a logged-out session.
-      tokenClient = oauth.initTokenClient({client_id:cfg.oauthClientId,scope:READONLY_SCOPE+' email openid',include_granted_scopes:false,
+      tokenClient = oauth.initTokenClient({client_id:cfg.oauthClientId,scope:READONLY_SCOPE,include_granted_scopes:false,
         error_callback: () => { if (attempt === generation) clearSession('ไม่สามารถเปิดหน้าต่างเข้าสู่ระบบ หรือหน้าต่างถูกปิด กรุณาลองใหม่'); },
         callback: async response => {
           if (attempt !== generation) return;
@@ -122,7 +122,7 @@ if (root) {
           token = response.access_token;
           accountEmail = null;
           showAccountEmail();
-          void resolveAccountEmail(token,attempt);
+          // Email lookup is optional and must never block the original Sheets login.
           const seconds = Number(response.expires_in);
           if (!Number.isFinite(seconds) || seconds <= 0 || seconds > 86400 || (response.scope && !response.scope.split(/\s+/).includes(READONLY_SCOPE))) { clearSession('Google ไม่ได้ส่งเซสชันอ่านข้อมูลที่ถูกต้อง'); return; }
           expiresAt = Date.now() + seconds*1000;
