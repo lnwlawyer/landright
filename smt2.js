@@ -68,7 +68,10 @@ if (root) {
     } catch (error) {
       if (current !== generation) return;
       const reason = error.name === 'AbortError' ? 'การอ่านข้อมูลใช้เวลานานเกินไป กรุณาเข้าสู่ระบบแล้วลองใหม่' : error instanceof TypeError ? 'เชื่อมต่อ Google Sheets ไม่สำเร็จ กรุณาตรวจเครือข่าย' : error.message;
-      clearSession(reason); open();
+      // A data/schema error must not revoke a valid Google OAuth session.
+      records = []; $('smt2-data').replaceChildren();
+      $('smt2-login').hidden = true; $('smt2-logout').hidden = false; $('smt2-refresh').hidden = false;
+      message(reason + ' — ตรวจสอบหัวตารางแล้วกดรีเฟรชข้อมูลได้โดยไม่ต้องเข้าสู่ระบบใหม่'); open();
     } finally {
       clearTimeout(timeout);
       if (activeRequest === request) activeRequest = null;
