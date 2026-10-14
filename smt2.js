@@ -158,6 +158,7 @@ if (root) {
     };
     options('smt2-sheet','sheet'); options('smt2-status','status','ไม่ระบุสถานะ'); options('smt2-province','province');
     $('smt2-warning').textContent = warnings.length ? 'บางชีตขาดคอลัมน์ที่รู้จัก (ช่องจะแสดง —): ' + warnings.join('; ') : '';
+      const normalizeHeader = value => String(value||'').normalize('NFKC').replace(/\\s+/g,'').toLocaleLowerCase('th');
       const thaiDateMonths = 'ม.ค. ก.พ. มี.ค. เม.ย. พ.ค. มิ.ย. ก.ค. ส.ค. ก.ย. ต.ค. พ.ย. ธ.ค.'.split(' ');
       const buddhistDateDisplay = (value, header) => {
         const original=String(value??'');
@@ -217,7 +218,6 @@ if (root) {
         ['สถานะปัจจุบัน',['สถานะปัจจุบัน']],
         ['เลขที่หนังสือจังหวัดตอบล่าสุด',['เลขที่หนังสือจังหวัดตอบล่าสุด']]
       ];
-      const normalizeHeader = value => String(value||'').normalize('NFKC').replace(/\\s+/g,'').toLocaleLowerCase('th');
       const pageRows=found.slice((page-1)*10,page*10);
       visiblePageRows=pageRows;
       const getColumn=(record,names)=>{
