@@ -64,6 +64,42 @@ function smt2StatusColor(value) {
   for(const char of name) hash=(Math.imul(hash,31)+char.codePointAt(0))>>>0;
   return palette[hash%palette.length];
 }
+const SMT2_AGE_BUCKETS = Object.freeze([
+  {label:'0–30 วัน',color:'#94a3b8',max:30},
+  {label:'31–60 วัน',color:'#fecaca',max:60},
+  {label:'61–90 วัน',color:'#f87171',max:90},
+  {label:'91–180 วัน',color:'#dc2626',max:180},
+  {label:'มากกว่า 180 วัน',color:'#7f1d1d',max:Infinity},
+  {label:'ไม่สามารถคำนวณอายุงาน',color:'#64748b',max:null}
+]);
+const SMT2_MONTHS = ['มค','กพ','มีค','เมย','พค','มิย','กค','สค','กย','ตค','พย','ธค'];
+function smt2AgeBucket(record) {
+  if(String(record.status||'').trim()==='เสร็จแล้ว')return null;
+  const columns=record.columns||{};
+  const raw=String(columns['เจ้าหน้าที่ รับเรื่อง']||'').trim();
+  const match=raw.match(/^(\\d{1,2})\\s+([ก-๙.]+)\\s+(\\d{4})$/);
+  if(!match)return 5;
+  const month=SMT2_MONTHS.indexOf(match[2].replace(/\\./g,''));
+  const year=Number(match[3]);const day=Number(match[1]);
+  if(month<0||day<1||day>31||!(year>=2000&&year<=2099||year>=2500&&year<=2699))return 5;
+  const y=year>=2500?year-543:year;
+  const date=new Date(Date.UTC(y,month,day));
+  if(date.getUTCFullYear()!==y||date.getUTCMonth()!==month||date.getUTCDate()!==day)return 5;
+  const today=new Date();
+  const current=Date.UTC(today.getFullYear(),today.getMonth(),today.getDate());
+  const age=Math.floor((current-date.getTime())/86400000);
+  if(age<0)return 5;
+  return SMT2_AGE_BUCKETS.findIndex(bucket=>bucket.max!==null&&age<=bucket.max);
+}
+function drawSmt2AgingChart(found) {
+  const canvas=$('smt2-chart-aging');
+  if(!canvas||typeof window.Chart!=='function')return;
+  const counts=SMT2_AGE_BUCKETS.map((_,i)=>found.filter(row=>smt2AgeBucket(row)===i).length);
+  smt2Charts.push(new window.Chart(canvas,{plugins:[smt2ValueLabels],type:'bar',data:{
+    labels:SMT2_AGE_BUCKETS.map(x=>x.label),
+    datasets:[{label:'งานค้าง',data:counts,backgroundColor:SMT2_AGE_BUCKETS.map(x=>x.color),borderRadius:4}]
+  },options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:48}},plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grace:'15%',ticks:{precision:0}},y:{ticks:{autoSkip:false}}}}}));
+}
 function drawSmt2Charts(found) {
   destroySmt2Charts();
   const ChartClass=window.Chart;
@@ -114,7 +150,7 @@ if (root) {
     if (revoke && oldToken) { try { window.google?.accounts?.oauth2.revoke(oldToken, () => {}); } catch {} }
   }
   function render(warnings) {
-    $('smt2-data').innerHTML = `<div class="smt2-filters"><label>กลุ่มงาน<select id="smt2-group"><option value="">ทุกกลุ่ม</option><option value="กลุ่มต่างด้าว">กลุ่มต่างด้าว</option><option value="กลุ่มศาสนา">กลุ่มศาสนา</option><option value="ฝ่ายตรวจสอบ">ฝ่ายตรวจสอบ</option></select></label><label>ค้นหา<input id="smt2-search" type="search" placeholder="เรื่อง จังหวัด เลขหนังสือ เจ้าหน้าที่"></label><label>ชีตเจ้าหน้าที่<select id="smt2-sheet"></select></label><label>สถานะ<select id="smt2-status"></select></label><label>จังหวัด<select id="smt2-province"></select></label></div><p id="smt2-warning"></p><div id="smt2-dashboard" class="smt2-dashboard"></div><div class="smt2-chart-grid" aria-label="กราฟสรุป SMT2"><section><h4>จำนวนเรื่องตามสถานะ</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-status" role="img" aria-label="กราฟจำนวนเรื่องตามสถานะ"></canvas></div></section><section><h4>จำนวนเรื่องตามชีตเจ้าหน้าที่</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-sheet" role="img" aria-label="กราฟจำนวนเรื่องตามชีตเจ้าหน้าที่"></canvas></div></section><section><h4>จำนวนเรื่องตามจังหวัด (12 อันดับแรก)</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-province" role="img" aria-label="กราฟจำนวนเรื่องตามจังหวัด"></canvas></div></section></div><p id="smt2-count" role="status"></p><div id="smt2-results" role="region" aria-label="ตารางข้อมูล SMT2" tabindex="0"></div><div class="smt2-pages"><button id="smt2-prev" type="button">หน้าก่อนหน้า</button><span id="smt2-page"></span><button id="smt2-next" type="button">หน้าถัดไป</button></div>`;
+    $('smt2-data').innerHTML = `<div class="smt2-filters"><label>กลุ่มงาน<select id="smt2-group"><option value="">ทุกกลุ่ม</option><option value="กลุ่มต่างด้าว">กลุ่มต่างด้าว</option><option value="กลุ่มศาสนา">กลุ่มศาสนา</option><option value="ฝ่ายตรวจสอบ">ฝ่ายตรวจสอบ</option></select></label><label>ค้นหา<input id="smt2-search" type="search" placeholder="เรื่อง จังหวัด เลขหนังสือ เจ้าหน้าที่"></label><label>ชีตเจ้าหน้าที่<select id="smt2-sheet"></select></label><label>สถานะ<select id="smt2-status"></select></label><label>จังหวัด<select id="smt2-province"></select></label></div><p id="smt2-warning"></p><div id="smt2-dashboard" class="smt2-dashboard"></div><div class="smt2-chart-grid" aria-label="กราฟสรุป SMT2"><section><h4>อายุงานค้างนับจากวันที่เจ้าหน้าที่รับเรื่อง</h4><div class="smt2-chart-frame" style="height:330px"><canvas id="smt2-chart-aging" role="img" aria-label="กราฟอายุงานค้างตามช่วงเวลา"></canvas></div><p>ไม่นับงานสถานะเสร็จแล้ว · เกณฑ์ 30 / 60 / 90 / 180 วัน</p></section><section><h4>จำนวนเรื่องตามสถานะ</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-status" role="img" aria-label="กราฟจำนวนเรื่องตามสถานะ"></canvas></div></section><section><h4>จำนวนเรื่องตามชีตเจ้าหน้าที่</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-sheet" role="img" aria-label="กราฟจำนวนเรื่องตามชีตเจ้าหน้าที่"></canvas></div></section><section><h4>จำนวนเรื่องตามจังหวัด (12 อันดับแรก)</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-province" role="img" aria-label="กราฟจำนวนเรื่องตามจังหวัด"></canvas></div></section></div><p id="smt2-count" role="status"></p><div id="smt2-results" role="region" aria-label="ตารางข้อมูล SMT2" tabindex="0"></div><div class="smt2-pages"><button id="smt2-prev" type="button">หน้าก่อนหน้า</button><span id="smt2-page"></span><button id="smt2-next" type="button">หน้าถัดไป</button></div>`;
     const options = (id,key,fallback='') => {
       const values = [...new Set(records.map(r => r[key] || fallback).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
       $(id).innerHTML = '<option value="">ทั้งหมด</option>' + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
@@ -130,6 +166,7 @@ if (root) {
       page = Math.min(page,pages);
       $('smt2-dashboard').replaceChildren();
       drawSmt2Charts(found);
+      drawSmt2AgingChart(found);
       $('smt2-count').textContent = `พบ ${found.length.toLocaleString('th-TH')} จาก ${records.length.toLocaleString('th-TH')} รายการ`;
       const displayedColumns = [
         ['ลำดับ',['ลำดับ']],
