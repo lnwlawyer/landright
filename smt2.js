@@ -158,6 +158,22 @@ if (root) {
     };
     options('smt2-sheet','sheet'); options('smt2-status','status','ไม่ระบุสถานะ'); options('smt2-province','province');
     $('smt2-warning').textContent = warnings.length ? 'บางชีตขาดคอลัมน์ที่รู้จัก (ช่องจะแสดง —): ' + warnings.join('; ') : '';
+      const thaiDateMonths = 'ม.ค. ก.พ. มี.ค. เม.ย. พ.ค. มิ.ย. ก.ค. ส.ค. ก.ย. ต.ค. พ.ย. ธ.ค.'.split(' ');
+      const buddhistDateDisplay = (value, header) => {
+        const original=String(value??'');
+        if (!/วันที่|วันรับ|วันส่ง|วันตอบ|date/i.test(header)) return original;
+        const monthPattern='(ม\\.?ค\\.?|ก\\.?พ\\.?|มี\\.?ค\\.?|เม\\.?ย\\.?|พ\\.?ค\\.?|มิ\\.?ย\\.?|ก\\.?ค\\.?|ส\\.?ค\\.?|ก\\.?ย\\.?|ต\\.?ค\\.?|พ\\.?ย\\.?|ธ\\.?ค\\.?)';
+        const re=new RegExp('(^|[^0-9])([0-3]?\\d)\\s+'+monthPattern+'\\s*(20\\d{2}|25\\d{2})(?=$|[^0-9])','g');
+        return original.replace(re,(whole,prefix,day,month,year)=>{
+          const y=Number(year),d=Number(day);
+          const monthIndex=thaiDateMonths.findIndex(m=>m.replace(/\\./g,'')===month.replace(/\\./g,''));
+          if(d<1||d>31||monthIndex<0)return whole;
+          const gregorianYear=y>=2500?y-543:y;
+          const check=new Date(Date.UTC(gregorianYear,monthIndex,d));
+          if(check.getUTCFullYear()!==gregorianYear||check.getUTCMonth()!==monthIndex||check.getUTCDate()!==d)return whole;
+          return prefix+day+' '+thaiDateMonths[monthIndex]+' '+String(y>=2500?y:y+543);
+        });
+      };
     let page = 1;
     // Keep record references in memory only; never embed private field values in attributes.
     let visiblePageRows = [];
@@ -202,22 +218,6 @@ if (root) {
         ['เลขที่หนังสือจังหวัดตอบล่าสุด',['เลขที่หนังสือจังหวัดตอบล่าสุด']]
       ];
       const normalizeHeader = value => String(value||'').normalize('NFKC').replace(/\\s+/g,'').toLocaleLowerCase('th');
-      const thaiDateMonths = 'ม.ค. ก.พ. มี.ค. เม.ย. พ.ค. มิ.ย. ก.ค. ส.ค. ก.ย. ต.ค. พ.ย. ธ.ค.'.split(' ');
-      const buddhistDateDisplay = (value, header) => {
-        const original=String(value??'');
-        if (!/วันที่|วันรับ|วันส่ง|วันตอบ|date/i.test(header)) return original;
-        const monthPattern='(ม\\.?ค\\.?|ก\\.?พ\\.?|มี\\.?ค\\.?|เม\\.?ย\\.?|พ\\.?ค\\.?|มิ\\.?ย\\.?|ก\\.?ค\\.?|ส\\.?ค\\.?|ก\\.?ย\\.?|ต\\.?ค\\.?|พ\\.?ย\\.?|ธ\\.?ค\\.?)';
-        const re=new RegExp('(^|[^0-9])([0-3]?\\d)\\s+'+monthPattern+'\\s*(20\\d{2}|25\\d{2})(?=$|[^0-9])','g');
-        return original.replace(re,(whole,prefix,day,month,year)=>{
-          const y=Number(year),d=Number(day);
-          const monthIndex=thaiDateMonths.findIndex(m=>m.replace(/\\./g,'')===month.replace(/\\./g,''));
-          if(d<1||d>31||monthIndex<0)return whole;
-          const gregorianYear=y>=2500?y-543:y;
-          const check=new Date(Date.UTC(gregorianYear,monthIndex,d));
-          if(check.getUTCFullYear()!==gregorianYear||check.getUTCMonth()!==monthIndex||check.getUTCDate()!==d)return whole;
-          return prefix+day+' '+thaiDateMonths[monthIndex]+' '+String(y>=2500?y:y+543);
-        });
-      };
       const pageRows=found.slice((page-1)*10,page*10);
       visiblePageRows=pageRows;
       const getColumn=(record,names)=>{
