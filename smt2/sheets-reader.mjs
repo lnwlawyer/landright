@@ -14,8 +14,10 @@ export function parseSheet(values, sheet) {
   const headers = values[0].map(normalize);
   const columns = Object.fromEntries(Object.entries(aliases).map(([key, names]) => {
     const matches = headers.flatMap((h, i) => names.map(normalize).includes(h) ? [i] : []);
-    if (matches.length > 1) throw new Error('หัวตารางซ้ำหรือกำกวมในชีต ' + sheet + ': ' + key);
-    return [key, matches[0] ?? -1];
+    // Prefer the first explicitly configured alias, then its leftmost column.
+    // Some operational sheets have both a document number and an intake number.
+    const preferred = names.map(normalize).map(name => headers.indexOf(name)).find(i => i >= 0);
+    return [key, preferred ?? -1];
   }));
   const missing = Object.keys(columns).filter(k => columns[k] < 0);
   const records = values.slice(1).filter(row => row.some(v => String(v).trim())).map(row => ({
