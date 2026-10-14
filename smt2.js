@@ -49,7 +49,7 @@ async function resolveAccountEmail(currentToken, currentGeneration) {
   } catch { /* Email is optional; Sheets access remains available. */ }
 }
 if (root) {
-  root.innerHTML = `<div class="smt2-panel"><h3>ระบบบริหารงาน SMT2</h3><p id="smt2-message" role="status" aria-live="polite">สำหรับบัญชี Google ที่ได้รับสิทธิ์เข้าถึงไฟล์ SMT2 เท่านั้น</p><p>สิทธิ์ Google Sheets เป็นระดับไฟล์ บัญชีที่ได้รับสิทธิ์ไฟล์สามารถอ่านทุกแท็บได้</p><p><a href="./privacy-policy.html">นโยบายความเป็นส่วนตัว</a></p><button id="smt2-login" type="button">เข้าสู่ระบบด้วย Google</button><button id="smt2-logout" type="button" hidden>ออกจากระบบ SMT2</button><button id="smt2-refresh" type="button" hidden>รีเฟรชข้อมูล</button><div id="smt2-data"></div></div>`;
+  root.innerHTML = `<div class="smt2-panel"><p id="smt2-message" role="status" aria-live="polite" hidden></p><button id="smt2-login" type="button">เข้าสู่ระบบด้วย Google</button><button id="smt2-logout" type="button" hidden>ออกจากระบบ SMT2</button><button id="smt2-refresh" type="button" hidden>รีเฟรชข้อมูล</button><div id="smt2-data"></div></div>`;
   const message = text => { $('smt2-message').textContent = text; };
   const open = () => { if (typeof window.showContent === 'function') window.showContent('smt2'); };
   function clearSession(text, revoke = true) {
@@ -77,15 +77,15 @@ if (root) {
     let page = 1;
     const draw = () => {
       const found = filterRecords(records, {query:$('smt2-search').value,sheet:$('smt2-sheet').value,status:$('smt2-status').value,province:$('smt2-province').value});
-      const summary = summarize(found), pages = Math.max(1,Math.ceil(found.length/50));
+      const summary = summarize(found), pages = Math.max(1,Math.ceil(found.length/10));
       page = Math.min(page,pages);
       const list = entries => '<ul>' + entries.map(([label,count])=>`<li>${esc(label)}: <strong>${count.toLocaleString('th-TH')}</strong></li>`).join('') + '</ul>';
       $('smt2-dashboard').innerHTML = `<section><h4>รายการตามตัวกรอง</h4><strong>${summary.total.toLocaleString('th-TH')}</strong></section><section><h4>สถานะปัจจุบัน</h4>${list(summary.byStatus)}</section><section><h4>ชีตเจ้าหน้าที่</h4>${list(summary.bySheet)}</section>`;
       drawSmt2Charts(found);
       $('smt2-count').textContent = `พบ ${found.length.toLocaleString('th-TH')} จาก ${records.length.toLocaleString('th-TH')} รายการ`;
-      const keys = ['sheet','province','subject','reference','officer','status'];
-      const labels = ['ชีตเจ้าหน้าที่','จังหวัด','เรื่อง','เลขที่หนังสือ','เจ้าหน้าที่รับผิดชอบ','สถานะปัจจุบัน'];
-      $('smt2-results').innerHTML = found.length ? '<table><caption>ข้อมูล SMT2 แบบอ่านอย่างเดียว</caption><thead><tr>' + labels.map(l=>`<th scope="col">${l}</th>`).join('') + '</tr></thead><tbody>' + found.slice((page-1)*50,page*50).map(r=>'<tr>'+keys.map(k=>`<td>${esc(r[k] || '—')}</td>`).join('')+'</tr>').join('') + '</tbody></table>' : '<p>ไม่พบรายการตามตัวกรอง</p>';
+      const keys = ['sheet',...new Set(found.flatMap(r=>Object.keys(r.columns || {})))];
+      const pageRows=found.slice((page-1)*10,page*10);
+      $('smt2-results').innerHTML = found.length ? '<div style="overflow-x:auto"><table><caption>รายการข้อมูล SMT2 (10 รายการต่อหน้า)</caption><thead><tr>' + keys.map(k=>'<th scope="col">'+esc(k==='sheet'?'ชีตเจ้าหน้าที่':k)+'</th>').join('') + '</tr></thead><tbody>' + pageRows.map(r=>'<tr>'+keys.map(k=>'<td>'+esc(k==='sheet'?r.sheet:(r.columns||{})[k] || '—')+'</td>').join('')+'</tr>').join('') + '</tbody></table></div>' : '<p>ไม่พบรายการตามตัวกรอง</p>';
       $('smt2-page').textContent = `หน้า ${page} / ${pages}`;
       $('smt2-prev').disabled = page === 1; $('smt2-next').disabled = page === pages;
     };
