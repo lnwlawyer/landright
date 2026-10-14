@@ -11,7 +11,8 @@ const aliases = {
 export function parseSheet(values, sheet) {
   if (!Array.isArray(values) || !values.length) return {records:[], missing:[]};
   if (!values.every(row => Array.isArray(row) && row.every(v => ['string','number','boolean'].includes(typeof v)))) throw new Error('รูปแบบข้อมูลชีตไม่ถูกต้อง');
-  const headers = values[0].map(normalize);
+  const rawHeaders = values[0].map(v=>String(v ?? '').trim());
+  const headers = rawHeaders.map(normalize);
   const columns = Object.fromEntries(Object.entries(aliases).map(([key, names]) => {
     const matches = headers.flatMap((h, i) => names.map(normalize).includes(h) ? [i] : []);
     // Prefer the first explicitly configured alias, then its leftmost column.
@@ -22,6 +23,7 @@ export function parseSheet(values, sheet) {
   const missing = Object.keys(columns).filter(k => columns[k] < 0);
   const records = values.slice(1).filter(row => row.some(v => String(v).trim())).map(row => ({
     sheet,
+    columns: Object.fromEntries(rawHeaders.map((header,i)=>[header || 'คอลัมน์ '+(i+1), String(row[i] ?? '')])),
     ...Object.fromEntries(Object.entries(columns).map(([k, i]) => [k, i < 0 ? '' : String(row[i] ?? '')])),
   }));
   return {records, missing};
