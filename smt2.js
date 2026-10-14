@@ -83,9 +83,27 @@ if (root) {
       $('smt2-dashboard').innerHTML = `<section><h4>รายการตามตัวกรอง</h4><strong>${summary.total.toLocaleString('th-TH')}</strong></section><section><h4>สถานะปัจจุบัน</h4>${list(summary.byStatus)}</section><section><h4>ชีตเจ้าหน้าที่</h4>${list(summary.bySheet)}</section>`;
       drawSmt2Charts(found);
       $('smt2-count').textContent = `พบ ${found.length.toLocaleString('th-TH')} จาก ${records.length.toLocaleString('th-TH')} รายการ`;
-      const keys = ['sheet',...new Set(found.flatMap(r=>Object.keys(r.columns || {})))];
+      const displayedColumns = [
+        ['ลำดับ',['ลำดับ']],
+        ['จังหวัด',['จังหวัด']],
+        ['หมายเลขเอกสารสิทธิ ผู้ขอ/ผู้ร้อง',['หมายเลขเอกสารสิทธิ ผู้ขอ/ผู้ร้อง','หมายเลขเอกสารสิทธิ     ผู้ขอ/ผู้ร้อง/ผู้เกี่ยวข้อง','หมายเลขเอกสารสิทธิ ผู้ขอ/ผู้ร้อง/ผู้เกี่ยวข้อง']],
+        ['เลขที่หนังสือ',['เลขที่หนังสือ']],
+        ['E-contact DC',['E-contact DC']],
+        ['ประเภท',['ประเภท']],
+        ['สำนักฯ รับเรื่อง',['สำนักฯ รับเรื่อง']],
+        ['เจ้าหน้าที่ รับเรื่อง',['เจ้าหน้าที่ รับเรื่อง']],
+        ['เจ้าหน้าที่รับผิดชอบ',['เจ้าหน้าที่รับผิดชอบ']],
+        ['สถานะปัจจุบัน',['สถานะปัจจุบัน']],
+        ['เลขที่หนังสือจังหวัดตอบล่าสุด',['เลขที่หนังสือจังหวัดตอบล่าสุด']]
+      ];
+      const normalizeHeader = value => String(value||'').normalize('NFKC').replace(/\\s+/g,'').toLocaleLowerCase('th');
       const pageRows=found.slice((page-1)*10,page*10);
-      $('smt2-results').innerHTML = found.length ? '<div style="overflow-x:auto"><table><caption>รายการข้อมูล SMT2 (10 รายการต่อหน้า)</caption><thead><tr>' + keys.map(k=>'<th scope="col">'+esc(k==='sheet'?'ชีตเจ้าหน้าที่':k)+'</th>').join('') + '</tr></thead><tbody>' + pageRows.map(r=>'<tr>'+keys.map(k=>'<td>'+esc(k==='sheet'?r.sheet:(r.columns||{})[k] || '—')+'</td>').join('')+'</tr>').join('') + '</tbody></table></div>' : '<p>ไม่พบรายการตามตัวกรอง</p>';
+      const getColumn=(record,names)=>{
+        const cols=record.columns||{};
+        const match=Object.keys(cols).find(header=>names.some(name=>normalizeHeader(header)===normalizeHeader(name)));
+        return match ? cols[match] : '';
+      };
+      $('smt2-results').innerHTML = found.length ? '<div style="overflow-x:auto"><table><caption>รายการข้อมูล SMT2 (10 รายการต่อหน้า)</caption><thead><tr>' + displayedColumns.map(([label])=>'<th scope="col">'+esc(label)+'</th>').join('') + '</tr></thead><tbody>' + pageRows.map(r=>'<tr>'+displayedColumns.map(([,names])=>'<td>'+esc(getColumn(r,names)||'—')+'</td>').join('')+'</tr>').join('') + '</tbody></table></div>' : '<p>ไม่พบรายการตามตัวกรอง</p>';
       $('smt2-page').textContent = `หน้า ${page} / ${pages}`;
       $('smt2-prev').disabled = page === 1; $('smt2-next').disabled = page === pages;
     };
