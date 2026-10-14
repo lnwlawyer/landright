@@ -4,6 +4,13 @@ const cfg = window.LANDRIGHT_SMT2_CONFIG || {};
 const $ = id => document.getElementById(id);
 const root = $('smt2-content');
 const menu = document.querySelector('[data-smt2-menu]');
+// The token remains private to this module; other LandRight menus receive only
+// an authenticated read function, never the bearer token.
+import {readMenuSheet} from './smt2/landright-menu-source.mjs';
+window.landrightReadMenu = async menuId => {
+  if (!token || Date.now() >= expiresAt) throw new Error('กรุณาเข้าสู่ระบบ Google');
+  return readMenuSheet({spreadsheetId:cfg.spreadsheetId,accessToken:token,menuId});
+};
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let token = null, expiresAt = 0, tokenClient = null, records = [], generation = 0, expiryTimer, activeRequest, pending = false;
 if (root) {
@@ -12,6 +19,7 @@ if (root) {
   const open = () => { if (typeof window.showContent === 'function') window.showContent('smt2'); };
   function clearSession(text, revoke = true) {
     const oldToken = token;
+    window.dispatchEvent(new Event('landright-auth-cleared'));
     generation++; activeRequest?.abort(); activeRequest = null;
     clearTimeout(expiryTimer); token = null; expiresAt = 0; records = []; pending = false;
     $('smt2-data').replaceChildren(); $('smt2-login').hidden = false; $('smt2-login').disabled = false;
@@ -79,8 +87,8 @@ if (root) {
     }
   }
   function login() {
-    open();
-    if (token && Date.now() < expiresAt) return;
+    if (!window.landrightMenuLogin) open();
+    if (token && Date.now() < expiresAt) { window.dispatchEvent(new Event('landright-auth-ready')); return; }
     if (pending) return;
     if (!/^[0-9]+-[A-Za-z0-9]+\.apps\.googleusercontent\.com$/.test(cfg.oauthClientId || '') || !/^[A-Za-z0-9_-]+$/.test(cfg.spreadsheetId || '')) { message('ยังไม่ได้ตั้งค่า OAuth Client ID หรือรหัส Google Sheets ที่ถูกต้อง'); return; }
     const oauth = window.google?.accounts?.oauth2;
@@ -99,12 +107,15 @@ if (root) {
           if (!Number.isFinite(seconds) || seconds <= 0 || seconds > 86400 || (response.scope && !response.scope.split(/\s+/).includes(READONLY_SCOPE))) { clearSession('Google ไม่ได้ส่งเซสชันอ่านข้อมูลที่ถูกต้อง'); return; }
           expiresAt = Date.now() + seconds*1000;
           expiryTimer = setTimeout(()=>clearSession('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่'),seconds*1000);
-          $('smt2-logout').hidden = false; await load();
+          $('smt2-logout').hidden = false;
+          window.dispatchEvent(new Event('landright-auth-ready'));
+          await load();
         }
       });
       tokenClient.requestAccessToken({prompt:'consent'});
     } catch { clearSession('ไม่สามารถเริ่มเข้าสู่ระบบ Google ได้ กรุณาลองใหม่'); }
   }
+  window.landrightLogin = () => { window.landrightMenuLogin = true; try { login(); } finally { window.landrightMenuLogin = false; } };
   $('smt2-login').addEventListener('click',login);
   $('smt2-admin-entry')?.addEventListener('click',login);
   $('smt2-logout').addEventListener('click',()=>clearSession('ออกจากระบบแล้ว'));

@@ -115,7 +115,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="smt2-config.example.js" defer></script>
     <script src="smt2.js" type="module"></script>
-    <script src="landright-unified.js" type="module"></script>
+
 </head>
 <body class="bg-gray-50 font-thai">
     <!-- Mobile Menu Overlay -->
@@ -1535,7 +1535,11 @@
             }
 
 
-            // Unified Sheets views manage their own rendering; do not redraw retired tabs.
+            // Redraw original charts when the selected section becomes visible.
+            setTimeout(() => {
+                if (section === 'foreigners') showTab(document.querySelector('#foreigners-content .tab-button[aria-selected="true"]')?.getAttribute('data-tab') || 'section93');
+                if (section === 'religious') showReligiousTab(document.querySelector('#religious-content .religious-tab-button[aria-selected="true"]')?.getAttribute('data-tab') || 'temple');
+            }, 50);
 
         }
 
@@ -2141,8 +2145,17 @@
          * @param {string} url - The Google Sheet CSV URL.
          * @returns {Promise<Array<Object>>}
          */
-        // Legacy CSV imports retired: use authenticated Google Sheets API instead.
-        async function loadDataFromSheet(_legacyUrl) { return []; }
+        // Restore original dashboards using the authenticated SMT2 data source.
+        const menuPromises = new Map();
+        const authReady = new Promise(resolve => window.addEventListener('landright-auth-ready',resolve,{once:true}));
+        async function loadDataFromSheet(menuId) {
+          if (!menuPromises.has(menuId)) menuPromises.set(menuId, (async()=>{
+            await authReady;
+            try { return await window.landrightReadMenu(menuId); }
+            catch(error) { console.error('Menu read failed:',menuId,error);return []; }
+          })());
+          return menuPromises.get(menuId);
+        }
 
         // --- Data Processing and Dashboard Update Functions ---
 
@@ -2734,6 +2747,16 @@
         }
 
         // --- Table Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+          const bar=document.createElement('div');
+          bar.style.cssText='position:sticky;top:0;z-index:30;background:#eaf2ff;padding:12px;border-bottom:1px solid #93a8cb';
+          const label=document.createElement('span');label.textContent='เข้าสู่ระบบ Google ครั้งเดียวเพื่อดู Dashboard ทั้ง 11 เมนู ';
+          const button=document.createElement('button');button.textContent='เข้าสู่ระบบ Google';button.type='button';
+          button.style.cssText='padding:8px 14px;background:#1d4ed8;color:white;border-radius:8px';
+          button.addEventListener('click',()=>window.landrightLogin?.());bar.append(label,button);document.body.prepend(bar);
+          window.addEventListener('landright-auth-ready',()=>{label.textContent='เชื่อมต่อ Google Sheets แล้ว — กำลังโหลด Dashboard';button.hidden=true;});
+          window.addEventListener('landright-auth-cleared',()=>{label.textContent='เซสชันหมดอายุ กรุณาโหลดหน้าใหม่และเข้าสู่ระบบ';button.hidden=false;document.querySelectorAll('.content-section:not(#smt2-content)').forEach(section=>{section.querySelectorAll('tbody').forEach(body=>body.replaceChildren());section.querySelectorAll('canvas').forEach(canvas=>{const chart=window.Chart?.getChart?.(canvas);if(chart)chart.destroy();canvas.getContext('2d')?.clearRect(0,0,canvas.width,canvas.height);});section.querySelectorAll('[id$="total-cases"],[id$="total-clients"],[id$="total-copies"]').forEach(el=>el.textContent='—');});});
+        });
         document.addEventListener('DOMContentLoaded', async function() {
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const sidebar = document.getElementById('sidebar');
@@ -2776,7 +2799,7 @@
             });
 
             // --- Load Section 93 Data from Google Sheets ---
-            const section93SheetUrl = ''; // <--- ❗ This is a sample URL. Replace with your own.
+            const section93SheetUrl = 'section93'; // <--- ❗ This is a sample URL. Replace with your own.
             
             const dataTableBody = document.getElementById('dataTableBody');
             dataTableBody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
@@ -2814,7 +2837,7 @@
             }
             
             // --- Load Section 96 Data from Google Sheets ---
-            const section96SheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "มาตรา 96" ที่นี่
+            const section96SheetUrl = 'section96'; // <--- ❗ วาง URL ของคุณสำหรับ "มาตรา 96" ที่นี่
             
             const dataTableBody96 = document.getElementById('dataTableBody96');
             dataTableBody96.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
@@ -2844,7 +2867,7 @@
             }
 
             // --- Load BOI Data from Google Sheets ---
-            const boiSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "BOI" ที่นี่
+            const boiSheetUrl = 'boi'; // <--- ❗ วาง URL ของคุณสำหรับ "BOI" ที่นี่
             
             const dataTableBodyBoi = document.getElementById('dataTableBodyBoi');
             dataTableBodyBoi.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
@@ -2882,7 +2905,7 @@
             }
 
             // --- Load Commercial Data from Google Sheets ---
-            const commercialSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "เช่าเพื่อพาณิชยกรรม" ที่นี่
+            const commercialSheetUrl = 'commercial'; // <--- ❗ วาง URL ของคุณสำหรับ "เช่าเพื่อพาณิชยกรรม" ที่นี่
             
             const dataTableBodyCommercial = document.getElementById('dataTableBodyCommercial');
             dataTableBodyCommercial.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
@@ -2923,7 +2946,7 @@
             }
 
             // --- Load Temple Data from Google Sheets ---
-            const templeSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "วัด" ที่นี่
+            const templeSheetUrl = 'temple'; // <--- ❗ วาง URL ของคุณสำหรับ "วัด" ที่นี่
 
             const templeData = await loadDataFromSheet(templeSheetUrl);
             if(templeData.length > 0) {
@@ -2933,7 +2956,7 @@
             }
 
             // --- Load Mosque Data from Google Sheets ---
-            const mosqueSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "มัสยิด" ที่นี่
+            const mosqueSheetUrl = 'mosque'; // <--- ❗ วาง URL ของคุณสำหรับ "มัสยิด" ที่นี่
             
             const mosqueData = await loadDataFromSheet(mosqueSheetUrl);
             if(mosqueData.length > 0) {
@@ -2945,7 +2968,7 @@
             }
 
             // --- Load Christian Foundation Data from Google Sheets ---
-            const christianSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "มูลนิธิคริสต์" ที่นี่
+            const christianSheetUrl = 'christian'; // <--- ❗ วาง URL ของคุณสำหรับ "มูลนิธิคริสต์" ที่นี่
             
             const christianData = await loadDataFromSheet(christianSheetUrl);
             if(christianData.length > 0) {
@@ -2957,7 +2980,7 @@
             }
             
             // --- Load Catholic Church Data from Google Sheets ---
-            const catholicSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "วัดคาทอลิก" ที่นี่
+            const catholicSheetUrl = 'catholic'; // <--- ❗ วาง URL ของคุณสำหรับ "วัดคาทอลิก" ที่นี่
 
             const catholicData = await loadDataFromSheet(catholicSheetUrl);
             if(catholicData.length > 0) {
@@ -2969,7 +2992,7 @@
             }
 
             // --- Load Abandoned Land Data from Google Sheets ---
-            const abandonedSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "ที่ดินทอดทิ้ง" ที่นี่
+            const abandonedSheetUrl = 'abandoned'; // <--- ❗ วาง URL ของคุณสำหรับ "ที่ดินทอดทิ้ง" ที่นี่
             
             const abandonedData = await loadDataFromSheet(abandonedSheetUrl);
             if(abandonedData.length > 0) {
@@ -3002,7 +3025,7 @@
             }
 
             // --- Load Securities Verification Data from Google Sheets ---
-            const securitiesSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "ตรวจสอบหลักทรัพย์" ที่นี่
+            const securitiesSheetUrl = 'securities'; // <--- ❗ วาง URL ของคุณสำหรับ "ตรวจสอบหลักทรัพย์" ที่นี่
             
             const securitiesData = await loadDataFromSheet(securitiesSheetUrl);
             if(securitiesData.length > 0) {
@@ -3034,7 +3057,7 @@
             }
 
             // --- Load Document Search Data from Google Sheets ---
-            const docSearchSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "ค้นหาเอกสาร" ที่นี่
+            const docSearchSheetUrl = 'docSearch'; // <--- ❗ วาง URL ของคุณสำหรับ "ค้นหาเอกสาร" ที่นี่
             
             const docSearchData = await loadDataFromSheet(docSearchSheetUrl);
             if(docSearchData.length > 0) {
