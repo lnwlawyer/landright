@@ -80,6 +80,16 @@
             height: 192px;
             margin-bottom: 1rem;
         }
+            .smt2-unified-panel { background:white; border:1px solid #e2e8f0; border-radius:16px; padding:24px; }
+        .smt2-unified-panel h2 {font-size:1.3rem;font-weight:700;margin-bottom:12px;}
+        .smt2-unified-panel p {margin:10px 0;}
+        .smt2-unified-nav {display:flex;flex-wrap:wrap;gap:10px;margin:20px 0;}
+        .smt2-unified-nav button,.smt2-unified-logout {padding:10px 14px;border:1px solid #93a8cb;border-radius:8px;background:#eef4ff;color:#172554;cursor:pointer;}
+        .smt2-unified-logout {background:white;}
+        .smt2-unified-scroll {overflow:auto;max-height:65vh;margin-top:12px;}
+        .smt2-unified-table {border-collapse:collapse;min-width:700px;width:100%;}
+        .smt2-unified-table th,.smt2-unified-table td {padding:8px;border:1px solid #e2e8f0;text-align:left;white-space:pre-wrap;}
+        .smt2-unified-table th {position:sticky;top:0;background:#f1f5f9;}
     </style>
     <script>
         // Encode values from published spreadsheets before inserting into HTML templates.
@@ -105,6 +115,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="smt2-config.example.js" defer></script>
     <script src="smt2.js" type="module"></script>
+    <script src="landright-unified.js" type="module"></script>
 </head>
 <body class="bg-gray-50 font-thai">
     <!-- Mobile Menu Overlay -->
@@ -1524,15 +1535,8 @@
             }
 
 
-            // Redraw charts for the default tab when its parent section becomes visible
-            setTimeout(() => {
-                if (section === 'foreigners') {
-                    showTab(document.querySelector('#foreigners-content .tab-button[aria-selected="true"]')?.getAttribute('data-tab') || 'section93');
-                }
-                if (section === 'religious') {
-                    showReligiousTab(document.querySelector('#religious-content .religious-tab-button[aria-selected="true"]')?.getAttribute('data-tab') || 'temple');
-                }
-            }, 50); 
+            // Unified Sheets views manage their own rendering; do not redraw retired tabs.
+
         }
 
         function toggleSubmenu(submenuId, event) {
@@ -2137,19 +2141,8 @@
          * @param {string} url - The Google Sheet CSV URL.
          * @returns {Promise<Array<Object>>}
          */
-        async function loadDataFromSheet(url) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Network response was not ok: ${response.statusText}`);
-                }
-                const csvText = await response.text();
-                return parseCSV(csvText);
-            } catch (error) {
-                console.error('Failed to load or parse sheet data:', error);
-                return [];
-            }
-        }
+        // Legacy CSV imports retired: use authenticated Google Sheets API instead.
+        async function loadDataFromSheet(_legacyUrl) { return []; }
 
         // --- Data Processing and Dashboard Update Functions ---
 
@@ -2783,7 +2776,7 @@
             });
 
             // --- Load Section 93 Data from Google Sheets ---
-            const section93SheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=679295658&single=true&output=csv'; // <--- ❗ This is a sample URL. Replace with your own.
+            const section93SheetUrl = ''; // <--- ❗ This is a sample URL. Replace with your own.
             
             const dataTableBody = document.getElementById('dataTableBody');
             dataTableBody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
@@ -2821,7 +2814,7 @@
             }
             
             // --- Load Section 96 Data from Google Sheets ---
-            const section96SheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=428060711&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "มาตรา 96" ที่นี่
+            const section96SheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "มาตรา 96" ที่นี่
             
             const dataTableBody96 = document.getElementById('dataTableBody96');
             dataTableBody96.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
@@ -2851,7 +2844,7 @@
             }
 
             // --- Load BOI Data from Google Sheets ---
-            const boiSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1748513612&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "BOI" ที่นี่
+            const boiSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "BOI" ที่นี่
             
             const dataTableBodyBoi = document.getElementById('dataTableBodyBoi');
             dataTableBodyBoi.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
@@ -2889,7 +2882,7 @@
             }
 
             // --- Load Commercial Data from Google Sheets ---
-            const commercialSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=300478018&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "เช่าเพื่อพาณิชยกรรม" ที่นี่
+            const commercialSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "เช่าเพื่อพาณิชยกรรม" ที่นี่
             
             const dataTableBodyCommercial = document.getElementById('dataTableBodyCommercial');
             dataTableBodyCommercial.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</td></tr>';
@@ -2930,7 +2923,7 @@
             }
 
             // --- Load Temple Data from Google Sheets ---
-            const templeSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1456133095&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "วัด" ที่นี่
+            const templeSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "วัด" ที่นี่
 
             const templeData = await loadDataFromSheet(templeSheetUrl);
             if(templeData.length > 0) {
@@ -2940,7 +2933,7 @@
             }
 
             // --- Load Mosque Data from Google Sheets ---
-            const mosqueSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1025487410&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "มัสยิด" ที่นี่
+            const mosqueSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "มัสยิด" ที่นี่
             
             const mosqueData = await loadDataFromSheet(mosqueSheetUrl);
             if(mosqueData.length > 0) {
@@ -2952,7 +2945,7 @@
             }
 
             // --- Load Christian Foundation Data from Google Sheets ---
-            const christianSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=2104196646&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "มูลนิธิคริสต์" ที่นี่
+            const christianSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "มูลนิธิคริสต์" ที่นี่
             
             const christianData = await loadDataFromSheet(christianSheetUrl);
             if(christianData.length > 0) {
@@ -2964,7 +2957,7 @@
             }
             
             // --- Load Catholic Church Data from Google Sheets ---
-            const catholicSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1235840245&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "วัดคาทอลิก" ที่นี่
+            const catholicSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "วัดคาทอลิก" ที่นี่
 
             const catholicData = await loadDataFromSheet(catholicSheetUrl);
             if(catholicData.length > 0) {
@@ -2976,7 +2969,7 @@
             }
 
             // --- Load Abandoned Land Data from Google Sheets ---
-            const abandonedSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=146619613&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "ที่ดินทอดทิ้ง" ที่นี่
+            const abandonedSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "ที่ดินทอดทิ้ง" ที่นี่
             
             const abandonedData = await loadDataFromSheet(abandonedSheetUrl);
             if(abandonedData.length > 0) {
@@ -3009,7 +3002,7 @@
             }
 
             // --- Load Securities Verification Data from Google Sheets ---
-            const securitiesSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1213605999&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "ตรวจสอบหลักทรัพย์" ที่นี่
+            const securitiesSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "ตรวจสอบหลักทรัพย์" ที่นี่
             
             const securitiesData = await loadDataFromSheet(securitiesSheetUrl);
             if(securitiesData.length > 0) {
@@ -3041,7 +3034,7 @@
             }
 
             // --- Load Document Search Data from Google Sheets ---
-            const docSearchSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvNO-arUskPNnb_t9N4j41AEERdLbM0omBqvPMTn8cWVosQwYIKIhG0pftYQSeA0RK7wfKnD1X4gOp/pub?gid=1378066006&single=true&output=csv'; // <--- ❗ วาง URL ของคุณสำหรับ "ค้นหาเอกสาร" ที่นี่
+            const docSearchSheetUrl = ''; // <--- ❗ วาง URL ของคุณสำหรับ "ค้นหาเอกสาร" ที่นี่
             
             const docSearchData = await loadDataFromSheet(docSearchSheetUrl);
             if(docSearchData.length > 0) {
