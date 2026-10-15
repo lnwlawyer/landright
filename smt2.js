@@ -15,6 +15,10 @@ window.landrightReadMenu = async menuId => {
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let token = null, expiresAt = 0, tokenClient = null, records = [], generation = 0, expiryTimer, activeRequest, pending = false;
 let accountEmail = null;
+const REMEMBER_GOOGLE_KEY = 'landright-remember-google-v1';
+const shouldRememberGoogle = () => { try { return localStorage.getItem(REMEMBER_GOOGLE_KEY) === 'yes'; } catch { return false; } };
+const setRememberGoogle = enabled => { try { if (enabled) localStorage.setItem(REMEMBER_GOOGLE_KEY,'yes'); else localStorage.removeItem(REMEMBER_GOOGLE_KEY); } catch {} };
+
 const SMT2_GROUPS = Object.freeze({
   'การะเกด':'ฝ่ายตรวจสอบ','ชยาน์ขวัญ':'ฝ่ายตรวจสอบ','ฉัตรพร':'ฝ่ายตรวจสอบ',
   'ปิยะพงษ์':'กลุ่มต่างด้าว','โสภา':'กลุ่มต่างด้าว','เทอดพงศ์':'กลุ่มต่างด้าว',
@@ -263,23 +267,24 @@ if (root) {
       if (current === generation) { pending = false; $('smt2-login').disabled = false; $('smt2-refresh').disabled = false; }
     }
   }
-  function login() {
-    open();
+  function login(silent = false) {
+    if (!silent) open();
     if (token && Date.now() < expiresAt) { window.dispatchEvent(new Event('landright-auth-ready')); return; }
     if (pending) return;
     if (!/^[0-9]+-[A-Za-z0-9]+\.apps\.googleusercontent\.com$/.test(cfg.oauthClientId || '') || !/^[A-Za-z0-9_-]+$/.test(cfg.spreadsheetId || '')) { message('ยังไม่ได้ตั้งค่า OAuth Client ID หรือรหัส Google Sheets ที่ถูกต้อง'); return; }
     const oauth = window.google?.accounts?.oauth2;
-    if (!oauth) { message('ไม่สามารถโหลดบริการ Google Identity ได้ กรุณาตรวจเครือข่ายแล้วลองอีกครั้ง'); return; }
+    if (!oauth) { if (!silent) message('ไม่สามารถโหลดบริการ Google Identity ได้ กรุณาตรวจเครือข่ายแล้วลองอีกครั้ง'); return; }
     pending = true; $('smt2-login').disabled = true;
     const attempt = ++generation;
     try {
       // Each attempt gets callbacks bound to its generation. Late responses cannot restore a logged-out session.
       tokenClient = oauth.initTokenClient({client_id:cfg.oauthClientId,scope:READONLY_SCOPE,include_granted_scopes:false,
-        error_callback: () => { if (attempt === generation) clearSession('ไม่สามารถเปิดหน้าต่างเข้าสู่ระบบ หรือหน้าต่างถูกปิด กรุณาลองใหม่'); },
+        error_callback: () => { if (attempt === generation) { if (silent) { pending=false; $('smt2-login').disabled=false; } else clearSession('ไม่สามารถเปิดหน้าต่างเข้าสู่ระบบ หรือหน้าต่างถูกปิด กรุณาลองใหม่'); } },
         callback: async response => {
           if (attempt !== generation) return;
-          if (response.error || !response.access_token) { clearSession('การเข้าสู่ระบบไม่สำเร็จ หรือไม่ได้อนุญาตสิทธิ์อ่าน Google Sheets'); return; }
+          if (response.error || !response.access_token) { if (silent) { pending=false; $('smt2-login').disabled=false; } else clearSession('การเข้าสู่ระบบไม่สำเร็จ หรือไม่ได้อนุญาตสิทธิ์อ่าน Google Sheets'); return; }
           token = response.access_token;
+          setRememberGoogle(true);
           accountEmail = null;
           showAccountEmail();
           // Email lookup is optional and must never block the original Sheets login.
@@ -292,15 +297,26 @@ if (root) {
           await load();
         }
       });
-      tokenClient.requestAccessToken({prompt:'consent'});
-    } catch { clearSession('ไม่สามารถเริ่มเข้าสู่ระบบ Google ได้ กรุณาลองใหม่'); }
+      tokenClient.requestAccessToken({prompt:silent?'':'consent'});
+    } catch { if (silent) { pending=false; $('smt2-login').disabled=false; } else clearSession('ไม่สามารถเริ่มเข้าสู่ระบบ Google ได้ กรุณาลองใหม่'); }
   }
   window.landrightLogin = () => { window.landrightMenuLogin = true; try { login(); } finally { window.landrightMenuLogin = false; } };
-  $('smt2-login').addEventListener('click',login);
-  $('smt2-admin-entry')?.addEventListener('click',login);
-  $('smt2-logout').addEventListener('click',()=>clearSession('ออกจากระบบแล้ว'));
+  $('smt2-login').addEventListener('click',()=>login());
+  $('smt2-admin-entry')?.addEventListener('click',()=>login());
+  $('smt2-logout').addEventListener('click',()=>{setRememberGoogle(false);clearSession('ออกจากระบบแล้ว');});
   $('smt2-refresh').addEventListener('click',load);
   window.addEventListener('pagehide',()=>clearSession('กรุณาเข้าสู่ระบบใหม่',false));
   document.addEventListener('visibilitychange',()=>{if(token && Date.now() >= expiresAt) clearSession('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');});
   if (new URLSearchParams(location.search).get('view') === 'smt2') open();
+  // Remember only the user's preference, never tokens or private Sheets data.
+  // Google may reject a silent request; manual login remains available.
+  if (shouldRememberGoogle()) {
+    let attempts=0;
+    const restore=()=>{
+      if (!shouldRememberGoogle() || token || pending) return;
+      if (window.google?.accounts?.oauth2) { login(true); return; }
+      if (++attempts < 20) setTimeout(restore,500);
+    };
+    setTimeout(restore,500);
+  }
 }
