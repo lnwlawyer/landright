@@ -11,7 +11,7 @@ for(const [section,tab] of views) test(`Tailwind migration preserves ${section}$
   await p.emulateMedia({reducedMotion:'reduce'});
   await setup(p);
   if(section==='mobile-menu'){await p.evaluate(()=>document.getElementById('mobile-menu-button').click());}
-  else if(section==='smt2'){await login(p);await expect(p.locator('#smt2-count')).toContainText('488');}
+  else if(section==='smt2'){await login(p);await expect(p.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]').locator('#last-sync-time')).toContainText('Google Sheets');}
   else {
    await p.evaluate(s=>window.showContent(s),section);
    if(tab){await p.evaluate(([s,t])=>s==='foreigners'?window.showTab(t):window.showReligiousTab(t),[section,tab]);}
