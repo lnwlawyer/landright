@@ -13,7 +13,7 @@ test('existing navigation and data sections remain present', () => {
  }
 });
 test('dashboard dependencies and data connectors remain present', () => {
- for (const value of ['chart.js','docs.google.com/spreadsheets','loadDataFromSheet','updateAbandonedDashboard']) assert.ok(html.includes(value), value);
+ for (const value of ['chart.js','loadDataFromSheet','loadDataFromSheet','updateAbandonedDashboard']) assert.ok(html.includes(value), value);
 });
 test('PWA manifest is valid and uses a relative start URL', () => {
  assert.equal(manifest.start_url, './index.html');
@@ -41,16 +41,32 @@ test('CSV parser handles quoted commas, escaped quotes, and newlines', () => {
 });
 
 test('land area conversion preserves fractional square wah', () => {
- const match = html.match(/        function convertAreaToWah\(areaString\) \{[\s\S]*?\n        \}\n\n        function convertWahToRaiNganWah\(totalWah\) \{[\s\S]*?\n        \}\n/);
- assert.ok(match, 'area helpers exist');
- const helpers = new Function(match[0] + '; return { convertAreaToWah, convertWahToRaiNganWah };')();
- assert.equal(helpers.convertAreaToWah('4-3-15.25'), 1915.25);
- assert.equal(helpers.convertWahToRaiNganWah(1915.25), '4-3-15.25');
- assert.equal(helpers.convertWahToRaiNganWah(500.5), '1-1-0.5');
- assert.equal(helpers.convertWahToRaiNganWah(400), '1-0-0');
- assert.equal(helpers.convertWahToRaiNganWah(0), '0-0-0');
- assert.equal(helpers.convertWahToRaiNganWah(1200), '3-0-0');
- assert.equal(helpers.convertAreaToWah('2-4-20'), 0);
+  const startMarker = 'function convertAreaToWah(value) {';
+  const endMarker = 'function convertWahToRaiNganWah(totalWah) {';
+
+  const start = html.indexOf(startMarker);
+  const end = html.indexOf(endMarker, start);
+
+  assert.ok(start >= 0 && end > start, 'area helpers exist');
+
+  const remainder = html.slice(end);
+  const nextFunction = remainder.indexOf('function ', endMarker.length);
+  assert.ok(nextFunction > 0, 'area helper boundary exists');
+
+  const source = html.slice(start, end + nextFunction);
+
+  const helpers = new Function(
+    source + '; return {convertAreaToWah, convertWahToRaiNganWah, getLandAreaWah};'
+  )();
+
+  assert.equal(helpers.convertAreaToWah('4-3-15.25'), 1915.25);
+  assert.equal(helpers.convertWahToRaiNganWah(1915.25), '4-3-15.25');
+  assert.equal(helpers.convertWahToRaiNganWah(500.5), '1-1-0.5');
+  assert.equal(helpers.convertWahToRaiNganWah(400), '1-0-0');
+  assert.equal(helpers.convertWahToRaiNganWah(0), '0-0-0');
+  assert.equal(helpers.convertWahToRaiNganWah(1200), '3-0-0');
+  assert.equal(helpers.convertAreaToWah('2-4-20'), 0);
+  assert.equal(helpers.getLandAreaWah({area_rai: '4-3-15.25'}), 1915.25);
 });
 
 test('mobile users can zoom and page has a descriptive title', () => {
@@ -286,7 +302,7 @@ test('SMT2 public dashboard matches LandRight shell without exposing restricted 
 test('SMT2 is a native LandRight section without separate-page navigation', () => {
  assert.ok(html.includes('id="smt2-content" class="content-section hidden"'));
  assert.ok(html.includes('showContent(\'smt2\', event)'));
- assert.ok(html.includes("'smt2': 'ระบบบริหารงาน SMT2'"));
+ assert.ok(html.includes("'smt2': 'ข้อมูลงาน'"));
  assert.ok(!html.includes("if (section === 'smt2') loadSmt2PublicDashboard()"));
  assert.ok(!html.includes("import {createInlineController} from './smt2/inline-dashboard.mjs'"));
  assert.ok(readFileSync(new URL('../smt2/inline-dashboard.mjs',import.meta.url),'utf8').includes("SMT2_SNAPSHOT_PATH = './smt2/approved-summary.json'"));
@@ -363,14 +379,20 @@ test('SMT2 private migration documentation requires legacy entry-point lockdown 
 
 test('land area dashboards read area_rai consistently with table rows', () => {
  assert.ok(html.includes('function getLandAreaWah(item)'));
- assert.ok(html.includes('item?.area_rai || item?.area'));
+ assert.ok(html.includes("getLandAreaWah(item)"));
  assert.ok(!html.includes('convertAreaToWah(item.area)'));
  assert.ok(html.split('getLandAreaWah(item)').length >= 11);
 });
 
 // Freeze the existing public feed connections while SMT2 adopts a separate private API.
-test('all eleven legacy published CSV feed URLs remain unchanged', () => {
- const urls = html.match(/https:\/\/docs\.google\.com\/spreadsheets\/[^'"\s<>]+/g).sort();
- assert.equal(urls.length, 11);
- assert.equal(createHash('sha256').update(urls.join('\n')).digest('hex'), 'c0ea01cb7edfb3cb7218b2735238189cd6f7449a97df52f9006942333eed285e');
+test('all eleven legacy menu datasets use the private Sheets API source', () => {
+  const source = readFileSync(
+    new URL('../smt2/landright-menu-source.mjs', import.meta.url),
+    'utf8'
+  );
+  assert.ok(source.includes('export const MENU_SHEETS'));
+  assert.ok(source.includes('export async function readMenuSheet'));
+  assert.ok(source.includes('sheets.googleapis.com/v4/spreadsheets/'));
+  assert.ok(source.includes('Authorization'));
+  assert.ok(!source.includes('docs.google.com/spreadsheets/'));
 });

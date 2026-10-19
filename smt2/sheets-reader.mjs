@@ -13,11 +13,17 @@ export function parseSheet(values, sheet) {
   if (!values.every(row => Array.isArray(row) && row.every(v => ['string','number','boolean'].includes(typeof v)))) throw new Error('รูปแบบข้อมูลชีตไม่ถูกต้อง');
   const rawHeaders = values[0].map(v=>String(v ?? '').trim());
   const headers = rawHeaders.map(normalize);
+  const nonEmptyHeaders = headers.filter(Boolean);
+  if (new Set(nonEmptyHeaders).size !== nonEmptyHeaders.length) {
+  throw new Error('ชื่อคอลัมน์ซ้ำกัน');
+}
   const columns = Object.fromEntries(Object.entries(aliases).map(([key, names]) => {
-    const matches = headers.flatMap((h, i) => names.map(normalize).includes(h) ? [i] : []);
-    // Prefer the first explicitly configured alias, then its leftmost column.
-    // Some operational sheets have both a document number and an intake number.
-    const preferred = names.map(normalize).map(name => headers.indexOf(name)).find(i => i >= 0);
+    const matches = headers.flatMap((h, i) =>
+      names.map(normalize).includes(h) ? [i] : []
+    );
+    const preferred = names.map(normalize)
+      .map(name => headers.indexOf(name))
+      .find(i => i >= 0);
     return [key, preferred ?? -1];
   }));
   const missing = Object.keys(columns).filter(k => columns[k] < 0);
