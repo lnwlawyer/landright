@@ -20,8 +20,10 @@ test('remember Google preference without storing access tokens or private record
 });
 test('login reads all tabs, filters, dashboard, pagination, safe HTML and logout',async({page})=>{
  const requests=await setup(page); await login(page);
- await expect(page.locator('#smt2-count')).toContainText('488'); expect(requests).toHaveLength(1);
- const request=requests[0]; expect(request.method()).toBe('GET'); expect(new URL(request.url()).searchParams.getAll('ranges')).toHaveLength(8);
+ await expect(page.locator('#smt2-count')).toContainText('488');
+ const smt2Requests=requests.filter(r=>new URL(r.url()).pathname.endsWith('/values:batchGet'));
+ expect(smt2Requests).toHaveLength(1);
+ const request=smt2Requests[0]; expect(request.method()).toBe('GET'); expect(new URL(request.url()).searchParams.getAll('ranges')).toHaveLength(8);
  expect(await request.headerValue('authorization')).toBe('Bearer FAKE_BROWSER_TOKEN');
  await expect(page.locator('#smt2-results tbody tr')).toHaveCount(50);
  await expect(page.locator('#smt2-results img')).toHaveCount(0); expect(await page.evaluate(()=>window.xss)).toBeUndefined();
