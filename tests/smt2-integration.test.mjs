@@ -78,7 +78,7 @@ test('header aliases normalize whitespace, BOM, zero-width characters, and Engli
 assert.deepEqual(result.missing, []);
 });
 
-test('aliases use priority, while duplicate headers and malformed data are rejected', () => {
+test('aliases use priority, duplicate headings preserve all columns, malformed data is rejected', () => {
   const result = parseSheet(
     [['เรื่อง', 'subject'], ['A', 'B']],
     'test'
@@ -86,13 +86,13 @@ test('aliases use priority, while duplicate headers and malformed data are rejec
 
   assert.equal(result.records[0].subject, 'A');
 
-  assert.throws(
-    () => parseSheet(
-      [['เรื่อง', 'เรื่อง'], ['A', 'B']],
-      'test'
-    ),
-    /ซ้ำ/
+  const duplicated = parseSheet(
+    [['เรื่อง', 'เรื่อง', 'ชื่อ เรื่อง', 'เรื่อง (2)'], ['A', 'B', 'C', 'D']],
+    'test'
   );
+  assert.equal(duplicated.records[0].subject, 'A');
+  assert.deepEqual(Object.values(duplicated.records[0].columns), ['A', 'B', 'C', 'D']);
+  assert.equal(Object.keys(duplicated.records[0].columns).length, 4);
 
   assert.throws(
     () => parseSheet(
