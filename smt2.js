@@ -1,5 +1,5 @@
 /* Tokens and private records live only in this page's memory. Google enforces file access. */
-import {READONLY_SCOPE, readStaffSheets, filterRecords, summarize} from './smt2/sheets-reader.mjs';
+import {READONLY_SCOPE, readStaffSheets} from './smt2/sheets-reader.mjs';
 const cfg = window.LANDRIGHT_SMT2_CONFIG || {};
 const $ = id => document.getElementById(id);
 const root = $('smt2-content');
@@ -12,7 +12,6 @@ window.landrightReadMenu = async menuId => {
   if (!token || Date.now() >= expiresAt) throw new Error('กรุณาเข้าสู่ระบบ Google');
   return readMenuSheet({spreadsheetId:cfg.spreadsheetId,accessToken:token,menuId});
 };
-const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Exact HTML dashboard is loaded as a same-origin view; authenticated records remain in memory.
 const EXECUTIVE_HTML = './smt2/executive-dashboard.html';
 let executiveFrame = null;
@@ -36,8 +35,7 @@ window.landrightSMT2SelectView = (view, event) => {
 function clearExecutiveView() {
   executiveFrame?.remove();
   executiveFrame = null;
-  const legacy = $('smt2-data');
-  if (legacy) legacy.hidden = false;
+  $('smt2-data').hidden = false;
 }
 function showExecutiveView() {
   clearExecutiveView();
@@ -80,108 +78,6 @@ const REMEMBER_GOOGLE_KEY = 'landright-remember-google-v1';
 const shouldRememberGoogle = () => { try { return localStorage.getItem(REMEMBER_GOOGLE_KEY) === 'yes'; } catch { return false; } };
 const setRememberGoogle = enabled => { try { if (enabled) localStorage.setItem(REMEMBER_GOOGLE_KEY,'yes'); else localStorage.removeItem(REMEMBER_GOOGLE_KEY); } catch {} };
 
-const SMT2_GROUPS = Object.freeze({
-  'การะเกด':'ฝ่ายตรวจสอบ','ชยาน์ขวัญ':'ฝ่ายตรวจสอบ','ฉัตรพร':'ฝ่ายตรวจสอบ',
-  'ปิยะพงษ์':'กลุ่มต่างด้าว','โสภา':'กลุ่มต่างด้าว','เทอดพงศ์':'กลุ่มต่างด้าว',
-  'สกุลวรรณ':'กลุ่มศาสนา','ภทรพงค์':'กลุ่มศาสนา'
-});
-const SMT2_GROUP_ORDER = ['กลุ่มต่างด้าว','กลุ่มศาสนา','ฝ่ายตรวจสอบ'];
-const groupForRecord = record => SMT2_GROUPS[record.sheet] || 'ไม่ระบุกลุ่ม';
-let smt2Charts = [];
-function destroySmt2Charts() { for (const chart of smt2Charts) chart.destroy(); smt2Charts=[]; }
-const smt2ValueLabels = {
-  id:'smt2ValueLabels',
-  afterDatasetsDraw(chart) {
-    const {ctx}=chart;
-    ctx.save();
-    ctx.fillStyle='#1e293b';
-    ctx.font='600 12px sans-serif';
-    ctx.textAlign='left';
-    ctx.textBaseline='middle';
-    chart.data.datasets.forEach((dataset, datasetIndex)=>{
-      const meta=chart.getDatasetMeta(datasetIndex);
-      meta.data.forEach((element,index)=>{
-        const value=Number(dataset.data[index]);
-        if(!Number.isFinite(value))return;
-        const x=Math.min(element.x+7,chart.chartArea.right+4);
-        ctx.fillText(value.toLocaleString('th-TH'),x,element.y);
-      });
-    });
-    ctx.restore();
-  }
-};
-// Central status palette: keep colors stable across filters and staff groups.
-const SMT2_STATUS_COLORS = Object.freeze({
-  'เสร็จแล้ว':'#15803d',
-  'รอผลจังหวัด/หน่วยงานอื่น':'#d97706',
-  'ระหว่างพิจารณาของเจ้าหน้าที่':'#2563eb',
-  'ตรวจร่าง':'#7c3aed',
-  'เสนอรองนาม':'#0891b2',
-  'ไม่ระบุ':'#64748b',
-  'ไม่ระบุสถานะ':'#64748b'
-});
-function smt2StatusColor(value) {
-  const name=String(value??'').trim().replace(/\\s+/g,' ');
-  if(Object.prototype.hasOwnProperty.call(SMT2_STATUS_COLORS,name)) return SMT2_STATUS_COLORS[name];
-  // Deterministic fallback for future statuses, without relying on sort order.
-  const palette=['#be185d','#0f766e','#a16207','#4338ca','#b45309','#0369a1','#7e22ce'];
-  let hash=0;
-  for(const char of name) hash=(Math.imul(hash,31)+char.codePointAt(0))>>>0;
-  return palette[hash%palette.length];
-}
-const SMT2_AGE_BUCKETS = Object.freeze([
-  {label:'0–30 วัน',color:'#94a3b8',max:30},
-  {label:'31–60 วัน',color:'#fecaca',max:60},
-  {label:'61–90 วัน',color:'#f87171',max:90},
-  {label:'91–180 วัน',color:'#dc2626',max:180},
-  {label:'มากกว่า 180 วัน',color:'#7f1d1d',max:Infinity},
-  {label:'ไม่สามารถคำนวณอายุงาน',color:'#64748b',max:null}
-]);
-const SMT2_MONTHS = ['มค','กพ','มีค','เมย','พค','มิย','กค','สค','กย','ตค','พย','ธค'];
-function smt2AgeBucket(record) {
-  if(String(record.status||'').trim()==='เสร็จแล้ว')return null;
-  const columns=record.columns||{};
-  const raw=String(columns['เจ้าหน้าที่ รับเรื่อง']||'').trim();
-  const match=raw.match(/^(\d{1,2})\s+([ก-๙.]+)\s+(\d{4})$/);
-  if(!match)return 5;
-  const month=SMT2_MONTHS.indexOf(match[2].replace(/\./g,''));
-  const year=Number(match[3]);const day=Number(match[1]);
-  if(month<0||day<1||day>31||!(year>=2000&&year<=2099||year>=2500&&year<=2699))return 5;
-  const y=year>=2500?year-543:year;
-  const date=new Date(Date.UTC(y,month,day));
-  if(date.getUTCFullYear()!==y||date.getUTCMonth()!==month||date.getUTCDate()!==day)return 5;
-  const bangkokDate=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
-  const datePart=type=>Number(bangkokDate.find(p=>p.type===type)?.value);
-  const current=Date.UTC(datePart('year'),datePart('month')-1,datePart('day'));
-  const age=Math.floor((current-date.getTime())/86400000);
-  if(age<0)return 5;
-  return SMT2_AGE_BUCKETS.findIndex(bucket=>bucket.max!==null&&age<=bucket.max);
-}
-function drawSmt2AgingChart(found) {
-  const canvas=$('smt2-chart-aging');
-  if(!canvas||typeof window.Chart!=='function')return;
-  const counts=SMT2_AGE_BUCKETS.map((_,i)=>found.filter(row=>smt2AgeBucket(row)===i).length);
-  smt2Charts.push(new window.Chart(canvas,{plugins:[smt2ValueLabels],type:'bar',data:{
-    labels:SMT2_AGE_BUCKETS.map(x=>x.label),
-    datasets:[{label:'งานค้าง',data:counts,backgroundColor:SMT2_AGE_BUCKETS.map(x=>x.color),borderRadius:4}]
-  },options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:48}},plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grace:'15%',ticks:{precision:0}},y:{ticks:{autoSkip:false}}}}}));
-}
-function drawSmt2Charts(found) {
-  destroySmt2Charts();
-  const ChartClass=window.Chart;
-  if(typeof ChartClass !== 'function') return;
-  const group=(key,missing='ไม่ระบุ')=>{
-    const counts=new Map();
-    for(const row of found){const value=String(row[key]||missing).trim()||missing;counts.set(value,(counts.get(value)||0)+1);}
-    return [...counts].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'th')).slice(0,12);
-  };
-  for(const [id,key,title] of [['smt2-chart-status','status','จำนวนเรื่องตามสถานะ'],['smt2-chart-sheet','sheet','จำนวนเรื่องตามชีตเจ้าหน้าที่'],['smt2-chart-province','province','จำนวนเรื่องตามจังหวัด']]) {
-    const canvas=$(id);if(!canvas)continue;
-    const pairs=group(key);
-    if(!pairs.length)continue;
-    smt2Charts.push(new ChartClass(canvas,{plugins:[smt2ValueLabels],type:'bar',data:{labels:pairs.map(x=>x[0]),datasets:[{label:'จำนวนเรื่อง',data:pairs.map(x=>x[1]),backgroundColor:key==='status'?pairs.map(([label])=>smt2StatusColor(label)):'#2563eb',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:42}},plugins:{legend:{display:false},title:{display:false},tooltip:{enabled:true}},scales:{x:{beginAtZero:true,grace:'15%',ticks:{precision:0}},y:{ticks:{autoSkip:false}}}}}));
-  }
-}
 const accountButton = $('smt2-admin-entry');
 function showAccountEmail() { if(accountButton) {accountButton.textContent=accountEmail || 'Google: เชื่อมต่อแล้ว'; accountButton.title=accountEmail || 'บัญชี Google ที่เชื่อมต่อ';} }
 async function resolveAccountEmail(currentToken, currentGeneration) {
@@ -203,7 +99,7 @@ if (root) {
   const open = () => { if (typeof window.showContent === 'function') window.showContent('smt2'); };
   function clearSession(text, revoke = true) {
     const oldToken = token;
-    destroySmt2Charts(); clearExecutiveView();
+    clearExecutiveView();
     window.dispatchEvent(new Event('landright-auth-cleared'));
     generation++; activeRequest?.abort(); activeRequest = null;
     clearTimeout(expiryTimer); token = null; expiresAt = 0; accountEmail = null; records = []; pending = false;
@@ -214,105 +110,6 @@ if (root) {
     message(text);
     // Clear local state even if the external identity library fails to revoke.
     if (revoke && oldToken) { try { window.google?.accounts?.oauth2.revoke(oldToken, () => {}); } catch {} }
-  }
-  function render(warnings) {
-    $('smt2-data').innerHTML = `<header class="smt2-exec-header"><small>EXECUTIVE DASHBOARD · LIVE GOOGLE SHEETS</small><h2>ภาพรวมผลการดำเนินงาน</h2><p>ข้อมูลจริงจาก Google Sheets ทั้ง 8 ชีต · อ่านอย่างเดียว</p></header><nav class="smt2-exec-nav" aria-label="มุมมองข้อมูลงาน"><button type="button" data-smt2-view="dashboard" aria-pressed="true">ภาพรวม</button><button type="button" data-smt2-view="details" aria-pressed="false">ข้อมูลรายบุคคล</button><button type="button" data-smt2-view="tracking" aria-pressed="false">ติดตามงานค้าง</button><button type="button" data-smt2-view="analytics" aria-pressed="false">สถิติเชิงลึก</button></nav><div id="smt2-exec-kpis" class="smt2-exec-kpis" aria-label="ตัวชี้วัดจากข้อมูลจริง"></div><div class="smt2-filters"><label>กลุ่มงาน<select id="smt2-group"><option value="">ทุกกลุ่ม</option><option value="กลุ่มต่างด้าว">กลุ่มต่างด้าว</option><option value="กลุ่มศาสนา">กลุ่มศาสนา</option><option value="ฝ่ายตรวจสอบ">ฝ่ายตรวจสอบ</option></select></label><label>ค้นหา<input id="smt2-search" type="search" placeholder="เรื่อง จังหวัด เลขหนังสือ เจ้าหน้าที่"></label><label>ชีตเจ้าหน้าที่<select id="smt2-sheet"></select></label><label>สถานะ<select id="smt2-status"></select></label><label>จังหวัด<select id="smt2-province"></select></label></div><p id="smt2-warning"></p><div id="smt2-dashboard" class="smt2-dashboard"></div><div class="smt2-chart-grid" aria-label="กราฟสรุป SMT2"><section><h4>อายุงานค้างนับจากวันที่เจ้าหน้าที่รับเรื่อง</h4><div class="smt2-chart-frame" style="height:330px"><canvas id="smt2-chart-aging" role="img" aria-label="กราฟอายุงานค้างตามช่วงเวลา"></canvas></div><p>ไม่นับงานสถานะเสร็จแล้ว · เกณฑ์ 30 / 60 / 90 / 180 วัน</p></section><section><h4>จำนวนเรื่องตามสถานะ</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-status" role="img" aria-label="กราฟจำนวนเรื่องตามสถานะ"></canvas></div></section><section><h4>จำนวนเรื่องตามชีตเจ้าหน้าที่</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-sheet" role="img" aria-label="กราฟจำนวนเรื่องตามชีตเจ้าหน้าที่"></canvas></div></section><section><h4>จำนวนเรื่องตามจังหวัด (12 อันดับแรก)</h4><div class="smt2-chart-frame"><canvas id="smt2-chart-province" role="img" aria-label="กราฟจำนวนเรื่องตามจังหวัด"></canvas></div></section></div><p id="smt2-count" role="status"></p><div id="smt2-results" role="region" aria-label="ตารางข้อมูล SMT2" tabindex="0"></div><dialog id="smt2-detail-dialog" aria-labelledby="smt2-detail-title" style="width:min(920px,calc(100vw - 24px));max-height:85vh;border:1px solid #cbd5e1;border-radius:12px;padding:0;color:#0f172a;background:#fff"><div style="padding:18px 20px;display:flex;justify-content:space-between;gap:16px;align-items:center;position:sticky;top:0;background:#fff;border-bottom:1px solid #e2e8f0;z-index:1"><h3 id="smt2-detail-title" style="font-size:1.2rem;font-weight:700">รายละเอียดรายการ</h3><button id="smt2-detail-close" type="button" style="padding:8px 12px;border:1px solid #94a3b8;border-radius:8px">ปิด</button></div><div id="smt2-detail-content" style="padding:16px 20px;overflow:auto"></div></dialog><div class="smt2-pages"><button id="smt2-prev" type="button">หน้าก่อนหน้า</button><span id="smt2-page"></span><button id="smt2-next" type="button">หน้าถัดไป</button></div>`;
-    const options = (id,key,fallback='') => {
-      const values = [...new Set(records.map(r => r[key] || fallback).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
-      $(id).innerHTML = '<option value="">ทั้งหมด</option>' + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
-    };
-    options('smt2-sheet','sheet'); options('smt2-status','status','ไม่ระบุสถานะ'); options('smt2-province','province');
-    $('smt2-warning').textContent = warnings.length ? 'บางชีตขาดคอลัมน์ที่รู้จัก (ช่องจะแสดง —): ' + warnings.join('; ') : '';
-      const normalizeHeader = value => String(value||'').normalize('NFKC').replace(/\\s+/g,'').toLocaleLowerCase('th');
-      const thaiDateMonths = 'ม.ค. ก.พ. มี.ค. เม.ย. พ.ค. มิ.ย. ก.ค. ส.ค. ก.ย. ต.ค. พ.ย. ธ.ค.'.split(' ');
-      const buddhistDateDisplay = (value, header) => {
-        const original=String(value??'');
-        if (!/วันที่|วันรับ|วันส่ง|วันตอบ|date/i.test(header)) return original;
-        const monthPattern='(ม\\.?ค\\.?|ก\\.?พ\\.?|มี\\.?ค\\.?|เม\\.?ย\\.?|พ\\.?ค\\.?|มิ\\.?ย\\.?|ก\\.?ค\\.?|ส\\.?ค\\.?|ก\\.?ย\\.?|ต\\.?ค\\.?|พ\\.?ย\\.?|ธ\\.?ค\\.?)';
-        const re=new RegExp('(^|[^0-9])([0-3]?\\d)\\s+'+monthPattern+'\\s*(20\\d{2}|25\\d{2})(?=$|[^0-9])','g');
-        return original.replace(re,(whole,prefix,day,month,year)=>{
-          const y=Number(year),d=Number(day);
-          const monthIndex=thaiDateMonths.findIndex(m=>m.replace(/\\./g,'')===month.replace(/\\./g,''));
-          if(d<1||d>31||monthIndex<0)return whole;
-          const gregorianYear=y>=2500?y-543:y;
-          const check=new Date(Date.UTC(gregorianYear,monthIndex,d));
-          if(check.getUTCFullYear()!==gregorianYear||check.getUTCMonth()!==monthIndex||check.getUTCDate()!==d)return whole;
-          return prefix+day+' '+thaiDateMonths[monthIndex]+' '+String(y>=2500?y:y+543);
-        });
-      };
-    let page = 1;
-    // Keep record references in memory only; never embed private field values in attributes.
-    let visiblePageRows = [];
-    const detailDialog = $('smt2-detail-dialog');
-    const showDetail = (record) => {
-      if (!record || !detailDialog || typeof detailDialog.showModal !== 'function') return;
-      const cells = Object.entries(record.columns || {});
-      $('smt2-detail-title').textContent = 'รายละเอียดรายการ — ชีต ' + record.sheet;
-      $('smt2-detail-content').innerHTML = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th scope="col" style="text-align:left;padding:10px;border-bottom:2px solid #cbd5e1">ชื่อข้อมูล</th><th scope="col" style="text-align:left;padding:10px;border-bottom:2px solid #cbd5e1">รายละเอียด</th></tr></thead><tbody>' +
-        cells.map(([header,value])=>'<tr><th scope="row" style="text-align:left;vertical-align:top;min-width:170px;padding:10px;border-bottom:1px solid #e2e8f0;overflow-wrap:anywhere">'+esc(header)+'</th><td style="vertical-align:top;padding:10px;border-bottom:1px solid #e2e8f0;white-space:pre-wrap;overflow-wrap:anywhere">'+esc(buddhistDateDisplay(value,header)||'—')+'</td></tr>').join('') +
-        '</tbody></table></div>';
-      if (!detailDialog.open) detailDialog.showModal();
-    };
-    $('smt2-detail-close').addEventListener('click',()=>detailDialog.close());
-    $('smt2-results').addEventListener('click',event=>{
-      const trigger=event.target.closest('button[data-smt2-row]');
-      if (!trigger || !$('smt2-results').contains(trigger)) return;
-      const index=Number(trigger.dataset.smt2Row);
-      if (Number.isInteger(index) && index>=0 && index<visiblePageRows.length) showDetail(visiblePageRows[index]);
-    });
-    const draw = () => {
-      const group=$('smt2-group').value;
-      const matchingGroup=group ? records.filter(r=>groupForRecord(r)===group) : records;
-      const found = filterRecords(matchingGroup, {query:$('smt2-search').value,sheet:$('smt2-sheet').value,status:$('smt2-status').value,province:$('smt2-province').value});
-      const summary = summarize(found), pages = Math.max(1,Math.ceil(found.length/10));
-      page = Math.min(page,pages);
-      const pending=found.filter(r=>String(r.status||'').trim()!=='เสร็จแล้ว');
-      const aging=pending.map(smt2AgeBucket);
-      const over30=aging.filter(i=>i>=1&&i<=4).length;
-      const unknown=aging.filter(i=>i===5).length;
-      const metrics=[['เรื่องทั้งหมด',found.length],['เสร็จแล้ว',found.length-pending.length],['อยู่ระหว่างดำเนินการ',pending.length],['ค้างเกิน 30 วัน',over30],['ไม่ทราบอายุงาน',unknown]];
-      $('smt2-exec-kpis').innerHTML=metrics.map(([name,count])=>'<article><span>'+esc(name)+'</span><strong>'+count.toLocaleString('th-TH')+'</strong></article>').join('');
-      const view=root.querySelector('[data-smt2-view][aria-pressed="true"]')?.dataset.smt2View||'dashboard';
-      const chartGrid=root.querySelector('.smt2-chart-grid');
-      if(chartGrid) chartGrid.hidden=view==='details'||view==='tracking';
-      $('smt2-results').hidden=view==='dashboard'||view==='analytics';
-      $('smt2-prev').closest('.smt2-pages').hidden=view==='dashboard'||view==='analytics';
-      $('smt2-dashboard').replaceChildren();
-      drawSmt2Charts(found);
-      drawSmt2AgingChart(found);
-      $('smt2-count').textContent = `พบ ${found.length.toLocaleString('th-TH')} จาก ${records.length.toLocaleString('th-TH')} รายการ`;
-      const displayedColumns = [
-        ['ลำดับ',['ลำดับ']],
-        ['จังหวัด',['จังหวัด']],
-        ['หมายเลขเอกสารสิทธิ ผู้ขอ/ผู้ร้อง',['หมายเลขเอกสารสิทธิ ผู้ขอ/ผู้ร้อง','หมายเลขเอกสารสิทธิ     ผู้ขอ/ผู้ร้อง/ผู้เกี่ยวข้อง','หมายเลขเอกสารสิทธิ ผู้ขอ/ผู้ร้อง/ผู้เกี่ยวข้อง']],
-        ['เลขที่หนังสือ',['เลขที่หนังสือ']],
-        ['E-contact DC',['E-contact DC']],
-        ['ประเภท',['ประเภท']],
-        ['สำนักฯ รับเรื่อง',['สำนักฯ รับเรื่อง']],
-        ['เจ้าหน้าที่ รับเรื่อง',['เจ้าหน้าที่ รับเรื่อง']],
-        ['เจ้าหน้าที่รับผิดชอบ',['เจ้าหน้าที่รับผิดชอบ']],
-        ['สถานะปัจจุบัน',['สถานะปัจจุบัน']],
-        ['เลขที่หนังสือจังหวัดตอบล่าสุด',['เลขที่หนังสือจังหวัดตอบล่าสุด']]
-      ];
-      const pageRows=found.slice((page-1)*10,page*10);
-      visiblePageRows=pageRows;
-      const getColumn=(record,names)=>{
-        const cols=record.columns||{};
-        const match=Object.keys(cols).find(header=>names.some(name=>normalizeHeader(header)===normalizeHeader(name)));
-        return match ? buddhistDateDisplay(cols[match],match) : '';
-      };
-      $('smt2-results').innerHTML = found.length ? '<div style="overflow-x:auto"><table><caption>รายการข้อมูล SMT2 (10 รายการต่อหน้า)</caption><thead><tr>' + displayedColumns.map(([label])=>'<th scope="col">'+esc(label)+'</th>').join('') + '</tr></thead><tbody>' + pageRows.map((r,i)=>'<tr>'+displayedColumns.map(([,names],col)=>'<td><button type="button" data-smt2-row="'+i+'" aria-label="เปิดรายละเอียดรายการ '+esc(getColumn(r,['ลำดับ'])||String(i+1))+' จากชีต '+esc(r.sheet)+'" style="display:block;width:100%;height:100%;text-align:left;background:transparent;border:0;color:inherit;padding:8px 4px;cursor:pointer;white-space:normal;overflow-wrap:anywhere">'+esc(getColumn(r,names)||'—')+'</button></td>').join('')+'</tr>').join('') + '</tbody></table></div>' : '<p>ไม่พบรายการตามตัวกรอง</p>';
-      $('smt2-page').textContent = `หน้า ${page} / ${pages}`;
-      $('smt2-prev').disabled = page === 1; $('smt2-next').disabled = page === pages;
-    };
-    root.querySelectorAll('[data-smt2-view]').forEach(button=>button.addEventListener('click',()=>{
-      root.querySelectorAll('[data-smt2-view]').forEach(other=>other.setAttribute('aria-pressed',String(other===button)));
-      page=1;draw();
-    }));
-    $('smt2-search').addEventListener('input',()=>{page=1;draw();});
-    for (const id of ['smt2-group','smt2-sheet','smt2-status','smt2-province']) $(id).addEventListener('change',()=>{page=1;draw();});
-    $('smt2-prev').addEventListener('click',()=>{page--;draw();});
-    $('smt2-next').addEventListener('click',()=>{page++;draw();}); draw();
   }
   async function load() {
     if (!token || Date.now() >= expiresAt) { clearSession('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่'); return; }
