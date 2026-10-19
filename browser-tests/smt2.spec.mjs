@@ -16,6 +16,14 @@ test('LandRight contains five SMT2 submenu links and they navigate the Executive
  await setup(page); await login(page);
  const links=page.locator('[data-smt2-subview]');
  await expect(links).toHaveCount(5);
+ const toggle=page.locator('[data-smt2-menu]');
+ await expect(page.locator('#smt2-submenu')).toBeHidden();
+ await toggle.click();
+ await expect(page.locator('#smt2-submenu')).toBeVisible();
+ await expect(toggle).toHaveAttribute('aria-expanded','true');
+ await toggle.click();
+ await expect(page.locator('#smt2-submenu')).toBeHidden();
+ await toggle.click();
  const frame=page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]');
  await expect(frame.locator('#view-dashboard')).toBeVisible();
  await page.locator('#mobile-menu-button').evaluate(button=>{if(getComputedStyle(button).display!=='none') button.click();});
