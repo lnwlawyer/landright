@@ -25,7 +25,7 @@ test('login reads all tabs, filters, dashboard, pagination, safe HTML and logout
  expect(smt2Requests).toHaveLength(1);
  const request=smt2Requests[0]; expect(request.method()).toBe('GET'); expect(new URL(request.url()).searchParams.getAll('ranges')).toHaveLength(8);
  expect(await request.headerValue('authorization')).toBe('Bearer FAKE_BROWSER_TOKEN');
- await expect(page.locator('#smt2-results tbody tr')).toHaveCount(50);
+ await expect(page.locator('#smt2-results tbody tr')).toHaveCount(10);
  await expect(page.locator('#smt2-results img')).toHaveCount(0); expect(await page.evaluate(()=>window.xss)).toBeUndefined();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
  expect(await page.locator('#smt2-results').evaluate(e=>e.scrollWidth>e.clientWidth || innerWidth>700)).toBe(true);
