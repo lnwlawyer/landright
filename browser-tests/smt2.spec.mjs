@@ -97,27 +97,15 @@ test('page exit cancels a pending OAuth response instead of restoring a session'
  await page.evaluate(()=>{window.dispatchEvent(new Event('pagehide'));window.finishOAuth();});
  await expect(page.locator('#smt2-data')).toBeEmpty(); expect(requests).toHaveLength(0); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
 });
-test('all eleven legacy CSV feeds populate tables and charts using synthetic rows',async({page})=>{
- const errors=[]; const feeds=new Set();
- page.on('pageerror',e=>errors.push(e.message));
- page.on('request',r=>{if(r.url().includes('docs.google.com/spreadsheets/')) feeds.add(r.url());});
- await setup(page,{legacyData:true});
- for(const id of ['dataTableBody','dataTableBody96','dataTableBodyBoi','dataTableBodyCommercial','abandonedTableBody','securitiesTableBody','docSearchTableBody']){
-  await expect(page.locator('#'+id)).toContainText('จังหวัดจำลอง');
- }
- for(const kind of ['temple','mosque','christian','catholic']){
-  await page.evaluate(()=>window.showContent('religious'));
-  await page.evaluate(t=>window.showReligiousTab(t),kind);
-  await expect(page.locator('#'+kind+'-top10-plots-body')).toContainText('จังหวัดจำลอง');
-  await expect(page.locator('#'+kind+'-top10-area-body')).toContainText('จังหวัดจำลอง');
- }
- await page.evaluate(()=>{window.showContent('foreigners');window.showTab('section93');});
- await expect.poll(()=>page.evaluate(()=>window.myCharts.nationalityChart?.data.datasets[0].data)).toEqual([1]);
- await expect(page.locator('#abandoned-total-plots')).toHaveText('2');
- await expect(page.locator('#securities-total-cases')).toHaveText('1');
- await expect(page.locator('#docsearch-total-cases')).toHaveText('1');
- expect(feeds.size).toBe(11); expect(errors).toEqual([]);
+test('legacy LandRight datasets stay private until Google authorization',async({page})=>{
+ const requests=await setup(page,{legacyData:true});
+ await page.goto('/index.html');
+ // Legacy menu loaders now wait for the shared OAuth session instead of public CSV endpoints.
+ await page.waitForTimeout(100);
+ expect(requests).toHaveLength(0);
+ await expect(page.locator('#smt2-data')).toBeEmpty();
 });
+
 test('mobile menu opens and closes with Escape after the stylesheet migration',async({page})=>{
  await setup(page);
  if(page.viewportSize().width>=1024){await expect(page.locator('#sidebar')).toBeVisible();return;}
