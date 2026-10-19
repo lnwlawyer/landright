@@ -19,6 +19,8 @@ test('remember Google preference without storing access tokens or private record
  expect(await page.evaluate(()=>localStorage.getItem('landright-remember-google-v1'))).toBeNull();
 });
 test('login renders original Executive HTML using authenticated Sheets data, with no mock fallback',async({page})=>{
+ page.on('console',m=>{if(m.type()==='error')console.log('SMT2 BROWSER ERROR:',m.text())});
+ page.on('pageerror',e=>console.log('SMT2 PAGE ERROR:',e.message));
  const requests=await setup(page); await login(page);
  await expect(page.locator('#smt2-count')).toContainText('488');
  const req=requests.filter(r=>new URL(r.url()).pathname.endsWith('/values:batchGet'));
