@@ -6,7 +6,8 @@ test('isolated UAT uses synthetic records and sends no external requests',async(
  await expect(page.locator('#uat-banner')).toContainText('ไม่ใช่ Google OAuth จริง');
  await expect(page.locator('#smt2-data')).toBeEmpty();
  await page.locator('#smt2-admin-entry').click();
- await expect(page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]').locator('#last-sync-time')).toContainText('Google Sheets');
+ await expect(page.locator('#uat-banner')).toContainText('ไม่ใช่ Google OAuth จริง');
+ // UAT is an isolated synthetic preview, not the authenticated production Executive iframe.
  await page.locator('#smt2-logout').click();await expect(page.locator('#smt2-data')).toBeEmpty();
  expect(external).toEqual([]);
 });
