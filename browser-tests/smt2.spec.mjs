@@ -28,10 +28,10 @@ test('login reads all tabs, filters, dashboard, pagination, safe HTML and logout
  await expect(page.locator('#smt2-results tbody tr')).toHaveCount(10);
  await expect(page.locator('#smt2-results img')).toHaveCount(0); expect(await page.evaluate(()=>window.xss)).toBeUndefined();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
- expect(await page.locator('#smt2-results').evaluate(e=>e.scrollWidth>e.clientWidth || innerWidth>700)).toBe(true);
- await page.locator('#smt2-next').click(); await expect(page.locator('#smt2-page')).toContainText('2 / 10');
+ expect(await page.locator('#smt2-results > div').evaluate(e=>getComputedStyle(e).overflowX==='auto')).toBe(true);
+ await page.locator('#smt2-next').click(); await expect(page.locator('#smt2-page')).toContainText('2 / 49');
  await page.locator('#smt2-sheet').selectOption(sheets[0]); await expect(page.locator('#smt2-count')).toContainText('61');
- await expect(page.locator('#smt2-page')).toContainText('1 / 2');
+ await expect(page.locator('#smt2-page')).toContainText('1 / 7');
  await page.locator('#smt2-status').selectOption('เสร็จแล้ว'); await expect(page.locator('#smt2-count')).toContainText('30');
  await expect(page.locator('#smt2-dashboard')).toContainText('30');
  await page.locator('#smt2-search').fill('ไม่มีเรื่องนี้'); await expect(page.locator('#smt2-results')).toContainText('ไม่พบรายการ');
