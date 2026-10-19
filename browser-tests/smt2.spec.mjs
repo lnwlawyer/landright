@@ -16,14 +16,24 @@ test('LandRight contains five SMT2 submenu links and they navigate the Executive
  await setup(page); await login(page);
  const links=page.locator('[data-smt2-subview]');
  await expect(links).toHaveCount(5);
+ const toggle=page.locator('[data-smt2-menu]');
+ // The mobile sidebar starts off-canvas; open it before interacting with its menu.
+ await page.locator('#mobile-menu-button').evaluate(button=>{if(getComputedStyle(button).display!=='none' && button.getAttribute('aria-expanded')!=='true') button.click();});
+ await expect(page.locator('#smt2-submenu')).toBeHidden();
+ await toggle.click();
+ await expect(page.locator('#smt2-submenu')).toBeVisible();
+ await expect(toggle).toHaveAttribute('aria-expanded','true');
+ await toggle.click();
+ await expect(page.locator('#smt2-submenu')).toBeHidden();
+ await toggle.click();
  const frame=page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]');
  await expect(frame.locator('#view-dashboard')).toBeVisible();
- await page.locator('#mobile-menu-button').evaluate(button=>{if(getComputedStyle(button).display!=='none') button.click();});
+ await page.locator('#mobile-menu-button').evaluate(button=>{if(getComputedStyle(button).display!=='none' && button.getAttribute('aria-expanded')!=='true') button.click();});
  await page.locator('[data-smt2-subview="details"]').click();
  await expect(frame.locator('#view-details')).toBeVisible();
  await expect(page.locator('[data-smt2-subview="details"]')).toHaveAttribute('aria-current','page');
  await expect(frame.locator('#desktop-sidebar')).toBeHidden();
- await page.locator('#mobile-menu-button').evaluate(button=>{if(getComputedStyle(button).display!=='none') button.click();});
+ await page.locator('#mobile-menu-button').evaluate(button=>{if(getComputedStyle(button).display!=='none' && button.getAttribute('aria-expanded')!=='true') button.click();});
  await page.locator('[data-smt2-subview="analytics"]').click();
  await expect(frame.locator('#view-analytics')).toBeVisible();
 });
