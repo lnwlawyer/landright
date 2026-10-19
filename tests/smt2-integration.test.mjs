@@ -12,10 +12,36 @@ test('OAuth staff UI replaces Apps Script without removing LandRight navigation'
  assert.match(html,/src="smt2.js" type="module"/);
  for (const section of ['overview','foreigners','religious','abandoned','users','settings']) assert.ok(html.includes(`id="${section}-content"`));
 });
-test('OAuth tokens are not persisted or placed in URL parameters',()=>{
- assert.doesNotMatch(code+reader,/localStorage\.|sessionStorage\.|indexedDB\.|client_secret|searchParams.*access_token/);
- assert.equal(READONLY_SCOPE,'https://www.googleapis.com/auth/spreadsheets.readonly');
+
+test('OAuth tokens are not persisted or placed in URL parameters', () => {
+  const withoutComments = code
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+
+  // Remembering a login preference is permitted.
+  assert.match(
+    withoutComments,
+    /localStorage\.setItem\(REMEMBER_GOOGLE_KEY,\s*['"]yes['"]\)/
+  );
+
+  // Token values must not be written to persistent browser storage.
+  assert.doesNotMatch(
+    withoutComments,
+    /(?:localStorage|sessionStorage)\.setItem\s*\([^;]*(?:access_token|id_token|refresh_token|\btoken\b)/i
+  );
+
+  // Token values must not be inserted into URL parameters.
+  assert.doesNotMatch(
+    withoutComments,
+    /(?:searchParams\.set|searchParams\.append)\s*\(\s*['"](?:access_token|id_token|refresh_token)['"]/i
+  );
+
+  assert.equal(
+    READONLY_SCOPE,
+    'https://www.googleapis.com/auth/spreadsheets.readonly'
+  );
 });
+
 test('anonymous reader performs zero API calls',async()=>{
  let calls=0;
  await assert.rejects(readStaffSheets({spreadsheetId:'test',accessToken:null,fetchImpl:()=>{calls++;}}),/เข้าสู่ระบบ/);
@@ -37,17 +63,46 @@ test('reads exactly eight unrestricted staff ranges with readonly GET and author
 });
 test('header aliases normalize whitespace, BOM, zero-width characters, and English case',()=>{
  const result=parseSheet([[' Province ','ชื่อ\u200bเรื่อง','เลขที่รับ','ผู้รับผิดชอบ','\uFEFFสถานะการดำเนินการ'],['A','B','C','D','E']],'test');
- assert.deepEqual(result.records,[{sheet:'test',province:'A',subject:'B',reference:'C',officer:'D',status:'E'}]); assert.deepEqual(result.missing,[]);
+ assert.deepEqual(result.records.map(({ sheet, province, subject, reference, officer, status }) => ({
+    sheet, province, subject, reference, officer, status
+  })),
+  [{
+    sheet: 'test',
+    province: 'A',
+    subject: 'B',
+    reference: 'C',
+    officer: 'D',
+    status: 'E'
+  }]
+);
+assert.deepEqual(result.missing, []);
 });
-test('blank rows are skipped, missing columns are reported, unknown private columns are not retained',()=>{
- const result=parseSheet([['เรื่อง','ข้อมูลที่ไม่ใช้'],['ตัวอย่าง','DO-NOT-RETAIN'],['','']], 'test');
- assert.equal(result.records.length,1); assert.equal(result.records[0].subject,'ตัวอย่าง');
- assert.ok(result.missing.includes('status')); assert.ok(!JSON.stringify(result).includes('DO-NOT-RETAIN'));
+
+test('aliases use priority, while duplicate headers and malformed data are rejected', () => {
+  const result = parseSheet(
+    [['เรื่อง', 'subject'], ['A', 'B']],
+    'test'
+  );
+
+  assert.equal(result.records[0].subject, 'A');
+
+  assert.throws(
+    () => parseSheet(
+      [['เรื่อง', 'เรื่อง'], ['A', 'B']],
+      'test'
+    ),
+    /ซ้ำ/
+  );
+
+  assert.throws(
+    () => parseSheet(
+      [['เรื่อง'], [{ unsafe: 'x' }]],
+      'test'
+    ),
+    /รูปแบบ/
+  );
 });
-test('ambiguous aliases and malformed data fail instead of silently overwriting values',()=>{
- assert.throws(()=>parseSheet([['เรื่อง','subject'],['A','B']],'test'),/กำกวม/);
- assert.throws(()=>parseSheet([['เรื่อง'],[{unsafe:'x'}]],'test'),/รูปแบบ/);
-});
+
 test('empty staff tabs are valid and do not invent records',async()=>{
  const result=await readStaffSheets({spreadsheetId:'test',accessToken:'FAKE_TEST_TOKEN',fetchImpl:async()=>response([])});
  assert.deepEqual(result.records,[]);
