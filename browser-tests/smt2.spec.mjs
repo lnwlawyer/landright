@@ -17,6 +17,8 @@ test('LandRight contains five SMT2 submenu links and they navigate the Executive
  const links=page.locator('[data-smt2-subview]');
  await expect(links).toHaveCount(5);
  const toggle=page.locator('[data-smt2-menu]');
+ // The mobile sidebar starts off-canvas; open it before interacting with its menu.
+ await page.locator('#mobile-menu-button').evaluate(button=>{if(getComputedStyle(button).display!=='none') button.click();});
  await expect(page.locator('#smt2-submenu')).toBeHidden();
  await toggle.click();
  await expect(page.locator('#smt2-submenu')).toBeVisible();
