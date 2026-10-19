@@ -9,6 +9,7 @@ test('LandRight contains five SMT2 submenu links and they navigate the Executive
  await expect(frame.locator('#view-details')).toBeVisible();
  await expect(page.locator('[data-smt2-subview="details"]')).toHaveAttribute('aria-current','page');
  await expect(frame.locator('#desktop-sidebar')).toBeHidden();
+ await page.locator('#mobile-menu-button').evaluate(button=>{if(getComputedStyle(button).display!=='none') button.click();});
  await page.locator('[data-smt2-subview="analytics"]').click();
  await expect(frame.locator('#view-analytics')).toBeVisible();
 });
