@@ -36,7 +36,8 @@ function showExecutiveView() {
       if (typeof frame.contentWindow.setExecutiveRecords !== 'function') throw new Error('missing live adapter');
       frame.contentWindow.setExecutiveRecords(records);
       $('smt2-data').hidden = true;
-    } catch {
+    } catch (err) {
+      console.error('SMT2 executive HTML adapter failed:', err);
       frame.remove();
       if (executiveFrame === frame) executiveFrame = null;
       $('smt2-data').hidden = false;
