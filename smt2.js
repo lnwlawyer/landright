@@ -117,7 +117,7 @@ if (root) {
     activeRequest?.abort(); const request = new AbortController(); activeRequest = request;
     const timeout = setTimeout(()=>request.abort(),30000);
     $('smt2-refresh').disabled = true;
-    destroySmt2Charts();clearExecutiveView();records = []; $('smt2-data').replaceChildren(); message('กำลังอ่านข้อมูลจาก Google Sheets ทั้ง 8 ชีต…');
+    clearExecutiveView();records = []; $('smt2-data').replaceChildren(); message('กำลังอ่านข้อมูลจาก Google Sheets ทั้ง 8 ชีต…');
     try {
       const result = await readStaffSheets({spreadsheetId:cfg.spreadsheetId,accessToken:token,signal:request.signal});
       if (current !== generation || request.signal.aborted) return;
