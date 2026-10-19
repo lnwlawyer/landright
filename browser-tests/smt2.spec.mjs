@@ -18,28 +18,27 @@ test('remember Google preference without storing access tokens or private record
  await expect(page.locator('#smt2-data')).toBeEmpty();
  expect(await page.evaluate(()=>localStorage.getItem('landright-remember-google-v1'))).toBeNull();
 });
-test('login reads all tabs, filters, dashboard, pagination, safe HTML and logout',async({page})=>{
+test('login renders original Executive HTML using authenticated Sheets data, with no mock fallback',async({page})=>{
+ page.on('console',m=>{if(m.type()==='error')console.log('SMT2 BROWSER ERROR:',m.text())});
+ page.on('pageerror',e=>console.log('SMT2 PAGE ERROR:',e.message));
  const requests=await setup(page); await login(page);
  await expect(page.locator('#smt2-count')).toContainText('488');
- const smt2Requests=requests.filter(r=>new URL(r.url()).pathname.endsWith('/values:batchGet'));
- expect(smt2Requests).toHaveLength(1);
- const request=smt2Requests[0]; expect(request.method()).toBe('GET'); expect(new URL(request.url()).searchParams.getAll('ranges')).toHaveLength(8);
- expect(await request.headerValue('authorization')).toBe('Bearer FAKE_BROWSER_TOKEN');
- await expect(page.locator('#smt2-results tbody tr')).toHaveCount(10);
- await expect(page.locator('#smt2-results img')).toHaveCount(0); expect(await page.evaluate(()=>window.xss)).toBeUndefined();
- expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
- expect(await page.locator('#smt2-results > div').evaluate(e=>getComputedStyle(e).overflowX==='auto')).toBe(true);
- await page.locator('[data-smt2-view="details"]').click(); await expect(page.locator('#smt2-next')).toBeVisible();
- await page.locator('#smt2-next').click(); await expect(page.locator('#smt2-page')).toContainText('2 / 49');
- await page.locator('#smt2-sheet').selectOption(sheets[0]); await expect(page.locator('#smt2-count')).toContainText('61');
- await expect(page.locator('#smt2-page')).toContainText('1 / 7');
- await page.locator('#smt2-status').selectOption('เสร็จแล้ว'); await expect(page.locator('#smt2-count')).toContainText('30');
- await expect(page.locator('#smt2-chart-status')).toBeAttached();
- await page.locator('#smt2-search').fill('ไม่มีเรื่องนี้'); await expect(page.locator('#smt2-results')).toContainText('ไม่พบรายการ');
- await expect(page.locator('#smt2-next')).toBeDisabled();
- expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
- const storage=await page.evaluate(()=>JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)])); expect(storage).not.toContain('FAKE_BROWSER_TOKEN');
- await page.locator('#smt2-logout').click(); await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('[data-smt2-menu]')).toBeVisible();
+ const req=requests.filter(r=>new URL(r.url()).pathname.endsWith('/values:batchGet'));
+ expect(req).toHaveLength(1);
+ expect(req[0].method()).toBe('GET');
+ expect(new URL(req[0].url()).searchParams.getAll('ranges')).toHaveLength(8);
+ expect(await req[0].headerValue('authorization')).toBe('Bearer FAKE_BROWSER_TOKEN');
+ const frame=page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]');
+ await expect(frame.locator('#desktop-sidebar')).toBeAttached();
+ await expect(frame.locator('#last-sync-time')).toContainText('Google Sheets');
+ expect(await page.locator('iframe[title="Executive Dashboard ข้อมูลงาน"]').evaluate(e=>e.contentWindow.ALL_CASES?.length)).toBeUndefined();
+ await expect(page.locator('#smt2-data')).toBeHidden();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const storage=await page.evaluate(()=>JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)]));
+ expect(storage).not.toContain('FAKE_BROWSER_TOKEN');
+ await page.locator('#smt2-logout').click();
+ await expect(page.locator('iframe[title="Executive Dashboard ข้อมูลงาน"]')).toHaveCount(0);
+ await expect(page.locator('#smt2-data')).toBeEmpty();
  expect(await page.evaluate(()=>window.wasRevoked)).toBe(true);
 });
 for(const status of [401,403,404,429,500]) test(`API ${status} clears private data and shows error in SMT2`,async({page})=>{
