@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="th" class="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Executive Dashboard – LandRight SMT2 (Live-data layout)</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enable dark mode via class strategy
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Sarabun', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49' }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { overflow-x: hidden; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .fade-enter { opacity: 0; transform: translateY(10px); }
+        .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.3s ease-out; }
+        
+        #desktop-sidebar { transition: width 0.3s ease-in-out; }
+        .sidebar-collapsed { width: 4.5rem !important; }
+        .sidebar-collapsed .sidebar-text, .sidebar-collapsed .logo-container { display: none; }
+        .sidebar-collapsed .menu-item, .sidebar-collapsed .footer-container { justify-content: center; padding-left: 0; padding-right: 0; }
+        
+        .modal-active { display: flex !important; }
+        .modal-show { opacity: 1 !important; }
+        .modal-show-content { transform: scale(1) !important; }
+
+        .dropdown-results { display: none; }
+        .dropdown-active .dropdown-results { display: block; }
+        
+        /* Print Styles for Executive PDF Generation */
+        @media print {
+            body { background: white !important; color: black !important; }
+            #desktop-sidebar, .md\:hidden, .no-print, #header-actions { display: none !important; }
+            .print-full { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            .bg-white { box-shadow: none !important; border: 1px solid #ddd !important; }
+            canvas { max-width: 100% !important; }
+        }
+
+        /* Drag & Drop Highlight */
+        .drag-over { border: 2px dashed #0ea5e9 !important; background-color: rgba(14, 165, 233, 0.05) !important; }
+    </style>
+</head>
+<body class="text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-900 antialiased selection:bg-brand-500 selection:text-white flex h-screen transition-colors duration-300">
+
+    <aside id="desktop-sidebar" class="w-64 bg-slate-900 dark:bg-slate-950 text-white flex flex-col flex-shrink-0 z-20 shadow-xl hidden md:flex no-print">
+        <div class="header-container h-16 flex items-center justify-between px-5 border-b border-slate-800 transition-all duration-300">
+            <div class="logo-container flex items-center gap-3 overflow-hidden">
+                <i class="ph-fill ph-chart-polar text-2xl text-brand-500 shrink-0"></i>
+                <h1 class="text-lg font-bold tracking-wide whitespace-nowrap">ExecDash <span class="text-[10px] bg-brand-600 px-1.5 py-0.5 rounded text-white ml-1">PRO</span></h1>
+            </div>
+            <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white transition p-1.5 rounded-lg hover:bg-slate-800 shrink-0" title="ย่อ/ขยายเมนู">
+                <i id="toggle-icon" class="ph ph-caret-left text-lg"></i>
+            </button>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-6 px-3 flex flex-col gap-2" id="main-nav">
+            <!-- Menus injected via JS based on RBAC -->
+        </nav>
+
+        <div class="footer-container p-4 border-t border-slate-800 flex items-center justify-between transition-all duration-300 overflow-hidden relative group">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center shrink-0" id="user-avatar-icon"><i class="ph ph-user text-slate-300"></i></div>
+                <div class="sidebar-text flex-1 min-w-0">
+                    <select id="roleSelect" onchange="switchRole(this.value)" class="bg-transparent text-sm font-medium text-white truncate focus:outline-none cursor-pointer w-full appearance-none">
+                        <option value="executive" class="text-slate-800">ผู้อำนวยการสำนักฯ (Executive)</option>
+                        <option value="officer" class="text-slate-800">โสภา (เจ้าหน้าที่)</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400 truncate mt-0.5" id="role-subtitle">Switch Role (RBAC)</p>
+                </div>
+            </div>
+            <i class="ph-bold ph-caret-up text-slate-500 sidebar-text absolute right-4 pointer-events-none"></i>
+        </div>
+    </aside>
+
+    <!-- Mobile Header -->
+    <div class="md:hidden fixed top-0 left-0 w-full bg-slate-900 text-white z-50 flex items-center justify-between px-4 h-14 shadow-md no-print">
+        <div class="flex items-center gap-2">
+            <i class="ph-fill ph-chart-polar text-xl text-brand-500"></i>
+            <h1 class="text-base font-bold">ExecDash</h1>
+        </div>
+        <div class="flex gap-1 overflow-x-auto hide-scrollbar" id="mobile-nav">
+            <!-- Mobile Menus injected via JS -->
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col h-screen overflow-hidden pt-14 md:pt-0 print-full">
+        
+        <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 h-16 hidden md:flex items-center justify-between px-6 flex-shrink-0 z-[60] transition-colors duration-300 no-print">
+            <div>
+                <h2 id="page-title" class="text-lg font-bold text-slate-800 dark:text-white">ภาพรวมผลการดำเนินงาน</h2>
+                <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400" id="last-sync-time">ข้อมูลอัปเดตล่าสุด: ต.ค. 2569</p>
+            </div>
+            
+            <div class="flex items-center gap-3" id="header-actions">
+                
+                <!-- Smart Search -->
+                <div class="relative dropdown-container" id="search-container">
+                    <div class="flex items-center bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-1.5 border border-slate-200 dark:border-slate-600 focus-within:border-brand-500 transition-all w-48 lg:w-64">
+                        <i class="ph ph-magnifying-glass text-slate-400 text-lg mr-2"></i>
+                        <input type="text" id="globalSearchInput" oninput="handleSearch(this.value)" placeholder="ค้นหาแฟ้ม, ผู้ร้อง..." class="bg-transparent border-none outline-none text-sm w-full text-slate-700 dark:text-white placeholder-slate-400 dark:placeholder-slate-400">
+                    </div>
+                    <div class="dropdown-results absolute top-full mt-2 right-0 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-50">
+                        <div id="search-results-list" class="max-h-[300px] overflow-y-auto hide-scrollbar text-sm"></div>
+                    </div>
+                </div>
+
+                <!-- Sync Database Button (Data Integration Simulation) -->
+                <button onclick="syncData()" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 dark:text-slate-400 transition" title="ดึงข้อมูลล่าสุด">
+                    <i class="ph ph-arrows-clockwise text-xl" id="sync-icon"></i>
+                </button>
+
+                <!-- Settings & Dark Mode -->
+                <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 dark:text-slate-400 transition" title="สลับโหมดหน้าจอ">
+                    <i class="ph ph-moon text-xl" id="theme-icon"></i>
+                </button>
+                <button onclick="openSettings()" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 dark:text-slate-400 transition" title="ตั้งค่าระบบ">
+                    <i class="ph ph-gear text-xl"></i>
+                </button>
+
+                <div class="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+
+                <!-- Notifications -->
+                <div class="relative dropdown-container" id="noti-container">
+                    <button onclick="toggleDropdown('noti-container')" class="relative p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 dark:text-slate-400 transition">
+                        <i class="ph ph-bell text-xl"></i>
+                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-800" id="noti-badge"></span>
+                    </button>
+                    <div class="dropdown-results absolute top-full mt-2 right-0 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-50">
+                        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
+                            <span class="text-sm font-bold text-slate-800 dark:text-white">การแจ้งเตือน</span>
+                        </div>
+                        <div class="max-h-[300px] overflow-y-auto" id="noti-list"></div>
+                    </div>
+                </div>
+
+                <!-- Audit Log Button -->
+                <button onclick="openAuditLog()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold transition flex items-center gap-2" title="ประวัติการทำรายการ">
+                    <i class="ph ph-clock-counter-clockwise text-lg"></i> ประวัติ
+                </button>
+
+                <!-- PDF Export -->
+                <button class="bg-brand-600 text-white hover:bg-brand-700 px-4 py-1.5 rounded-lg text-sm font-bold transition flex items-center gap-2 shadow-sm" onclick="window.print()">
+                    <i class="ph ph-printer text-lg"></i> PDF
+                </button>
+            </div>
+        </header>
+
+        <!-- Toast Notification (Top Right) -->
+        <div id="toast" class="fixed top-20 right-6 bg-slate-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 transform translate-x-full opacity-0 transition-all duration-300 z-[100]">
+            <i class="ph-fill ph-check-circle text-emerald-400 text-xl"></i>
+            <span id="toast-msg" class="text-sm font-medium">ทำรายการสำเร็จ</span>
+        </div>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 w-full relative print-full" id="main-scroll-area">
+            
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="max-w-7xl mx-auto view-section">
+                <!-- OKR Widget -->
+                <div class="bg-gradient-to-br from-brand-800 to-indigo-900 rounded-xl p-5 mb-6 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row items-center gap-6 no-print">
+                    <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none"><i class="ph-fill ph-target text-9xl"></i></div>
+                    <div class="flex-1 z-10 w-full">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="bg-white/20 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Q4 Goal</span>
+                            <h3 class="text-lg font-bold">เป้าหมายลดงานค้างเก่าสะสม (ก่อนปี 66)</h3>
+                        </div>
+                        <p class="text-brand-100 text-sm mb-4">ลดแฟ้มค้างเก่าให้เหลือ < 50 เรื่อง ภายในสิ้นปี</p>
+                        <div class="flex items-end gap-3 mb-2">
+                            <div class="flex-1 h-3 bg-slate-900/50 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-400 w-[45%] transition-all shadow-[0_0_10px_rgba(52,211,153,0.5)]"></div>
+                            </div>
+                            <div class="text-sm font-bold w-16 text-right"><span class="text-emerald-300">45%</span></div>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-brand-200/70 font-medium">
+                            <span>เริ่มต้น: 180 เรื่อง</span>
+                            <span>ปัจจุบัน: <span id="okr-current" class="text-white font-bold text-xs"></span> เรื่อง</span>
+                            <span>เป้าหมาย: < 50 เรื่อง</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6"><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="kpiContainer"></div></div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 flex flex-col transition-colors">
+                        <h3 class="text-base font-bold text-slate-800 dark:text-white mb-1">สัดส่วนสถานะงาน</h3>
+                        <div class="relative flex-grow flex items-center justify-center min-h-[250px]"><canvas id="statusChart"></canvas></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 flex flex-col lg:col-span-2 transition-colors">
+                        <h3 class="text-base font-bold text-slate-800 dark:text-white mb-1">ภาระงานค้างรายบุคคล</h3>
+                        <div class="relative flex-grow min-h-[250px] w-full"><canvas id="workloadChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="mb-6" id="insightsSection">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><i class="ph-fill ph-lightbulb text-amber-500"></i> ประเด็นเพื่อการบริหารจัดการ</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="insightsContainer"></div>
+                </div>
+            </div>
+
+            <!-- Details View -->
+            <div id="view-details" class="w-full view-section hidden max-w-7xl mx-auto flex flex-col lg:flex-row gap-6">
+                <!-- Left Sidebar (Officer Select & Summary) -->
+                <div class="w-full lg:w-[320px] flex-shrink-0 flex flex-col gap-4">
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm z-20 no-print transition-colors">
+                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase">เลือกเจ้าหน้าที่</label>
+                        <select id="officerSelect" onchange="changeOfficer(this.value)" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white text-base font-bold rounded-lg focus:ring-brand-500 block px-3 py-2 cursor-pointer outline-none shadow-sm"></select>
+                    </div>
+                    
+                    <div id="officerSummaryContainer" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm flex flex-col lg:sticky lg:top-4 transition-colors"></div>
+                </div>
+
+                <!-- Right Content (Filters & Table) -->
+                <div class="flex-1 flex flex-col min-w-0">
+                    <div class="mb-4 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap gap-2 items-center transition-colors no-print" id="legendContainer"></div>
+                    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm flex-1 flex flex-col transition-colors" id="tableContainer"></div>
+                </div>
+            </div>
+
+            <!-- Escalation View -->
+            <div id="view-escalation" class="w-full view-section hidden max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 no-print">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2"><i class="ph-fill ph-warning-octagon text-red-500"></i> ศูนย์เร่งรัดและติดตามงาน</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">รวบรวมรายการรอผลจังหวัดเกิน SLA <span id="lbl-sla-esc" class="font-bold text-red-500">30</span> วัน</p>
+                    </div>
+                    <button class="bg-brand-600 text-white hover:bg-brand-700 px-4 py-2 rounded-lg text-sm font-semibold transition shadow-sm" onclick="bulkEscalateAll()">
+                        ทวงถามทั้งหมด (Bulk Action)
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="escalationContainer"></div>
+            </div>
+
+            <!-- Rebalance View -->
+            <div id="view-rebalance" class="w-full view-section hidden max-w-7xl mx-auto flex-col h-[calc(100vh-8rem)]">
+                <div class="mb-4 no-print">
+                    <h3 class="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2"><i class="ph-fill ph-scales text-brand-500"></i> กระดานเกลี่ยภาระงาน</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">ลากและวาง (Drag & Drop) เพื่อโอนย้ายงาน *จำลองเฉพาะ 30 กล่องแรกของแต่ละคน</p>
+                </div>
+                <div class="flex-1 flex overflow-x-auto gap-4 pb-6 items-start hide-scrollbar" id="kanbanContainer"></div>
+            </div>
+
+            <!-- Analytics View -->
+            <div id="view-analytics" class="w-full view-section hidden max-w-7xl mx-auto">
+                <div class="mb-6 no-print">
+                    <h3 class="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2"><i class="ph-fill ph-trend-up text-indigo-500"></i> สถิติเชิงลึก (Analytics)</h3>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 transition-colors">
+                        <h3 class="text-base font-bold text-slate-800 dark:text-white mb-4">แนวโน้มงานค้างสะสมรวม</h3>
+                        <div class="relative min-h-[300px] w-full"><canvas id="trendChart"></canvas></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 transition-colors">
+                        <h3 class="text-base font-bold text-slate-800 dark:text-white mb-4">สถิติ รับเข้า vs แล้วเสร็จ</h3>
+                        <div class="relative min-h-[300px] w-full"><canvas id="inOutChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    
+    <!-- Modal Backdrop -->
+    <div id="shared-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700" id="shared-modal-content">
+            
+            <!-- Settings Content -->
+            <div id="modal-settings" class="hidden flex-col h-full">
+                <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">ตั้งค่าระบบ (Settings)</h3>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><i class="ph ph-x text-xl"></i></button>
+                </div>
+                <div class="p-6">
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">เกณฑ์ SLA งานรอผล (วัน)</label>
+                    <input type="number" id="sla-input" value="30" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white mb-4 outline-none focus:border-brand-500">
+                    <p class="text-xs text-slate-500 dark:text-slate-400">ระบบจะขึ้นแจ้งเตือนสีแดงหากงานรอผลนานเกินจำนวนวันที่กำหนด</p>
+                </div>
+                <div class="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3 rounded-b-xl">
+                    <button onclick="closeModal()" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600">ยกเลิก</button>
+                    <button onclick="saveSettings()" class="px-4 py-2 rounded-lg text-sm font-bold bg-brand-600 text-white hover:bg-brand-700">บันทึก</button>
+                </div>
+            </div>
+
+            <!-- Audit Log Content -->
+            <div id="modal-audit" class="hidden flex-col h-full max-h-[70vh]">
+                <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="ph-fill ph-clock-counter-clockwise text-brand-500"></i> ประวัติการทำรายการ</h3>
+                    <button onclick="closeModal()" class="text-slate-400"><i class="ph ph-x text-xl"></i></button>
+                </div>
+                <div class="p-4 flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900/50" id="audit-list">
+                    <!-- Logs Injected Here -->
+                </div>
+            </div>
+
+            <!-- Prompt/Action Content -->
+            <div id="modal-prompt" class="hidden flex-col h-full">
+                <div class="p-6 text-center">
+                    <div class="w-14 h-14 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center mx-auto mb-4" id="prompt-icon-bg">
+                        <i id="prompt-icon" class="ph-fill ph-info text-3xl text-brand-600 dark:text-brand-400"></i>
+                    </div>
+                    <h3 id="prompt-title" class="text-xl font-bold text-slate-900 dark:text-white mb-2"></h3>
+                    <p id="prompt-desc" class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed"></p>
+                </div>
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-center gap-3 rounded-b-xl">
+                    <button onclick="closeModal()" class="px-6 py-2 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600">ยกเลิก</button>
+                    <button id="prompt-confirm" class="px-6 py-2 rounded-lg text-sm font-bold bg-brand-600 text-white shadow-sm">ยืนยัน</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // State & Configuration
+        let SLA_DAYS = 30;
+        let CURRENT_ROLE = 'executive'; 
+        let IS_DARK = false;
+        let AUDIT_LOGS = [];
+        
+        const ST = { done: { label: "เสร็จแล้ว", color: "#10b981" }, wait: { label: "รอผลจังหวัด", color: "#f59e0b" }, review: { label: "ระหว่างพิจารณา", color: "#3b82f6" }, draft: { label: "ตรวจร่าง", color: "#8b5cf6" }, sign: { label: "เสนอลงนาม", color: "#f97316" }, none: { label: "ไม่ระบุสถานะ", color: "#94a3b8" } };
+        const KEYS = Object.keys(ST);
+        const BUCKETS = ["0-30 วัน", "31-90 วัน", "91-180 วัน", "181-365 วัน", "1-3 ปี", "3-5 ปี", "5-10 ปี", "10 ปีขึ้นไป"];
+        const B_COLORS = ["bg-emerald-400", "bg-lime-400", "bg-amber-400", "bg-orange-500", "bg-red-500", "bg-rose-600", "bg-purple-700", "bg-slate-800 dark:bg-slate-400"];
+
+        // Live-only adapter: parent LandRight SMT2 supplies authenticated read-only records.
+        // No seeded records, fallback fixtures, or simulated network responses.
+        let D = [], TOTALS = {all:0,open:0,wait:0,old:0};
+        let ALL_CASES = [], CASES = {}, activeFilter = null, currentOfficer = '';
+        let currentPage = 1; const ITEMS_PER_PAGE = 10;
+        const escapeText = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        function thaiAge(raw) {
+            const match = String(raw ?? '').trim().match(/^(\d{1,2})\s+(มค|กพ|มีค|เมย|พค|มิย|กค|สค|กย|ตค|พย|ธค)\s+(\d{4})$/);
+            if (!match) return null;
+            const months=['มค','กพ','มีค','เมย','พค','มิย','กค','สค','กย','ตค','พย','ธค'];
+            const year=Number(match[3]);
+            const date=new Date(year>2400?year-543:year,months.indexOf(match[2]),Number(match[1]));
+            const days=Math.floor((Date.now()-date.getTime())/86400000);
+            return Number.isFinite(days)&&days>=0?days:null;
+        }
+        function statusIndex(status) {
+            const t=String(status||'').trim();
+            if(t==='เสร็จแล้ว') return 0;
+            if(t.includes('รอผล')) return 1;
+            if(t.includes('ระหว่างพิจารณา')) return 2;
+            if(t.includes('ตรวจร่าง')) return 3;
+            if(t.includes('เสนอรองนาม')||t.includes('เสนอลงนาม')) return 4;
+            return 5;
+        }
+        function ageIndex(days) {
+            if(days===null) return -1;
+            return days<=30?0:days<=90?1:days<=180?2:days<=365?3:days<=1095?4:days<=1825?5:days<=3650?6:7;
+        }
+        function setExecutiveRecords(rows) {
+            if(!Array.isArray(rows)) throw new TypeError('Expected live Sheets records array');
+            ALL_CASES=[];CASES={};D=[];
+            const grouped=new Map();
+            rows.forEach((record,i)=>{
+                const officer=String(record.sheet||record.officer||'ไม่ระบุ').trim();
+                const status=statusIndex(record.status);
+                const days=status===0?null:thaiAge(record.columns?.['เจ้าหน้าที่ รับเรื่อง']);
+                const item={id:String(i+1),officer,s:status,daysAgo:days,ageText:days===null?'ไม่ทราบอายุ':days+' วัน',wd:null,
+                    p:escapeText(record.province),t:escapeText(record.subject),w:escapeText(record.reference||record.officer),raw:record};
+                ALL_CASES.push(item);
+                if(!grouped.has(officer))grouped.set(officer,[]);
+                grouped.get(officer).push(item);
+            });
+            for(const [name,items] of grouped){
+                const statuses=KEYS.map((_,i)=>items.filter(c=>c.s===i).length);
+                const ages=BUCKETS.map((_,i)=>items.filter(c=>c.s!==0&&ageIndex(c.daysAgo)===i).length);
+                const obj={n:escapeText(name),t:'ข้อมูลจาก Google Sheets',s:statuses,a:ages,total:items.length,open:items.length-statuses[0],old:items.filter(c=>c.s!==0&&c.daysAgo!==null&&c.daysAgo>365).length,miss:items.filter(c=>c.s!==0&&c.daysAgo===null).length};
+                D.push(obj);CASES[obj.n]=items.sort((a,b)=>(b.daysAgo??-1)-(a.daysAgo??-1));
+            }
+            D.sort((a,b)=>b.open-a.open);
+            TOTALS={all:ALL_CASES.length,open:ALL_CASES.filter(c=>c.s!==0).length,wait:ALL_CASES.filter(c=>c.s===1).length,old:ALL_CASES.filter(c=>c.s!==0&&c.daysAgo!==null&&c.daysAgo>365).length};
+            currentOfficer=D[0]?.n||'';
+            renderMenus();switchView('dashboard');
+            document.getElementById('last-sync-time').innerText='ข้อมูลจริงจาก Google Sheets';
+        }
+        window.setExecutiveRecords=setExecutiveRecords;
+        function initData(){ /* intentionally no mock or sample data */ }
+
+        function logAction(action) {
+            const time = new Date().toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            AUDIT_LOGS.unshift({ time, action, role: CURRENT_ROLE });
+            if(AUDIT_LOGS.length > 50) AUDIT_LOGS.pop();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('translate-x-full', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-x-full', 'opacity-0'), 3000);
+            logAction(msg);
+        }
+
+        function switchRole(role) {
+            CURRENT_ROLE = 'executive';
+            if(false) {
+                currentOfficer = D[0]?.n || '';  
+                document.getElementById('role-subtitle').innerText = "Officer View";
+            } else {
+                document.getElementById('role-subtitle').innerText = "Executive View";
+            }
+            renderMenus(); switchView(role==='officer' ? 'details' : 'dashboard');
+            logAction(`สลับบทบาทเป็น ${role}`);
+        }
+
+        function renderMenus() {
+            const menus = [
+                { id: 'dashboard', icon: 'squares-four', label: 'ภาพรวม (Dashboard)', roles: ['executive'] },
+                { id: 'details', icon: 'users', label: 'ข้อมูลรายบุคคล', roles: ['executive', 'officer'] },
+                { id: 'escalation', icon: 'warning-octagon', label: 'ศูนย์เร่งรัดงาน', roles: ['executive'] },
+                { id: 'rebalance', icon: 'scales', label: 'กระดานเกลี่ยงาน', roles: ['executive'] },
+                { id: 'analytics', icon: 'trend-up', label: 'แนวโน้มสถิติ', roles: ['executive'] }
+            ];
+            
+            const renderLinks = (isMobile) => menus.filter(m => m.roles.includes(CURRENT_ROLE)).map(m => `
+                <button onclick="switchView('${m.id}')" data-target="${m.id}" class="${isMobile ? 'menu-item-mobile p-2 rounded-lg shrink-0 text-slate-300 dark:text-slate-400' : 'menu-item text-slate-300 dark:text-slate-400 hover:bg-slate-800 hover:text-white flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full text-left overflow-hidden'}">
+                    <i class="ph ph-${m.icon} ${isMobile ? 'text-xl' : 'text-lg shrink-0'}"></i>
+                    ${isMobile ? '' : `<span class="sidebar-text ml-3 whitespace-nowrap">${m.label}</span>`}
+                </button>
+            `).join('');
+
+            document.getElementById('main-nav').innerHTML = renderLinks(false);
+            document.getElementById('mobile-nav').innerHTML = renderLinks(true);
+        }
+
+        function switchView(viewId) {
+            document.querySelectorAll('.menu-item, .menu-item-mobile').forEach(el => {
+                const isActive = el.dataset.target === viewId;
+                el.classList.toggle('bg-brand-800', isActive); el.classList.toggle('text-white', isActive);
+                if(!isActive) el.classList.remove('bg-brand-800', 'text-white');
+            });
+
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden', 'opacity-0'));
+            const target = document.getElementById('view-' + viewId);
+            if(target) {
+                target.classList.remove('hidden');
+                setTimeout(() => target.classList.remove('opacity-0'), 10);
+            }
+            
+            const titles = { dashboard: 'ภาพรวมผลการดำเนินงาน', details: 'ข้อมูลรายบุคคล', escalation: 'ศูนย์เร่งรัดและติดตามงาน', rebalance: 'กระดานเกลี่ยภาระงาน', analytics: 'แนวโน้มและสถิติเชิงลึก' };
+            document.getElementById('page-title').innerText = titles[viewId] || '';
+            
+            document.getElementById('main-scroll-area').scrollTop = 0;
+            
+            if(viewId === 'dashboard') { renderDashboard(); }
+            if(viewId === 'details') { renderOfficerSelect(); renderOfficerDetails(); }
+            if(viewId === 'escalation') { renderEscalation(); }
+            if(viewId === 'rebalance') { renderRebalance(); }
+            if(viewId === 'analytics') { renderAnalytics(); }
+        }
+
+        
+        function toggleDarkMode() {
+            IS_DARK = !IS_DARK;
+            document.documentElement.classList.toggle('dark', IS_DARK);
+            document.getElementById('theme-icon').className = IS_DARK ? 'ph ph-sun text-xl' : 'ph ph-moon text-xl';
+            // Re-render charts to adjust text colors
+            if(document.getElementById('view-dashboard').classList.contains('hidden') === false) renderDashboard();
+        }
+
+        function syncData() {
+            // The authenticated LandRight parent must reload Google Sheets and call setExecutiveRecords.
+            window.parent.postMessage({type:'landright-smt2-refresh-request'},location.origin);
+            showToast('ส่งคำขอโหลดข้อมูลจริงแล้ว');
+        }
+
+        function toggleDropdown(id) { document.getElementById(id).classList.toggle('dropdown-active'); }
+        document.addEventListener('click', e => {
+            if(!e.target.closest('#search-container')) document.getElementById('search-container')?.classList.remove('dropdown-active');
+            if(!e.target.closest('#noti-container')) document.getElementById('noti-container')?.classList.remove('dropdown-active');
+        });
+
+        function handleSearch(q) {
+            const container = document.getElementById('search-container');
+            if(!q.trim()) return container.classList.remove('dropdown-active');
+            
+            const res = ALL_CASES.filter(c => c.t.includes(q) || c.w.includes(q) || c.officer.includes(q)).slice(0,10);
+            document.getElementById('search-results-list').innerHTML = res.length ? res.map(c => `
+                <div class="p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer" onclick="gotoOfficer('${c.officer}')">
+                    <div class="font-bold text-slate-800 dark:text-slate-200 text-xs truncate">${c.t}</div>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex justify-between"><span>ผู้รับผิดชอบ: ${c.officer}</span><span style="color:${ST[KEYS[c.s]].color}">${ST[KEYS[c.s]].label}</span></div>
+                </div>`).join('') : '<div class="p-4 text-center text-slate-500">ไม่พบข้อมูล</div>';
+            container.classList.add('dropdown-active');
+        }
+
+        function gotoOfficer(name) {
+            if(CURRENT_ROLE === 'officer' && name !== 'โสภา') { alert("ไม่มีสิทธิเข้าถึงข้อมูลผู้อื่น"); return; }
+            currentOfficer = name; switchView('details');
+        }
+
+        function openModal(type, title, desc, onConfirm) {
+            document.getElementById('shared-modal').classList.add('modal-active');
+            setTimeout(() => document.getElementById('shared-modal').classList.add('modal-show', 'modal-show-content'), 10);
+            
+            ['settings', 'audit', 'prompt'].forEach(id => document.getElementById('modal-'+id).classList.add('hidden'));
+            document.getElementById('modal-'+type).classList.remove('hidden');
+
+            if(type === 'prompt') {
+                document.getElementById('prompt-title').innerText = title;
+                document.getElementById('prompt-desc').innerText = desc;
+                const btn = document.getElementById('prompt-confirm');
+                btn.onclick = () => { onConfirm(); closeModal(); };
+            }
+        }
+        function closeModal() { document.getElementById('shared-modal').classList.remove('modal-show', 'modal-show-content'); setTimeout(() => document.getElementById('shared-modal').classList.remove('modal-active'), 300); }
+
+        function openSettings() { document.getElementById('sla-input').value = SLA_DAYS; openModal('settings'); }
+        function saveSettings() { 
+            SLA_DAYS = parseInt(document.getElementById('sla-input').value) || 30; 
+            document.getElementById('lbl-sla-esc').innerText = SLA_DAYS;
+            showToast(`อัปเดตเกณฑ์ SLA เป็น ${SLA_DAYS} วัน`);
+            closeModal(); switchView(document.querySelector('.menu-item.bg-brand-800').dataset.target); 
+        }
+
+        function openAuditLog() {
+            const list = document.getElementById('audit-list');
+            list.innerHTML = AUDIT_LOGS.length ? AUDIT_LOGS.map(l => `
+                <div class="mb-3 p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 text-sm">
+                    <div class="flex justify-between mb-1"><span class="font-bold text-slate-800 dark:text-white">${l.action}</span><span class="text-[10px] text-slate-400">${l.time}</span></div>
+                    <div class="text-[11px] text-slate-500">By: ${l.role.toUpperCase()}</div>
+                </div>`).join('') : '<p class="text-center text-slate-500 mt-4">ยังไม่มีประวัติการทำรายการ</p>';
+            openModal('audit');
+        }
+
+        function exportCSV() {
+            let cases = CASES[currentOfficer];
+            if(activeFilter) cases = cases.filter(x => x.s === KEYS.indexOf(activeFilter));
+            let csv = "จังหวัด,เรื่อง,ผู้ร้อง,อายุเรื่อง,สถานะ,เวลารอ(วัน)\n";
+            cases.forEach(c => { csv += `${c.p},${c.t},${c.w},${c.ageText},${ST[KEYS[c.s]].label},${c.wd||''}\n`; });
+            
+            let blob = new Blob(["\ufeff"+csv], {type: 'text/csv;charset=utf-8;'});
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a'); a.href = url; a.download = `tasks_${currentOfficer}.csv`; a.click();
+            showToast(`ดาวน์โหลด CSV ของ ${currentOfficer} แล้ว`);
+        }
+
+        let chStatus, chWork, chTrend, chInOut;
+        function renderDashboard() {
+            document.getElementById('okr-current').innerText = TOTALS.old;
+            let breachCount = ALL_CASES.filter(c => c.wd > SLA_DAYS).length;
+            
+            // Check Notifications
+            if(breachCount > 0) { document.getElementById('noti-badge').classList.remove('hidden'); }
+            document.getElementById('noti-list').innerHTML = breachCount ? `<div class="p-3 bg-red-50 dark:bg-red-900/20 flex gap-3"><i class="ph-fill ph-siren text-red-500"></i><div><p class="text-xs font-bold text-slate-800 dark:text-white">SLA วิกฤต</p><p class="text-[11px] text-slate-600 dark:text-slate-400">มีงานรอผลเกิน ${SLA_DAYS} วัน รวม ${breachCount} เรื่อง</p></div></div>` : '<div class="p-3 text-center text-xs text-slate-500">ไม่มีการแจ้งเตือนใหม่</div>';
+
+            document.getElementById('kpiContainer').innerHTML = [
+                {icon:'files', c:'blue', l:'เรื่องทั้งหมด', v:TOTALS.all}, {icon:'hourglass-high', c:'amber', l:'รอดำเนินการ', v:TOTALS.open},
+                {icon:'warning-circle', c:'red', l:`เกิน SLA ${SLA_DAYS} วัน`, v:breachCount}, {icon:'archive-box', c:'purple', l:'ค้างเกิน 1 ปี', v:TOTALS.old}
+            ].map(k => `<div class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4"><div class="p-3 bg-${k.c}-50 dark:bg-${k.c}-900/30 text-${k.c}-600 dark:text-${k.c}-400 rounded-lg"><i class="ph ph-${k.icon} text-2xl"></i></div><div><p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">${k.l}</p><h3 class="text-2xl font-bold text-slate-800 dark:text-white">${k.v}</h3></div></div>`).join('');
+
+            Chart.defaults.color = IS_DARK ? '#94a3b8' : '#64748b';
+            if(chStatus) chStatus.destroy();
+            chStatus = new Chart(document.getElementById('statusChart'), { type: 'doughnut', data: { labels: KEYS.map(k=>ST[k].label), datasets: [{ data: KEYS.map((_,i)=>ALL_CASES.filter(c=>c.s===i).length), backgroundColor: KEYS.map(k=>ST[k].color), borderWidth: 0 }] }, options: { responsive:true, maintainAspectRatio:false, cutout:'75%', plugins: { legend: { position: 'right', labels:{font:{family:'Sarabun'}, boxWidth:10} } } } });
+            
+            if(chWork) chWork.destroy();
+            chWork = new Chart(document.getElementById('workloadChart'), { type: 'bar', data: { labels: D.map(d=>d.n), datasets: [{ label:'เสร็จแล้ว', data:D.map(d=>d.s[0]), backgroundColor:ST.done.color }, { label:'รอดำเนินการ', data:D.map(d=>d.open), backgroundColor:ST.wait.color, borderRadius:{topLeft:4,topRight:4} }] }, options: { responsive:true, maintainAspectRatio:false, scales: { x:{stacked:true, grid:{display:false}}, y:{stacked:true, grid:{color: IS_DARK?'#334155':'#e2e8f0'}} }, plugins: { legend: { position: 'top', labels:{font:{family:'Sarabun'}, usePointStyle:true} } } } });
+
+            document.getElementById('insightsContainer').innerHTML = `
+                <div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-xl flex gap-4 items-start"><i class="ph-fill ph-siren text-2xl text-red-500"></i><div><h4 class="font-bold text-red-800 dark:text-red-400">เคลียร์งานเก่าเร่งด่วน</h4><p class="text-sm text-red-700 dark:text-red-300 mt-1">${D.slice().sort((a,b)=>b.old-a.old)[0]?.n||'ไม่มีข้อมูล'} มีเรื่องเกิน 1 ปีสะสมถึง ${D[0]?.old||0} เรื่อง</p></div></div>
+                <div class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50 rounded-xl flex gap-4 items-start"><i class="ph-fill ph-scales text-2xl text-orange-500"></i><div><h4 class="font-bold text-orange-800 dark:text-orange-400">เกลี่ยภาระงาน</h4><p class="text-sm text-orange-700 dark:text-orange-300 mt-1">${D.slice().sort((a,b)=>b.open-a.open)[0]?.n||'ไม่มีข้อมูล'} แบกรับงานค้างสูงที่สุด ควรพิจารณาโอนย้ายแฟ้มใหม่</p></div></div>
+            `;
+        }
+
+        function renderOfficerSelect() {
+            const sel = document.getElementById('officerSelect');
+            sel.innerHTML = D.map(d => `<option value="${d.n}">${d.n} (งานค้าง ${d.open} เรื่อง)</option>`).join('');
+            sel.value = currentOfficer;
+            sel.disabled = CURRENT_ROLE === 'officer';
+        }
+
+        function changeOfficer(val) { currentOfficer = val; currentPage = 1; activeFilter = null; renderOfficerDetails(); }
+        function changePage(delta) { currentPage += delta; renderOfficerDetails(); }
+        function toggleFilter(k) { activeFilter = activeFilter === k ? null : k; currentPage = 1; renderOfficerDetails(); }
+
+        function renderOfficerDetails() {
+            const d = D.find(x => x.n === currentOfficer); if(!d) return;
+            const breached = CASES[d.n].filter(x => x.wd > SLA_DAYS).length;
+            const slaPct = d.open === 0 ? 100 : Math.round(((d.open - breached)/d.open)*100);
+
+            document.getElementById('legendContainer').innerHTML = KEYS.map(k => `<button onclick="toggleFilter('${k}')" class="flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold transition-all shadow-sm ${activeFilter===k ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 ring-2 ring-brand-500/20' : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'}"><span class="w-2.5 h-2.5 rounded-full" style="background:${ST[k].color}"></span>${ST[k].label}</button>`).join('');
+
+            const maxAge = Math.max(...d.a) || 1;
+            const ageHtml = d.a.map((v, i) => `<div class="flex items-center gap-2 text-[10px] mb-2"><div class="w-14 truncate text-slate-500 dark:text-slate-400 font-bold">${BUCKETS[i]}</div><div class="flex-grow h-2 bg-slate-100 dark:bg-slate-700 rounded-full"><div class="h-full rounded-full ${B_COLORS[i]}" style="width:${(v/maxAge)*100}%"></div></div><div class="w-5 text-right font-bold dark:text-white">${v}</div></div>`).join('');
+
+            const statusHtml = KEYS.map((k, i) => {
+                const val = d.s[i];
+                return val ? `<div class="flex justify-between items-center text-xs mb-2.5"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background:${ST[k].color}"></span><span class="text-slate-600 dark:text-slate-300 font-medium">${ST[k].label}</span></div><span class="font-bold text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-900/50 px-2 py-0.5 rounded border border-slate-100 dark:border-slate-700">${val}</span></div>` : '';
+            }).join('');
+
+            document.getElementById('officerSummaryContainer').innerHTML = `
+                <div class="p-5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 rounded-t-xl flex justify-between items-center">
+                    <div class="flex items-center gap-3"><div class="w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-300 flex items-center justify-center text-xl font-bold border border-brand-200">${d.n.charAt(0)}</div><div><h3 class="font-bold text-slate-900 dark:text-white text-base mb-0.5">${d.n}</h3><p class="text-xs text-slate-500 dark:text-slate-400">${d.t}</p></div></div>
+                </div>
+                ${CURRENT_ROLE === 'executive' ? `
+                <div class="p-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex gap-2">
+                    <button onclick="showToast('ยังไม่มีระบบส่งหนังสือจากข้อมูลจริง')" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white py-2 rounded-lg text-xs font-bold shadow-sm transition flex justify-center items-center gap-1.5"><i class="ph-fill ph-paper-plane-tilt text-sm"></i> เร่งรัดงาน</button>
+                    <button onclick="switchView('rebalance')" class="flex-1 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 py-2 rounded-lg text-xs font-bold transition flex justify-center items-center gap-1.5"><i class="ph-fill ph-scales text-sm"></i> เกลี่ยงาน</button>
+                </div>` : ''}
+                <div class="flex p-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 divide-x divide-slate-100 dark:divide-slate-700">
+                    <div class="flex-1 text-center"><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">งานค้างดำเนินการ</p><p class="text-3xl font-bold text-slate-800 dark:text-white">${d.open}</p></div>
+                    <div class="flex-1 text-center"><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">SLA Health</p><p class="text-3xl font-bold ${slaPct<80?'text-red-500':'text-emerald-500'}">${slaPct}%</p></div>
+                </div>
+                <div class="p-5 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-wider flex items-center gap-1"><i class="ph-fill ph-chart-pie-slice text-brand-500"></i> สัดส่วนสถานะงาน</p>
+                    ${statusHtml}
+                </div>
+                <div class="p-5 bg-white dark:bg-slate-800 rounded-b-xl">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-wider flex items-center gap-1"><i class="ph-fill ph-calendar-blank text-brand-500"></i> อายุเรื่องสะสม</p>
+                    ${ageHtml}
+                </div>
+            `;
+
+            let fCases = CASES[d.n].filter(x => activeFilter ? x.s === KEYS.indexOf(activeFilter) : x.s !== 0);
+            const total = fCases.length; const pages = Math.ceil(total/ITEMS_PER_PAGE) || 1;
+            if(currentPage > pages) currentPage = pages;
+            const start = (currentPage-1)*ITEMS_PER_PAGE; 
+            fCases = fCases.slice(start, start+ITEMS_PER_PAGE);
+
+            document.getElementById('tableContainer').innerHTML = total === 0 ? `<div class="p-8 text-center text-slate-400">ไม่มีรายการ</div>` : `
+                <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 rounded-t-xl">
+                    <span class="text-sm font-bold text-slate-700 dark:text-slate-200">รายการเรื่อง (${total})</span>
+                    <button onclick="exportCSV()" class="text-[10px] font-bold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded text-slate-600 dark:text-slate-300 hover:bg-slate-50 flex items-center gap-1 shadow-sm"><i class="ph ph-download"></i> CSV</button>
+                </div>
+                <div class="overflow-x-auto flex-1"><table class="w-full text-sm text-left"><thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[11px] uppercase"><tr><th class="px-4 py-3">จังหวัด</th><th class="px-4 py-3">เรื่อง</th><th class="px-4 py-3">อายุ</th><th class="px-4 py-3">สถานะ</th><th class="px-4 py-3 text-right">SLA</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                    ${fCases.map(c => `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition dark:text-slate-200">
+                            <td class="px-4 py-3 whitespace-nowrap">${c.p}</td><td class="px-4 py-3 truncate max-w-[200px]" title="${c.t}">${c.t} <span class="block text-[10px] text-slate-400">${c.w}</span></td><td class="px-4 py-3 whitespace-nowrap font-medium ${c.daysAgo>365?'text-red-500':''}">${c.ageText}</td>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="inline-flex items-center gap-1.5 text-[11px] font-medium bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 shadow-sm"><span class="w-1.5 h-1.5 rounded-full" style="background:${ST[KEYS[c.s]].color}"></span>${ST[KEYS[c.s]].label}</span></td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right font-bold ${c.wd>SLA_DAYS?'text-red-500':'text-slate-500'}">${c.wd?c.wd+' วัน':'-'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody></table></div>
+                <div class="px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-b-xl">
+                    <span class="text-[11px] font-medium text-slate-500">หน้า ${currentPage} / ${pages}</span>
+                    <div class="flex gap-2"><button onclick="changePage(-1)" ${currentPage===1?'disabled':''} class="px-3 py-1.5 text-xs font-bold border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 dark:text-white transition shadow-sm">ก่อนหน้า</button><button onclick="changePage(1)" ${currentPage===pages?'disabled':''} class="px-3 py-1.5 text-xs font-bold border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 dark:text-white transition shadow-sm">ถัดไป</button></div>
+                </div>
+            `;
+        }
+
+        function renderEscalation() {
+            let provs = {};
+            ALL_CASES.filter(c => c.s===1 && c.wd>SLA_DAYS).forEach(c => { provs[c.p] = provs[c.p] || []; provs[c.p].push(c); });
+            
+            document.getElementById('escalationContainer').innerHTML = Object.keys(provs).sort((a,b)=>provs[b].length-provs[a].length).map(p => `
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
+                    <div class="flex justify-between items-start mb-4"><div><h4 class="font-bold dark:text-white">จังหวัด${p}</h4><p class="text-[10px] text-red-500 font-bold mt-1">เกิน SLA ${provs[p].length} เรื่อง</p></div><div class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-sm">${provs[p].length}</div></div>
+                    <div class="space-y-2 mb-4 flex-1">${provs[p].slice(0,3).map(c=>`<div class="text-[10px] p-2 bg-slate-50 dark:bg-slate-900 rounded border border-slate-100 dark:border-slate-700"><div class="font-bold dark:text-slate-200 truncate">${c.t}</div><div class="flex justify-between text-slate-500 mt-1"><span>${c.officer}</span><span class="text-red-500 font-bold">รอ ${c.wd} วัน</span></div></div>`).join('')}</div>
+                    <button onclick="showToast('ยังไม่มีระบบส่งหนังสือจากข้อมูลจริง')" class="w-full bg-slate-100 dark:bg-slate-700 hover:bg-brand-600 hover:text-white dark:text-white text-xs font-bold py-2 rounded transition">เร่งรัด</button>
+                </div>
+            `).join('');
+        }
+
+        function bulkEscalateAll() { showToast('ยังไม่มีระบบส่งหนังสือจากข้อมูลจริง'); }
+        function allowDrop(e) { e.preventDefault(); }
+        function dragLeave(e) {}
+        function dragStart(e,name) { e.preventDefault(); }
+        function dragEnd(e) {}
+        function drop(e,toName) { e.preventDefault(); showToast('โหมดอ่านอย่างเดียว ไม่สามารถโอนย้ายงาน'); }
+
+        function renderRebalance() {
+            document.getElementById('kanbanContainer').innerHTML = D.map(d => `
+                <div class="bg-slate-100 dark:bg-slate-900/50 rounded-xl p-3 min-w-[260px] flex flex-col h-full border border-slate-200 dark:border-slate-700">
+                    <div class="flex justify-between items-center mb-3"><h4 class="font-bold text-sm dark:text-white">${d.n}</h4><span id="kb-count-${d.n}" class="bg-white dark:bg-slate-800 text-xs font-bold px-2 py-0.5 rounded shadow-sm dark:text-white border border-slate-200 dark:border-slate-700">${d.open}</span></div>
+                    <div class="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-2 p-1" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${d.n}')">
+                        ${Array.from({length:Math.min(d.open, 20)}).map((_,i)=>`
+                            <div class="bg-white dark:bg-slate-800 p-2.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 cursor-grab active:cursor-grabbing text-[11px] dark:text-slate-200 hover:border-brand-400" draggable="false" ondragstart="dragStart(event, '${d.n}')" ondragend="dragEnd(event)">
+                                <div class="text-[9px] text-slate-400 mb-1">รายการงาน #${i+1}</div>
+                                <div class="font-bold truncate">${d.t}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAnalytics() {
+            Chart.defaults.color = IS_DARK ? '#94a3b8' : '#64748b';
+            const tc = document.getElementById('trendChart');
+            if(chTrend) chTrend.destroy();
+            chTrend = new Chart(tc, { type: 'line', data: { labels: ['พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.'], datasets: [{ label:'งานค้างสะสม', data:[null,null,null,null,null,TOTALS.open], borderColor:'#0ea5e9', backgroundColor:'rgba(14,165,233,0.1)', borderWidth:3, fill:true, tension:0.3 }] }, options: { responsive:true, maintainAspectRatio:false, plugins: { legend: { position:'bottom', labels:{font:{family:'Sarabun'}} } } } });
+
+            const ioc = document.getElementById('inOutChart');
+            if(chInOut) chInOut.destroy();
+            chInOut = new Chart(ioc, { type: 'bar', data: { labels: ['พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.'], datasets: [{ label:'รับเรื่อง', data:[null,null,null,null,null,null], backgroundColor:'#f43f5e' }, { label:'แล้วเสร็จ', data:[null,null,null,null,null,null], backgroundColor:'#10b981' }] }, options: { responsive:true, maintainAspectRatio:false, plugins: { legend: { position:'bottom', labels:{font:{family:'Sarabun'}} } } } });
+        }
+
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('desktop-sidebar');
+            sidebar.classList.toggle('sidebar-collapsed');
+            document.getElementById('toggle-icon').className = sidebar.classList.contains('sidebar-collapsed') ? 'ph ph-list text-lg' : 'ph ph-caret-left text-lg';
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+        }
+
+        // Initialize App
+        window.onload = function() {
+            initData();
+            renderMenus();
+            switchView('dashboard');
+            logAction('รอรับข้อมูลจริงจาก LandRight');
+        };
+    </script>
+</body>
+</html>
