@@ -570,7 +570,7 @@
                 {icon:'warning-circle', c:'red', l:`เกิน SLA ${SLA_DAYS} วัน`, v:breachCount}, {icon:'archive-box', c:'purple', l:'ค้างเกิน 1 ปี', v:TOTALS.old}
             ].map(k => `<div class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4"><div class="p-3 bg-${k.c}-50 dark:bg-${k.c}-900/30 text-${k.c}-600 dark:text-${k.c}-400 rounded-lg"><i class="ph ph-${k.icon} text-2xl"></i></div><div><p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">${k.l}</p><h3 class="text-2xl font-bold text-slate-800 dark:text-white">${k.v}</h3></div></div>`).join('');
 
-            Chart.defaults.color = IS_DARK ? '#94a3b8' : '#64748b';
+            if (window.Chart?.defaults) Chart.defaults.color = IS_DARK ? '#94a3b8' : '#64748b';
             if(chStatus) chStatus.destroy();
             chStatus = new Chart(document.getElementById('statusChart'), { type: 'doughnut', data: { labels: KEYS.map(k=>ST[k].label), datasets: [{ data: KEYS.map((_,i)=>ALL_CASES.filter(c=>c.s===i).length), backgroundColor: KEYS.map(k=>ST[k].color), borderWidth: 0 }] }, options: { responsive:true, maintainAspectRatio:false, cutout:'75%', plugins: { legend: { position: 'right', labels:{font:{family:'Sarabun'}, boxWidth:10} } } } });
             
@@ -696,7 +696,7 @@
         }
 
         function renderAnalytics() {
-            Chart.defaults.color = IS_DARK ? '#94a3b8' : '#64748b';
+            if (window.Chart?.defaults) Chart.defaults.color = IS_DARK ? '#94a3b8' : '#64748b';
             const tc = document.getElementById('trendChart');
             if(chTrend) chTrend.destroy();
             chTrend = new Chart(tc, { type: 'line', data: { labels: ['พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.'], datasets: [{ label:'งานค้างสะสม', data:[null,null,null,null,null,TOTALS.open], borderColor:'#0ea5e9', backgroundColor:'rgba(14,165,233,0.1)', borderWidth:3, fill:true, tension:0.3 }] }, options: { responsive:true, maintainAspectRatio:false, plugins: { legend: { position:'bottom', labels:{font:{family:'Sarabun'}} } } } });
