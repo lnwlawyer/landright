@@ -10,7 +10,7 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parent.parent
 FILES = {name: ROOT / name for name in (
-    'manifest.json', 'privacy-policy.html', 'smt2.js', 'smt2/sheets-reader.mjs',
+    'manifest.json', 'privacy-policy.html', 'smt2.js', 'smt2/sheets-reader.mjs', 'smt2/landright-menu-source.mjs',
     'assets/landright.css', 'assets/chart.js',
 )}
 
