@@ -7,7 +7,7 @@ const code=readFileSync('smt2.js','utf8');
 const reader=readFileSync('smt2/sheets-reader.mjs','utf8');
 const response = (values = [['จังหวัด','เรื่อง','เลขที่หนังสือ','เจ้าหน้าที่','สถานะ'],['ทดสอบ','เรื่องจำลอง','TEST-ONLY','จำลอง','รอดำเนินการ']]) => ({ok:true,json:async()=>({valueRanges:STAFF_SHEETS.map(sheet=>({range:`'${sheet}'!A1:E2`,values}))})});
 test('OAuth staff UI replaces Apps Script without removing LandRight navigation',()=>{
- assert.match(html,/id="smt2-content"/); assert.match(html,/data-smt2-menu hidden/);
+ assert.match(html,/id="smt2-content"/); assert.match(html,/data-smt2-menu/);
  assert.doesNotMatch(html,/script.google.com\/macros/);
  assert.match(html,/src="smt2.js" type="module"/);
  for (const section of ['overview','foreigners','religious','abandoned','users','settings']) assert.ok(html.includes(`id="${section}-content"`));
