@@ -29,6 +29,7 @@ test('login reads all tabs, filters, dashboard, pagination, safe HTML and logout
  await expect(page.locator('#smt2-results img')).toHaveCount(0); expect(await page.evaluate(()=>window.xss)).toBeUndefined();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
  expect(await page.locator('#smt2-results > div').evaluate(e=>getComputedStyle(e).overflowX==='auto')).toBe(true);
+ await page.locator('[data-smt2-view="details"]').click(); await expect(page.locator('#smt2-next')).toBeVisible();
  await page.locator('#smt2-next').click(); await expect(page.locator('#smt2-page')).toContainText('2 / 49');
  await page.locator('#smt2-sheet').selectOption(sheets[0]); await expect(page.locator('#smt2-count')).toContainText('61');
  await expect(page.locator('#smt2-page')).toContainText('1 / 7');

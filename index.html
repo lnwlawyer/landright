@@ -120,6 +120,22 @@
     <script src="smt2-config.example.js" defer></script>
     <script src="smt2.js" type="module"></script>
 
+<style>
+/* SMT2 executive dashboard, scoped to avoid changing other LandRight menus. */
+#smt2-content .smt2-exec-header{padding:22px 24px;border-radius:14px;background:linear-gradient(115deg,#075985,#1e3a8a);color:#fff;margin-bottom:16px}
+#smt2-content .smt2-exec-header small{font-size:11px;letter-spacing:.08em;opacity:.85}
+#smt2-content .smt2-exec-header h2{font-size:22px;font-weight:700;margin:7px 0}
+#smt2-content .smt2-exec-header p{font-size:13px;opacity:.9}
+#smt2-content .smt2-exec-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+#smt2-content .smt2-exec-nav button{padding:9px 14px;border-radius:9px;border:1px solid #cbd5e1;background:#fff;color:#334155;cursor:pointer;font-size:13px}
+#smt2-content .smt2-exec-nav button[aria-pressed="true"]{background:#075985;color:#fff;border-color:#075985}
+#smt2-content .smt2-exec-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px}
+#smt2-content .smt2-exec-kpis article{border:1px solid #dbe3ee;border-radius:12px;padding:16px;background:#fff;box-shadow:0 2px 8px #0f172a0a}
+#smt2-content .smt2-exec-kpis span{display:block;font-size:12px;color:#64748b}
+#smt2-content .smt2-exec-kpis strong{display:block;font-size:26px;color:#0f172a;margin-top:5px}
+#smt2-content .smt2-chart-grid[hidden],#smt2-content #smt2-results[hidden],#smt2-content .smt2-pages[hidden]{display:none!important}
+
+</style>
 </head>
 <body class="bg-gray-50 font-thai">
     <!-- Mobile Menu Overlay -->
