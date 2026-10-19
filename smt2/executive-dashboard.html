@@ -378,7 +378,7 @@
                 const officer=String(record.sheet||record.officer||'ไม่ระบุ').trim();
                 const status=statusIndex(record.status);
                 const days=status===0?null:thaiAge(record.columns?.['เจ้าหน้าที่ รับเรื่อง']);
-                const item={id:String(i+1),officer,s:status,daysAgo:days,ageText:days===null?'ไม่ทราบอายุ':days+' วัน',wd:null,
+                const item={id:String(i+1),officer,s:status,daysAgo:days,ageText:days===null?'ไม่ทราบอายุ':days+' วัน',wd:days,
                     p:escapeText(record.province),t:escapeText(record.subject),w:escapeText(record.reference||record.officer),raw:record};
                 ALL_CASES.push(item);
                 if(!grouped.has(officer))grouped.set(officer,[]);
@@ -578,7 +578,7 @@
             chWork = new Chart(document.getElementById('workloadChart'), { type: 'bar', data: { labels: D.map(d=>d.n), datasets: [{ label:'เสร็จแล้ว', data:D.map(d=>d.s[0]), backgroundColor:ST.done.color }, { label:'รอดำเนินการ', data:D.map(d=>d.open), backgroundColor:ST.wait.color, borderRadius:{topLeft:4,topRight:4} }] }, options: { responsive:true, maintainAspectRatio:false, scales: { x:{stacked:true, grid:{display:false}}, y:{stacked:true, grid:{color: IS_DARK?'#334155':'#e2e8f0'}} }, plugins: { legend: { position: 'top', labels:{font:{family:'Sarabun'}, usePointStyle:true} } } } });
 
             document.getElementById('insightsContainer').innerHTML = `
-                <div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-xl flex gap-4 items-start"><i class="ph-fill ph-siren text-2xl text-red-500"></i><div><h4 class="font-bold text-red-800 dark:text-red-400">เคลียร์งานเก่าเร่งด่วน</h4><p class="text-sm text-red-700 dark:text-red-300 mt-1">${D.slice().sort((a,b)=>b.old-a.old)[0]?.n||'ไม่มีข้อมูล'} มีเรื่องเกิน 1 ปีสะสมถึง ${D[0]?.old||0} เรื่อง</p></div></div>
+                <div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-xl flex gap-4 items-start"><i class="ph-fill ph-siren text-2xl text-red-500"></i><div><h4 class="font-bold text-red-800 dark:text-red-400">เคลียร์งานเก่าเร่งด่วน</h4><p class="text-sm text-red-700 dark:text-red-300 mt-1">${D.slice().sort((a,b)=>b.old-a.old)[0]?.n||'ไม่มีข้อมูล'} มีเรื่องเกิน 1 ปีสะสมถึง ${D.slice().sort((a,b)=>b.old-a.old)[0]?.old||0} เรื่อง</p></div></div>
                 <div class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50 rounded-xl flex gap-4 items-start"><i class="ph-fill ph-scales text-2xl text-orange-500"></i><div><h4 class="font-bold text-orange-800 dark:text-orange-400">เกลี่ยภาระงาน</h4><p class="text-sm text-orange-700 dark:text-orange-300 mt-1">${D.slice().sort((a,b)=>b.open-a.open)[0]?.n||'ไม่มีข้อมูล'} แบกรับงานค้างสูงที่สุด ควรพิจารณาโอนย้ายแฟ้มใหม่</p></div></div>
             `;
         }
