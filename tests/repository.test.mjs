@@ -301,7 +301,10 @@ test('SMT2 public dashboard matches LandRight shell without exposing restricted 
 
 test('SMT2 is a native LandRight section without separate-page navigation', () => {
  assert.ok(html.includes('id="smt2-content" class="content-section hidden"'));
- assert.ok(html.includes('showContent(\'smt2\', event)'));
+ assert.ok(html.includes('toggleSubmenu(\'smt2\', event)'));
+ assert.ok(html.includes('id="smt2-submenu"'));
+ assert.ok(html.includes('aria-controls="smt2-submenu"'));
+ assert.ok(html.includes('window.landrightSMT2SelectView(\'dashboard\',event)'));
  assert.ok(html.includes("'smt2': 'ข้อมูลงาน'"));
  assert.ok(!html.includes("if (section === 'smt2') loadSmt2PublicDashboard()"));
  assert.ok(!html.includes("import {createInlineController} from './smt2/inline-dashboard.mjs'"));
