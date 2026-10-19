@@ -41,7 +41,8 @@ function showExecutiveView() {
       frame.remove();
       if (executiveFrame === frame) executiveFrame = null;
       $('smt2-data').hidden = false;
-      message('ไม่สามารถเปิด Dashboard ต้นฉบับได้ กำลังแสดงตารางข้อมูลเดิมแทน');
+      const status = $('smt2-message');
+      if (status) status.textContent = 'ไม่สามารถเปิด Dashboard ต้นฉบับได้ กำลังแสดงตารางข้อมูลเดิมแทน';
     }
   });
   $('smt2-data').after(frame);
