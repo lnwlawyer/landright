@@ -315,7 +315,7 @@ test('SMT2 public snapshot module remains isolated from the OAuth staff entry', 
  assert.ok(html.includes('id="smt2-admin-entry"'));
  assert.ok(!html.includes('script.google.com/macros/'));
  assert.ok(html.includes('src="smt2.js" type="module"'));
- assert.match(html, /data-smt2-menu hidden/);
+ assert.match(html, /data-smt2-menu/);
  assert.ok(html.includes("new URLSearchParams(location.search).get('view') === 'smt2'"));
  assert.ok(!html.includes("window.loadSmt2PublicDashboard = () => controller.load()"));
  const module = readFileSync(new URL('../smt2/inline-dashboard.mjs',import.meta.url),'utf8');

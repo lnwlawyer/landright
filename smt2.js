@@ -148,7 +148,7 @@ if (root) {
     clearTimeout(expiryTimer); token = null; expiresAt = 0; accountEmail = null; records = []; pending = false;
     $('smt2-data').replaceChildren(); $('smt2-login').hidden = false; $('smt2-login').disabled = false;
     $('smt2-logout').hidden = true; $('smt2-refresh').hidden = true; $('smt2-refresh').disabled = false;
-    if (menu) menu.hidden = true;
+    if (menu) menu.hidden = false;
     if ($('smt2-admin-entry')) $('smt2-admin-entry').textContent = 'เข้าสู่ระบบ Google';
     message(text);
     // Clear local state even if the external identity library fails to revoke.
