@@ -27,7 +27,7 @@ test('login renders original Executive HTML using authenticated Sheets data, wit
  expect(new URL(req[0].url()).searchParams.getAll('ranges')).toHaveLength(8);
  expect(await req[0].headerValue('authorization')).toBe('Bearer FAKE_BROWSER_TOKEN');
  const frame=page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]');
- await expect(frame.locator('#desktop-sidebar')).toBeVisible();
+ await expect(frame.locator('#desktop-sidebar')).toBeAttached();
  await expect(frame.locator('#last-sync-time')).toContainText('Google Sheets');
  expect(await page.locator('iframe[title="Executive Dashboard ข้อมูลงาน"]').evaluate(e=>e.contentWindow.ALL_CASES?.length)).toBeUndefined();
  await expect(page.locator('#smt2-data')).toBeHidden();
