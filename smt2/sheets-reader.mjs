@@ -13,10 +13,16 @@ export function parseSheet(values, sheet) {
   if (!values.every(row => Array.isArray(row) && row.every(v => ['string','number','boolean'].includes(typeof v)))) throw new Error('รูปแบบข้อมูลชีตไม่ถูกต้อง');
   const rawHeaders = values[0].map(v=>String(v ?? '').trim());
   const headers = rawHeaders.map(normalize);
-  const nonEmptyHeaders = headers.filter(Boolean);
-  if (new Set(nonEmptyHeaders).size !== nonEmptyHeaders.length) {
-  throw new Error('ชื่อคอลัมน์ซ้ำกัน');
-}
+  // Keep every source column even when a sheet contains duplicate or
+  // normalization-equivalent headings. Never overwrite earlier values.
+  const usedLabels = new Set();
+  const displayHeaders = rawHeaders.map((header, i) => {
+    const base = header || 'คอลัมน์ ' + (i + 1);
+    let label = base, suffix = 2;
+    while (usedLabels.has(normalize(label))) label = base + ' (' + suffix++ + ')';
+    usedLabels.add(normalize(label));
+    return label;
+  });
   const columns = Object.fromEntries(Object.entries(aliases).map(([key, names]) => {
     const matches = headers.flatMap((h, i) =>
       names.map(normalize).includes(h) ? [i] : []
@@ -29,7 +35,7 @@ export function parseSheet(values, sheet) {
   const missing = Object.keys(columns).filter(k => columns[k] < 0);
   const records = values.slice(1).filter(row => row.some(v => String(v).trim())).map(row => ({
     sheet,
-    columns: Object.fromEntries(rawHeaders.map((header,i)=>[header || 'คอลัมน์ '+(i+1), String(row[i] ?? '')])),
+    columns: Object.fromEntries(displayHeaders.map((header,i)=>[header, String(row[i] ?? '')])),
     ...Object.fromEntries(Object.entries(columns).map(([k, i]) => [k, i < 0 ? '' : String(row[i] ?? '')])),
   }));
   return {records, missing};
