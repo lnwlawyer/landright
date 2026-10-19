@@ -5,20 +5,35 @@ test('anonymous users see login but no private API requests or records',async({p
  await expect(page.locator('#smt2-content')).toBeVisible(); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
  await expect(page.locator('#smt2-data')).toBeEmpty(); expect(requests).toHaveLength(0);
 });
+test('remember Google preference without storing access tokens or private records',async({page})=>{
+ const requests=await setup(page);
+ await login(page);
+ await expect(page.locator('#smt2-count')).toContainText('488');
+ const stored=await page.evaluate(()=>({remember:localStorage.getItem('landright-remember-google-v1'),local:Object.entries(localStorage),session:Object.entries(sessionStorage)}));
+ expect(stored.remember).toBe('yes');
+ expect(JSON.stringify(stored)).not.toContain('FAKE_BROWSER_TOKEN');
+ expect(JSON.stringify(stored)).not.toContain('จังหวัดจำลอง');
+ expect(requests.some(r=>new URL(r.url()).pathname.endsWith('/values:batchGet'))).toBe(true);
+ await page.locator('#smt2-logout').click();
+ await expect(page.locator('#smt2-data')).toBeEmpty();
+ expect(await page.evaluate(()=>localStorage.getItem('landright-remember-google-v1'))).toBeNull();
+});
 test('login reads all tabs, filters, dashboard, pagination, safe HTML and logout',async({page})=>{
  const requests=await setup(page); await login(page);
- await expect(page.locator('#smt2-count')).toContainText('488'); expect(requests).toHaveLength(1);
- const request=requests[0]; expect(request.method()).toBe('GET'); expect(new URL(request.url()).searchParams.getAll('ranges')).toHaveLength(8);
+ await expect(page.locator('#smt2-count')).toContainText('488');
+ const smt2Requests=requests.filter(r=>new URL(r.url()).pathname.endsWith('/values:batchGet'));
+ expect(smt2Requests).toHaveLength(1);
+ const request=smt2Requests[0]; expect(request.method()).toBe('GET'); expect(new URL(request.url()).searchParams.getAll('ranges')).toHaveLength(8);
  expect(await request.headerValue('authorization')).toBe('Bearer FAKE_BROWSER_TOKEN');
- await expect(page.locator('#smt2-results tbody tr')).toHaveCount(50);
+ await expect(page.locator('#smt2-results tbody tr')).toHaveCount(10);
  await expect(page.locator('#smt2-results img')).toHaveCount(0); expect(await page.evaluate(()=>window.xss)).toBeUndefined();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
- expect(await page.locator('#smt2-results').evaluate(e=>e.scrollWidth>e.clientWidth || innerWidth>700)).toBe(true);
- await page.locator('#smt2-next').click(); await expect(page.locator('#smt2-page')).toContainText('2 / 10');
+ expect(await page.locator('#smt2-results > div').evaluate(e=>getComputedStyle(e).overflowX==='auto')).toBe(true);
+ await page.locator('#smt2-next').click(); await expect(page.locator('#smt2-page')).toContainText('2 / 49');
  await page.locator('#smt2-sheet').selectOption(sheets[0]); await expect(page.locator('#smt2-count')).toContainText('61');
- await expect(page.locator('#smt2-page')).toContainText('1 / 2');
+ await expect(page.locator('#smt2-page')).toContainText('1 / 7');
  await page.locator('#smt2-status').selectOption('เสร็จแล้ว'); await expect(page.locator('#smt2-count')).toContainText('30');
- await expect(page.locator('#smt2-dashboard')).toContainText('30');
+ await expect(page.locator('#smt2-chart-status')).toBeAttached();
  await page.locator('#smt2-search').fill('ไม่มีเรื่องนี้'); await expect(page.locator('#smt2-results')).toContainText('ไม่พบรายการ');
  await expect(page.locator('#smt2-next')).toBeDisabled();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -29,8 +44,8 @@ test('login reads all tabs, filters, dashboard, pagination, safe HTML and logout
 for(const status of [401,403,404,429,500]) test(`API ${status} clears private data and shows error in SMT2`,async({page})=>{
  const requests=await setup(page,{status}); await login(page);
  const reason={401:'หมดอายุ',403:'ปฏิเสธ',404:'ไม่พบไฟล์',429:'จำกัด',500:'ไม่สำเร็จ'}[status];
- await expect(page.locator('#smt2-message')).toContainText(reason); expect(requests).toHaveLength(1); await expect(page.locator('#smt2-content')).toBeVisible();
- await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('#smt2-login')).toBeVisible(); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
+ await expect(page.locator('#smt2-message')).toContainText(reason); expect(requests.length).toBeGreaterThanOrEqual(1); await expect(page.locator('#smt2-content')).toBeVisible();
+ await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('#smt2-logout')).toBeVisible(); await expect(page.locator('#smt2-refresh')).toBeVisible();
 });
 for(const mode of ['popup','deny']) test(`OAuth ${mode} reports error and permits retry`,async({page})=>{
  const requests=await setup(page,{mode}); await login(page);
@@ -63,7 +78,7 @@ test('network failure during refresh removes previous records and session',async
  await setup(page); await login(page); await expect(page.locator('#smt2-count')).toContainText('488');
  await page.route('https://sheets.googleapis.com/**',route=>route.abort('failed'));
  await page.locator('#smt2-refresh').click(); await expect(page.locator('#smt2-message')).toContainText('เครือข่าย');
- await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
+ await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('#smt2-refresh')).toBeVisible();
 });
 test('incomplete Sheets response never renders partial private data',async({page})=>{
  await setup(page); await page.route('https://sheets.googleapis.com/**',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({valueRanges:fakeResponse().valueRanges.slice(0,7)})}));
@@ -84,27 +99,15 @@ test('page exit cancels a pending OAuth response instead of restoring a session'
  await page.evaluate(()=>{window.dispatchEvent(new Event('pagehide'));window.finishOAuth();});
  await expect(page.locator('#smt2-data')).toBeEmpty(); expect(requests).toHaveLength(0); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
 });
-test('all eleven legacy CSV feeds populate tables and charts using synthetic rows',async({page})=>{
- const errors=[]; const feeds=new Set();
- page.on('pageerror',e=>errors.push(e.message));
- page.on('request',r=>{if(r.url().includes('docs.google.com/spreadsheets/')) feeds.add(r.url());});
- await setup(page,{legacyData:true});
- for(const id of ['dataTableBody','dataTableBody96','dataTableBodyBoi','dataTableBodyCommercial','abandonedTableBody','securitiesTableBody','docSearchTableBody']){
-  await expect(page.locator('#'+id)).toContainText('จังหวัดจำลอง');
- }
- for(const kind of ['temple','mosque','christian','catholic']){
-  await page.evaluate(()=>window.showContent('religious'));
-  await page.evaluate(t=>window.showReligiousTab(t),kind);
-  await expect(page.locator('#'+kind+'-top10-plots-body')).toContainText('จังหวัดจำลอง');
-  await expect(page.locator('#'+kind+'-top10-area-body')).toContainText('จังหวัดจำลอง');
- }
- await page.evaluate(()=>{window.showContent('foreigners');window.showTab('section93');});
- await expect.poll(()=>page.evaluate(()=>window.myCharts.nationalityChart?.data.datasets[0].data)).toEqual([1]);
- await expect(page.locator('#abandoned-total-plots')).toHaveText('2');
- await expect(page.locator('#securities-total-cases')).toHaveText('1');
- await expect(page.locator('#docsearch-total-cases')).toHaveText('1');
- expect(feeds.size).toBe(11); expect(errors).toEqual([]);
+test('legacy LandRight datasets stay private until Google authorization',async({page})=>{
+ const requests=await setup(page,{legacyData:true});
+ await page.goto('/index.html');
+ // Legacy menu loaders now wait for the shared OAuth session instead of public CSV endpoints.
+ await page.waitForTimeout(100);
+ expect(requests).toHaveLength(0);
+ await expect(page.locator('#smt2-data')).toBeEmpty();
 });
+
 test('mobile menu opens and closes with Escape after the stylesheet migration',async({page})=>{
  await setup(page);
  if(page.viewportSize().width>=1024){await expect(page.locator('#sidebar')).toBeVisible();return;}

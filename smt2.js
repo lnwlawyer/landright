@@ -297,7 +297,9 @@ if (root) {
           await load();
         }
       });
-      tokenClient.requestAccessToken({prompt:silent?'':'consent'});
+      // Reuse an existing Google grant when possible; never force consent on every visit.
+      // Google may still require an interactive account/consent prompt.
+      tokenClient.requestAccessToken({prompt: silent || shouldRememberGoogle() ? '' : 'consent'});
     } catch { if (silent) { pending=false; $('smt2-login').disabled=false; } else clearSession('ไม่สามารถเริ่มเข้าสู่ระบบ Google ได้ กรุณาลองใหม่'); }
   }
   window.landrightLogin = () => { window.landrightMenuLogin = true; try { login(); } finally { window.landrightMenuLogin = false; } };

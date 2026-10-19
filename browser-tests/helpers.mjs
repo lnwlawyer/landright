@@ -20,8 +20,8 @@ export async function setup(page,{status=200,mode='success',delay=0,expires=3600
   else await route.fulfill({body:'',contentType:'text/plain'});
  });
  await page.goto('/index.html'); await expect(page.locator('#smt2-login')).toBeAttached();
- // The legacy loader awaits eleven feeds in sequence. Wait for its final render.
- await expect(page.locator('#docSearchTableBody')).toContainText(legacyData?'จังหวัดจำลอง':'ไม่สามารถโหลดข้อมูลได้');
+ // Private Sheets menus wait for Google authorization; do not wait for obsolete public CSV feeds.
+ await expect(page.locator('#smt2-content')).toBeAttached();
  return requests;
 }
 export async function login(page) {await page.locator('#smt2-admin-entry').click();}
