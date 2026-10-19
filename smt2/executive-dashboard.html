@@ -29,6 +29,10 @@
     
     <style>
         body { overflow-x: hidden; }
+        /* LandRight owns the main and submenu navigation. */
+        #desktop-sidebar, #mobile-nav { display: none !important; }
+        .print-full { padding-top: 0 !important; }
+        @media (max-width: 767px) { body > .md\\:hidden { display: none !important; } }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -445,6 +449,9 @@
             document.getElementById('mobile-nav').innerHTML = renderLinks(true);
         }
 
+        window.setExecutiveView = viewId => {
+            if(['dashboard','details','escalation','rebalance','analytics'].includes(viewId)) switchView(viewId);
+        };
         function switchView(viewId) {
             document.querySelectorAll('.menu-item, .menu-item-mobile').forEach(el => {
                 const isActive = el.dataset.target === viewId;

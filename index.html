@@ -185,10 +185,18 @@
                         <i class="fas fa-users mr-3"></i>
                         ฝ่ายควบคุมทะเบียนที่ดิน
                     </a>
-                    <a data-smt2-menu href="#" onclick="showContent('smt2', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200" aria-label="เปิดข้อมูลงาน">
-                        <i class="fas fa-clipboard-list mr-3" aria-hidden="true"></i>
-                        ข้อมูลงาน
-                    </a>
+                    <div id="smt2-navigation-group">
+                        <a data-smt2-menu href="#" onclick="showContent('smt2', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200" aria-label="เปิดข้อมูลงาน">
+                            <i class="fas fa-clipboard-list mr-3" aria-hidden="true"></i>ข้อมูลงาน
+                        </a>
+                        <div id="smt2-submenus" class="ml-6" aria-label="เมนูย่อยข้อมูลงาน">
+                            <a href="#" data-smt2-subview="dashboard" onclick="window.landrightSMT2SelectView('dashboard',event)" class="submenu-item flex items-center px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm">ภาพรวม (Dashboard)</a>
+                            <a href="#" data-smt2-subview="details" onclick="window.landrightSMT2SelectView('details',event)" class="submenu-item flex items-center px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm">ข้อมูลรายบุคคล</a>
+                            <a href="#" data-smt2-subview="escalation" onclick="window.landrightSMT2SelectView('escalation',event)" class="submenu-item flex items-center px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm">ศูนย์เร่งรัดงาน</a>
+                            <a href="#" data-smt2-subview="rebalance" onclick="window.landrightSMT2SelectView('rebalance',event)" class="submenu-item flex items-center px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm">กระดานเกลี่ยงาน</a>
+                            <a href="#" data-smt2-subview="analytics" onclick="window.landrightSMT2SelectView('analytics',event)" class="submenu-item flex items-center px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm">แนวโน้มสถิติ</a>
+                        </div>
+                    </div>
                     <a href="#" onclick="showContent('settings', event)" class="menu-item flex items-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200">
                         <i class="fas fa-cog mr-3"></i>
                         ตั้งค่า

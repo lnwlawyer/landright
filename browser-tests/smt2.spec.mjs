@@ -1,3 +1,18 @@
+test('LandRight contains five SMT2 submenu links and they navigate the Executive views',async({page})=>{
+ await setup(page); await login(page);
+ const links=page.locator('[data-smt2-subview]');
+ await expect(links).toHaveCount(5);
+ const frame=page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]');
+ await expect(frame.locator('#view-dashboard')).toBeVisible();
+ await page.locator('#mobile-menu-button').evaluate(button=>{if(getComputedStyle(button).display!=='none') button.click();});
+ await page.locator('[data-smt2-subview="details"]').click();
+ await expect(frame.locator('#view-details')).toBeVisible();
+ await expect(page.locator('[data-smt2-subview="details"]')).toHaveAttribute('aria-current','page');
+ await expect(frame.locator('#desktop-sidebar')).toBeHidden();
+ await page.locator('#mobile-menu-button').evaluate(button=>{if(getComputedStyle(button).display!=='none') button.click();});
+ await page.locator('[data-smt2-subview="analytics"]').click();
+ await expect(frame.locator('#view-analytics')).toBeVisible();
+});
 import {test,expect} from '@playwright/test';
 import {sheets, fakeResponse, setup, login} from './helpers.mjs';
 test('anonymous users see login but no private API requests or records',async({page})=>{
