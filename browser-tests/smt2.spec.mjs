@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 import {sheets, fakeResponse, setup, login} from './helpers.mjs';
 test('anonymous users see login but no private API requests or records',async({page})=>{
  const requests=await setup(page); await page.goto('/index.html?view=smt2');
- await expect(page.locator('#smt2-content')).toBeVisible(); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
+ await expect(page.locator('#smt2-content')).toBeVisible(); await expect(page.locator('[data-smt2-menu]')).toBeVisible();
  await expect(page.locator('#smt2-data')).toBeEmpty(); expect(requests).toHaveLength(0);
 });
 test('remember Google preference without storing access tokens or private records',async({page})=>{
@@ -38,7 +38,7 @@ test('login reads all tabs, filters, dashboard, pagination, safe HTML and logout
  await expect(page.locator('#smt2-next')).toBeDisabled();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
  const storage=await page.evaluate(()=>JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)])); expect(storage).not.toContain('FAKE_BROWSER_TOKEN');
- await page.locator('#smt2-logout').click(); await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
+ await page.locator('#smt2-logout').click(); await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('[data-smt2-menu]')).toBeVisible();
  expect(await page.evaluate(()=>window.wasRevoked)).toBe(true);
 });
 for(const status of [401,403,404,429,500]) test(`API ${status} clears private data and shows error in SMT2`,async({page})=>{
@@ -59,7 +59,7 @@ test('Google Identity unavailable keeps SMT2 open and explains failure',async({p
 test('logout during request prevents late private response restoring session',async({page})=>{
  await setup(page,{delay:400}); await login(page); await expect(page.locator('#smt2-logout')).toBeVisible();
  await page.locator('#smt2-logout').click(); await page.waitForTimeout(600);
- await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
+ await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('[data-smt2-menu]')).toBeVisible();
 });
 test('expiry clears private DOM and requires a fresh login',async({page})=>{
  await setup(page); await page.clock.install(); await login(page); await expect(page.locator('#smt2-count')).toContainText('488');
@@ -97,7 +97,7 @@ test('invalid configuration does not initiate OAuth or call private API',async({
 test('page exit cancels a pending OAuth response instead of restoring a session',async({page})=>{
  const requests=await setup(page,{mode:'hold'}); await login(page);
  await page.evaluate(()=>{window.dispatchEvent(new Event('pagehide'));window.finishOAuth();});
- await expect(page.locator('#smt2-data')).toBeEmpty(); expect(requests).toHaveLength(0); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
+ await expect(page.locator('#smt2-data')).toBeEmpty(); expect(requests).toHaveLength(0); await expect(page.locator('[data-smt2-menu]')).toBeVisible();
 });
 test('legacy LandRight datasets stay private until Google authorization',async({page})=>{
  const requests=await setup(page,{legacyData:true});
