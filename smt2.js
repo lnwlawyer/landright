@@ -13,6 +13,43 @@ window.landrightReadMenu = async menuId => {
   return readMenuSheet({spreadsheetId:cfg.spreadsheetId,accessToken:token,menuId});
 };
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Exact HTML dashboard is loaded as a same-origin view; authenticated records remain in memory.
+const EXECUTIVE_HTML = './smt2/executive-dashboard.html';
+let executiveFrame = null;
+function clearExecutiveView() {
+  executiveFrame?.remove();
+  executiveFrame = null;
+  const legacy = $('smt2-data');
+  if (legacy) legacy.hidden = false;
+}
+function showExecutiveView() {
+  clearExecutiveView();
+  const frame = document.createElement('iframe');
+  frame.title = 'Executive Dashboard ข้อมูลงาน';
+  frame.src = EXECUTIVE_HTML;
+  frame.style.cssText = 'width:100%;height:max(760px,calc(100vh - 150px));min-height:760px;border:0;border-radius:12px;background:white';
+  frame.referrerPolicy = 'same-origin';
+  frame.addEventListener('load', () => {
+    if (executiveFrame !== frame || !token || Date.now() >= expiresAt) return;
+    try {
+      if (frame.contentWindow.location.origin !== location.origin) throw new Error('origin mismatch');
+      if (typeof frame.contentWindow.setExecutiveRecords !== 'function') throw new Error('missing live adapter');
+      frame.contentWindow.setExecutiveRecords(records);
+      $('smt2-data').hidden = true;
+    } catch {
+      frame.remove();
+      if (executiveFrame === frame) executiveFrame = null;
+      $('smt2-data').hidden = false;
+      message('ไม่สามารถเปิด Dashboard ต้นฉบับได้ กำลังแสดงตารางข้อมูลเดิมแทน');
+    }
+  });
+  $('smt2-data').after(frame);
+  executiveFrame = frame;
+}
+window.addEventListener('message', event => {
+  if (event.origin !== location.origin || event.source !== executiveFrame?.contentWindow) return;
+  if (event.data?.type === 'landright-smt2-refresh-request') load();
+});
 let token = null, expiresAt = 0, tokenClient = null, records = [], generation = 0, expiryTimer, activeRequest, pending = false;
 let accountEmail = null;
 const REMEMBER_GOOGLE_KEY = 'landright-remember-google-v1';
@@ -142,7 +179,7 @@ if (root) {
   const open = () => { if (typeof window.showContent === 'function') window.showContent('smt2'); };
   function clearSession(text, revoke = true) {
     const oldToken = token;
-    destroySmt2Charts();
+    destroySmt2Charts(); clearExecutiveView();
     window.dispatchEvent(new Event('landright-auth-cleared'));
     generation++; activeRequest?.abort(); activeRequest = null;
     clearTimeout(expiryTimer); token = null; expiresAt = 0; accountEmail = null; records = []; pending = false;
@@ -259,12 +296,12 @@ if (root) {
     activeRequest?.abort(); const request = new AbortController(); activeRequest = request;
     const timeout = setTimeout(()=>request.abort(),30000);
     $('smt2-refresh').disabled = true;
-    destroySmt2Charts();records = []; $('smt2-data').replaceChildren(); message('กำลังอ่านข้อมูลจาก Google Sheets ทั้ง 8 ชีต…');
+    destroySmt2Charts();clearExecutiveView();records = []; $('smt2-data').replaceChildren(); message('กำลังอ่านข้อมูลจาก Google Sheets ทั้ง 8 ชีต…');
     try {
       const result = await readStaffSheets({spreadsheetId:cfg.spreadsheetId,accessToken:token,signal:request.signal});
       if (current !== generation || request.signal.aborted) return;
       if (Date.now() >= expiresAt) { clearSession('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่'); return; }
-      records = result.records; render(result.warnings);
+      records = result.records; render(result.warnings); showExecutiveView();
       message('เชื่อมต่อ Google Sheets สำเร็จ (อ่านอย่างเดียว)');
       $('smt2-login').hidden = true; $('smt2-logout').hidden = false; $('smt2-refresh').hidden = false;
       if (menu) menu.hidden = false;
