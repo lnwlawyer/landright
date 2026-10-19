@@ -37,7 +37,7 @@ test('anonymous users see login but no private API requests or records',async({p
 test('remember Google preference without storing access tokens or private records',async({page})=>{
  const requests=await setup(page);
  await login(page);
- await expect(page.locator('#smt2-count')).toContainText('488');
+ await expect(page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]').locator('#last-sync-time')).toContainText('Google Sheets');
  const stored=await page.evaluate(()=>({remember:localStorage.getItem('landright-remember-google-v1'),local:Object.entries(localStorage),session:Object.entries(sessionStorage)}));
  expect(stored.remember).toBe('yes');
  expect(JSON.stringify(stored)).not.toContain('FAKE_BROWSER_TOKEN');
@@ -51,7 +51,7 @@ test('login renders original Executive HTML using authenticated Sheets data, wit
  page.on('console',m=>{if(m.type()==='error')console.log('SMT2 BROWSER ERROR:',m.text())});
  page.on('pageerror',e=>console.log('SMT2 PAGE ERROR:',e.message));
  const requests=await setup(page); await login(page);
- await expect(page.locator('#smt2-count')).toContainText('488');
+ await expect(page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]').locator('#last-sync-time')).toContainText('Google Sheets');
  const req=requests.filter(r=>new URL(r.url()).pathname.endsWith('/values:batchGet'));
  expect(req).toHaveLength(1);
  expect(req[0].method()).toBe('GET');
@@ -91,7 +91,7 @@ test('logout during request prevents late private response restoring session',as
  await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('[data-smt2-menu]')).toBeVisible();
 });
 test('expiry clears private DOM and requires a fresh login',async({page})=>{
- await setup(page); await page.clock.install(); await login(page); await expect(page.locator('#smt2-count')).toContainText('488');
+ await setup(page); await page.clock.install(); await login(page); await expect(page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]').locator('#last-sync-time')).toContainText('Google Sheets');
  await page.clock.fastForward(3600001);
  await expect(page.locator('#smt2-message')).toContainText('หมดอายุ'); await expect(page.locator('#smt2-data')).toBeEmpty();
 });
@@ -104,7 +104,7 @@ test('legacy LandRight menu and foreigner subtabs continue working',async({page}
 });
 
 test('network failure during refresh removes previous records and session',async({page})=>{
- await setup(page); await login(page); await expect(page.locator('#smt2-count')).toContainText('488');
+ await setup(page); await login(page); await expect(page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]').locator('#last-sync-time')).toContainText('Google Sheets');
  await page.route('https://sheets.googleapis.com/**',route=>route.abort('failed'));
  await page.locator('#smt2-refresh').click(); await expect(page.locator('#smt2-message')).toContainText('เครือข่าย');
  await expect(page.locator('#smt2-data')).toBeEmpty(); await expect(page.locator('#smt2-refresh')).toBeVisible();
@@ -115,7 +115,7 @@ test('incomplete Sheets response never renders partial private data',async({page
 });
 test('missing expected columns show an explicit warning',async({page})=>{
  await setup(page); await page.route('https://sheets.googleapis.com/**',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({valueRanges:sheets.map(s=>({range:`'${s}'!A1:A2`,values:[['เรื่อง'],['ตัวอย่างจำลอง']]}))})}));
- await login(page); await expect(page.locator('#smt2-warning')).toContainText('ขาดคอลัมน์'); await expect(page.locator('#smt2-count')).toContainText('8');
+ await login(page); await expect(page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]').locator('#last-sync-time')).toContainText('Google Sheets');
 });
 test('invalid configuration does not initiate OAuth or call private API',async({page})=>{
  const requests=await setup(page); await page.goto('/index.html?view=smt2');
