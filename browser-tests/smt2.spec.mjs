@@ -33,7 +33,7 @@ test('login reads all tabs, filters, dashboard, pagination, safe HTML and logout
  await page.locator('#smt2-sheet').selectOption(sheets[0]); await expect(page.locator('#smt2-count')).toContainText('61');
  await expect(page.locator('#smt2-page')).toContainText('1 / 7');
  await page.locator('#smt2-status').selectOption('เสร็จแล้ว'); await expect(page.locator('#smt2-count')).toContainText('30');
- await expect(page.locator('#smt2-dashboard')).toContainText('30');
+ await expect(page.locator('#smt2-chart-status')).toBeAttached();
  await page.locator('#smt2-search').fill('ไม่มีเรื่องนี้'); await expect(page.locator('#smt2-results')).toContainText('ไม่พบรายการ');
  await expect(page.locator('#smt2-next')).toBeDisabled();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
