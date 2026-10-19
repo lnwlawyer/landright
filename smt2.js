@@ -16,6 +16,23 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;',
 // Exact HTML dashboard is loaded as a same-origin view; authenticated records remain in memory.
 const EXECUTIVE_HTML = './smt2/executive-dashboard.html';
 let executiveFrame = null;
+const SMT2_VIEWS = new Set(['dashboard','details','escalation','rebalance','analytics']);
+let selectedExecutiveView = 'dashboard';
+function syncSMT2Submenu() {
+  document.querySelectorAll('[data-smt2-subview]').forEach(link => {
+    const active = link.dataset.smt2Subview === selectedExecutiveView;
+    link.classList.toggle('bg-blue-700', active);
+    link.setAttribute('aria-current', active ? 'page' : 'false');
+  });
+}
+window.landrightSMT2SelectView = (view, event) => {
+  event?.preventDefault();
+  if (!SMT2_VIEWS.has(view)) return;
+  selectedExecutiveView = view;
+  syncSMT2Submenu();
+  if (typeof window.showContent === 'function') window.showContent('smt2', event);
+  if (executiveFrame?.contentWindow?.setExecutiveView) executiveFrame.contentWindow.setExecutiveView(view);
+};
 function clearExecutiveView() {
   executiveFrame?.remove();
   executiveFrame = null;
@@ -35,6 +52,8 @@ function showExecutiveView() {
       if (frame.contentWindow.location.origin !== location.origin) throw new Error('origin mismatch');
       if (typeof frame.contentWindow.setExecutiveRecords !== 'function') throw new Error('missing live adapter');
       frame.contentWindow.setExecutiveRecords(records);
+      frame.contentWindow.setExecutiveView?.(selectedExecutiveView);
+      syncSMT2Submenu();
       $('smt2-data').hidden = true;
     } catch (err) {
       console.error('SMT2 executive HTML adapter failed:', err);
