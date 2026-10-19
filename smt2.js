@@ -41,6 +41,8 @@ function clearExecutiveView() {
 }
 function showExecutiveView() {
   clearExecutiveView();
+  // Keep the legacy renderer hidden throughout iframe initialization.
+  $('smt2-data').hidden = true;
   const frame = document.createElement('iframe');
   frame.title = 'Executive Dashboard ข้อมูลงาน';
   frame.src = EXECUTIVE_HTML;
@@ -60,8 +62,9 @@ function showExecutiveView() {
       frame.remove();
       if (executiveFrame === frame) executiveFrame = null;
       $('smt2-data').hidden = false;
+      $('smt2-data').textContent = 'ไม่สามารถเปิด Executive Dashboard ได้ กรุณารีเฟรชข้อมูลหรือลองอีกครั้ง';
       const status = $('smt2-message');
-      if (status) status.textContent = 'ไม่สามารถเปิด Dashboard ต้นฉบับได้ กำลังแสดงตารางข้อมูลเดิมแทน';
+      if (status) status.textContent = 'ไม่สามารถเปิด Executive Dashboard ได้ กรุณารีเฟรชข้อมูลหรือลองอีกครั้ง';
     }
   });
   $('smt2-data').after(frame);
@@ -322,7 +325,7 @@ if (root) {
       const result = await readStaffSheets({spreadsheetId:cfg.spreadsheetId,accessToken:token,signal:request.signal});
       if (current !== generation || request.signal.aborted) return;
       if (Date.now() >= expiresAt) { clearSession('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่'); return; }
-      records = result.records; render(result.warnings); showExecutiveView();
+      records = result.records; showExecutiveView();
       message('เชื่อมต่อ Google Sheets สำเร็จ (อ่านอย่างเดียว)');
       $('smt2-login').hidden = true; $('smt2-logout').hidden = false; $('smt2-refresh').hidden = false;
       if (menu) menu.hidden = false;
