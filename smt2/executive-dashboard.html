@@ -353,13 +353,28 @@
         let currentPage = 1; const ITEMS_PER_PAGE = 10;
         const escapeText = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         function thaiAge(raw) {
-            const match = String(raw ?? '').trim().match(/^(\d{1,2})\s+(มค|กพ|มีค|เมย|พค|มิย|กค|สค|กย|ตค|พย|ธค)\s+(\d{4})$/);
-            if (!match) return null;
-            const months=['มค','กพ','มีค','เมย','พค','มิย','กค','สค','กย','ตค','พย','ธค'];
-            const year=Number(match[3]);
-            const date=new Date(year>2400?year-543:year,months.indexOf(match[2]),Number(match[1]));
-            const days=Math.floor((Date.now()-date.getTime())/86400000);
-            return Number.isFinite(days)&&days>=0?days:null;
+            const text=String(raw ?? '').trim().replace(/[\u200B-\u200D\uFEFF]/g,'');
+            if(!text) return null;
+            const digits=text.replace(/[๐-๙]/g,c=>String('๐๑๒๓๔๕๖๗๘๙'.indexOf(c)));
+            const monthNames=['มค','กพ','มีค','เมย','พค','มิย','กค','สค','กย','ตค','พย','ธค'];
+            let day,month,year;
+            const thai=digits.match(/^(\d{1,2})\s+([ก-๙.]+)\s+(\d{4})$/);
+            const numeric=digits.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+            const iso=digits.match(/^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/);
+            if(thai) { day=Number(thai[1]);month=monthNames.indexOf(thai[2].replace(/\./g,''));year=Number(thai[3]); }
+            else if(numeric) { day=Number(numeric[1]);month=Number(numeric[2])-1;year=Number(numeric[3]); }
+            else if(iso) { year=Number(iso[1]);month=Number(iso[2])-1;day=Number(iso[3]); }
+            else return null;
+            if(year>=2500&&year<=2699) year-=543;
+            if(year<1900||year>2100||month<0||month>11||day<1||day>31) return null;
+            const date=Date.UTC(year,month,day);
+            const check=new Date(date);
+            if(check.getUTCFullYear()!==year||check.getUTCMonth()!==month||check.getUTCDate()!==day) return null;
+            const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+            const part=t=>Number(parts.find(p=>p.type===t)?.value);
+            const today=Date.UTC(part('year'),part('month')-1,part('day'));
+            const age=Math.floor((today-date)/86400000);
+            return Number.isFinite(age)&&age>=0?age:null;
         }
         function statusIndex(status) {
             const t=String(status||'').trim();

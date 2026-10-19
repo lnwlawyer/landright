@@ -1,3 +1,17 @@
+test('Executive aging parses Thai dotted dates, numeric dates, and excludes invalid dates from SLA',async({page})=>{
+ await setup(page); await login(page);
+ const frame=page.frameLocator('iframe[title="Executive Dashboard ข้อมูลงาน"]');
+ const ages=await frame.locator('body').evaluate(()=>{
+   const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+   const get=t=>Number(today.find(p=>p.type===t)?.value);
+   const past=new Date(Date.UTC(get('year'),get('month')-1,get('day')-45));
+   const buddhist=past.getUTCFullYear()+543;
+   const thai=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][past.getUTCMonth()];
+   const formatted=past.getUTCDate()+' '+thai+' '+buddhist;
+   return {dotted:thaiAge(formatted),numeric:thaiAge(past.getUTCDate()+'/'+(past.getUTCMonth()+1)+'/'+buddhist),invalid:thaiAge('31 ก.พ. 2569')};
+ });
+ expect(ages).toEqual({dotted:45,numeric:45,invalid:null});
+});
 test('LandRight contains five SMT2 submenu links and they navigate the Executive views',async({page})=>{
  await setup(page); await login(page);
  const links=page.locator('[data-smt2-subview]');
