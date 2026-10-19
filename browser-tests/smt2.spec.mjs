@@ -5,6 +5,19 @@ test('anonymous users see login but no private API requests or records',async({p
  await expect(page.locator('#smt2-content')).toBeVisible(); await expect(page.locator('[data-smt2-menu]')).toBeHidden();
  await expect(page.locator('#smt2-data')).toBeEmpty(); expect(requests).toHaveLength(0);
 });
+test('remember Google preference without storing access tokens or private records',async({page})=>{
+ const requests=await setup(page);
+ await login(page);
+ await expect(page.locator('#smt2-count')).toContainText('488');
+ const stored=await page.evaluate(()=>({remember:localStorage.getItem('landright-remember-google-v1'),local:Object.entries(localStorage),session:Object.entries(sessionStorage)}));
+ expect(stored.remember).toBe('yes');
+ expect(JSON.stringify(stored)).not.toContain('FAKE_BROWSER_TOKEN');
+ expect(JSON.stringify(stored)).not.toContain('จังหวัดจำลอง');
+ expect(requests.some(r=>new URL(r.url()).pathname.endsWith('/values:batchGet'))).toBe(true);
+ await page.locator('#smt2-logout').click();
+ await expect(page.locator('#smt2-data')).toBeEmpty();
+ expect(await page.evaluate(()=>localStorage.getItem('landright-remember-google-v1'))).toBeNull();
+});
 test('login reads all tabs, filters, dashboard, pagination, safe HTML and logout',async({page})=>{
  const requests=await setup(page); await login(page);
  await expect(page.locator('#smt2-count')).toContainText('488'); expect(requests).toHaveLength(1);
