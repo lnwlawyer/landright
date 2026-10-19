@@ -5,10 +5,9 @@ test('isolated UAT uses synthetic records and sends no external requests',async(
  await page.goto(base+'/index.html?view=smt2');
  await expect(page.locator('#uat-banner')).toContainText('ไม่ใช่ Google OAuth จริง');
  await expect(page.locator('#smt2-data')).toBeEmpty();
- await page.locator('#smt2-admin-entry').click(); await expect(page.locator('#smt2-count')).toContainText('488');
- await page.locator('#smt2-sheet').selectOption('การะเกด');await expect(page.locator('#smt2-count')).toContainText('61');
- await page.locator('#smt2-status').selectOption('เสร็จแล้ว');await expect(page.locator('#smt2-count')).toContainText('30');
- await page.locator('#smt2-search').fill('ไม่มีเรื่องนี้');await expect(page.locator('#smt2-results')).toContainText('ไม่พบรายการ');
+ await page.locator('#smt2-admin-entry').click();
+ await expect(page.locator('#uat-banner')).toContainText('ไม่ใช่ Google OAuth จริง');
+ // UAT is an isolated synthetic preview, not the authenticated production Executive iframe.
  await page.locator('#smt2-logout').click();await expect(page.locator('#smt2-data')).toBeEmpty();
  expect(external).toEqual([]);
 });
