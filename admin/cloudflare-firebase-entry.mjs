@@ -24,7 +24,7 @@ export function createWorkersFirebaseServices({serviceAccountJson,fetchImpl=fetc
   if(typeof serviceAccountJson!=='string'||!serviceAccountJson)throw Error('Missing Worker credential secret');
   const credentials=JSON.parse(serviceAccountJson);
   if(credentials.type!=='service_account'||credentials.project_id!==PROJECT||
-    !/^https:\/\/[^/]+@[^/]+$/.test(credentials.client_email||'')||
+    !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.gserviceaccount\\.com$/.test(credentials.client_email||'')||
     typeof credentials.private_key!=='string'||!credentials.private_key.includes('BEGIN PRIVATE KEY'))
     throw Error('Invalid Firebase service identity');
   let accessToken='',expiresAt=0;
