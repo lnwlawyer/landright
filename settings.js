@@ -44,6 +44,21 @@
       : 'ยังไม่พร้อมตรวจสอบสถานะการยืนยันตัวตน';
     el.textContent = 'ไฟล์รูปแบบหน้าจอ: '+checks[0]+'\nไฟล์กราฟ: '+checks[1]+'\nไฟล์ Executive Dashboard: '+checks[2]+'\nGoogle Sheets: '+auth;
   }
+  // Google OAuth read-only authentication is not an administrator authorization.
+  // Do not infer roles from email, localStorage, or client-side UI state.
+  function adminReadiness() {
+    const el = document.getElementById('lr-admin-readiness');
+    if (!el) return;
+    const signedIn = typeof window.landrightAuthIsReady === 'function' && window.landrightAuthIsReady();
+    const lines = [
+      'การเชื่อมต่อ Google (อ่านข้อมูล): ' + (signedIn ? 'เชื่อมต่อแล้ว' : 'ยังไม่เชื่อมต่อ'),
+      'การยืนยันบทบาท Admin ฝั่งเซิร์ฟเวอร์: ยังไม่มี',
+      'บริการจัดการผู้ใช้และสิทธิ์: ยังไม่เปิดใช้งาน',
+      'บริการบันทึก Audit Log ฝั่งเซิร์ฟเวอร์: ยังไม่เปิดใช้งาน',
+      'การแก้ไขข้อมูลและแหล่งข้อมูล: ปิดใช้งานเพื่อความปลอดภัย'
+    ];
+    el.textContent = lines.join('\\n');
+  }
   load();
   function init() {
     apply();
@@ -60,11 +75,12 @@
       prefs = {...DEFAULTS};apply();feedback(save() ? 'คืนค่าเริ่มต้นแล้ว' : 'คืนค่าเริ่มต้นชั่วคราว');
     });
     document.getElementById('lr-check-system')?.addEventListener('click',diagnostics);
+    document.getElementById('lr-check-admin-readiness')?.addEventListener('click',adminReadiness);
     const originalShowContent = window.showContent;
     if (typeof originalShowContent === 'function') {
       window.showContent = function(section,event) {
         const result = originalShowContent.apply(this,arguments);
-        if (section === 'settings') void diagnostics();
+        if (section === 'settings') { void diagnostics(); adminReadiness(); }
         return result;
       };
       if (prefs.startPage !== 'overview') window.showContent(prefs.startPage);
