@@ -440,7 +440,7 @@ test('admin settings do not grant elevated privileges without backend authorizat
  const settings=html.split('id="settings-content" class="content-section hidden"')[1]?.split('</main>')[0];
  assert.ok(settings.includes('id="lr-admin-readiness"'));
  assert.ok(settings.includes('id="lr-check-admin-readiness"'));
- assert.ok(settings.includes('การยืนยันบทบาท'));
+ assert.ok(settings.includes('ต้องมีบริการตรวจสอบบทบาทฝั่งเซิร์ฟเวอร์ก่อน'));
  const script=readFileSync(new URL('../settings.js',import.meta.url),'utf8');
  assert.ok(script.includes('function adminReadiness()'));
  assert.ok(script.includes('ยังไม่มี'));
