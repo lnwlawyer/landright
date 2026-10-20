@@ -420,3 +420,18 @@ test('overview dashboard uses existing navigation and does not invent performanc
  assert.ok(!overview.includes('Math.random('));
  assert.ok(!overview.includes('data-smt2-subview='));
 });
+
+test('settings screen provides functional preferences and safe diagnostic controls', () => {
+ const settings=html.split('id="settings-content" class="content-section hidden"')[1]?.split('</main>')[0];
+ assert.ok(settings);
+ for(const id of ['lr-theme','lr-font-size','lr-start-page','lr-reset-preferences','lr-check-system','lr-system-status']) {
+  assert.ok(settings.includes('id="'+id+'"'),id);
+ }
+ assert.ok(html.includes('<script src="settings.js" defer></script>'));
+ const source=readFileSync(new URL('../settings.js',import.meta.url),'utf8');
+ assert.ok(source.includes("localStorage.setItem(KEY"));
+ assert.ok(source.includes("window.landrightAuthIsReady()"));
+ assert.ok(source.includes("cache:'no-store'"));
+ assert.ok(!source.includes('accessToken'));
+ assert.ok(!source.includes('Authorization'));
+});
