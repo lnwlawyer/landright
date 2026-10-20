@@ -27,3 +27,8 @@ Do not enable the privileged UI or ship credentials to GitHub Pages until backen
 - Unit tests use generated ephemeral RSA keys. No credentials, production endpoints, or identity information are stored in the repository.
 
 **Before deployment:** Implement trusted JWKS retrieval from Google's official HTTPS endpoint with response-size limits, cache control respecting Google's cache headers, safe key rotation and fail-closed network errors. Provide a server-owned persistent role store and a secure initial Admin bootstrap. Issue ID tokens through an explicitly approved login flow, separate from the existing read-only Sheets access token. Define rate limiting, CSRF/origin controls as appropriate, request logging without tokens, atomic writes, and production monitoring. No public endpoint or production Admin access exists yet.
+
+## Implementation increment: Google JWKS provider
+`admin/google-jwks-provider.mjs` fetches Google's public signing keys from a fixed HTTPS URL with redirects disabled, a timeout, response-size and schema bounds, a capped `Cache-Control: max-age` cache, and concurrent-fetch deduplication. Expired keys are not used after a failed refresh. Tests exercise cache expiry, malformed keys, network errors, unexpected content types, redirects and oversized bodies.
+
+To integrate on an approved backend, instantiate `createGoogleJwksProvider()` once per server process and pass its returned function as `getJwks` to `authorizeGoogleAdminRequest`. Never run it as an authorization authority on GitHub Pages. **No backend, role store, Google login change, or production write capability is deployed by this increment.**
