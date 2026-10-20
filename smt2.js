@@ -54,7 +54,7 @@ function showExecutiveView() {
       frame.contentWindow.setExecutiveRecords(records);
       frame.contentWindow.setExecutiveView?.(selectedExecutiveView);
       // Reveal only after the live records and selected view have rendered.
-      frame.style.visibility = 'visible';
+      frame.style.removeProperty('visibility');
       syncSMT2Submenu();
       $('smt2-data').hidden = true;
     } catch (err) {
