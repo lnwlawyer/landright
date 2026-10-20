@@ -1,0 +1,13 @@
+{
+  "name": "landright-admin-backend",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node start.mjs",
+    "test": "node --test ../tests/firebase-*.test.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "13.5.0"
+  }
+}
