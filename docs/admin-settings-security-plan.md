@@ -20,3 +20,10 @@ The Settings page shows read-only readiness and explicit disabled capabilities. 
 **Critical trust boundary:** `normalizeServerPrincipal` only validates the shape of a principal; it does NOT authenticate anyone. Never pass client-provided identity/role values directly. The future backend must verify Google identity tokens (signature, issuer, audience, expiry), resolve the immutable subject to a role in server-controlled storage, enforce permissions on each request, atomically compare-and-swap versions, and persist audit events before returning success.
 
 Do not enable the privileged UI or ship credentials to GitHub Pages until backend choice, initial Admin bootstrap, storage, and operating costs are approved.
+
+## Implementation increment: Google identity verification (not deployed)
+- `admin/google-id-token.mjs` validates the RS256 signature against an injected **trusted Google JWKS**, and checks issuer, exact configured audience, subject, expiry, issuance time, authorized party, and token format. It rejects attacker-controlled JWKS URLs and keys in JWT headers. It accepts **Google ID tokens only**, not the existing Sheets OAuth access token.
+- `admin/server-auth-gate.mjs` obtains roles exclusively from an injected server-owned role store. The browser cannot assign itself an Admin role. Missing, disabled, or User accounts are denied.
+- Unit tests use generated ephemeral RSA keys. No credentials, production endpoints, or identity information are stored in the repository.
+
+**Before deployment:** Implement trusted JWKS retrieval from Google's official HTTPS endpoint with response-size limits, cache control respecting Google's cache headers, safe key rotation and fail-closed network errors. Provide a server-owned persistent role store and a secure initial Admin bootstrap. Issue ID tokens through an explicitly approved login flow, separate from the existing read-only Sheets access token. Define rate limiting, CSRF/origin controls as appropriate, request logging without tokens, atomic writes, and production monitoring. No public endpoint or production Admin access exists yet.
