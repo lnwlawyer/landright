@@ -408,3 +408,15 @@ test('SMT2 Executive iframe remains invisible until live data and view are ready
  assert.ok(ready>=0 && reveal>ready);
  assert.ok(source.includes("frame.contentWindow.setExecutiveRecords(records);"));
 });
+
+test('overview dashboard uses existing navigation and does not invent performance totals', () => {
+ const overview=html.split('id="overview-content" class="content-section"')[1]?.split('<div id="smt2-content"')[0];
+ assert.ok(overview,'overview content exists');
+ for(const section of ['foreigners','religious','abandoned','users']) {
+  assert.ok(overview.includes("showContent('"+section+"',event)"),section);
+ }
+ assert.ok(overview.includes('ข้อมูลผลการดำเนินงาน'));
+ assert.ok(overview.includes('ยังไม่รวมยอดข้ามระบบ'));
+ assert.ok(!overview.includes('Math.random('));
+ assert.ok(!overview.includes('data-smt2-subview='));
+});
