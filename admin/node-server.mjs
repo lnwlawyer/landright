@@ -1,5 +1,6 @@
 import http from 'node:http';
 import {createFirebaseAdminHttpHandler} from './firebase-http-handler.mjs';
+import {createFirebaseRoleReader} from './firebase-role-store.mjs';
 
 /**
  * Trusted server adapter. Never run this on GitHub Pages.
@@ -40,10 +41,7 @@ export async function startAdminServer({port=8080,allowedOrigin='https://lnwlawy
   const db=getFirestore(app);
   const server=await createAdminServer({
     firebaseAuth:getAuth(app),
-    getAdminRole:async(uid)=>{
-      const snapshot=await db.collection('landrightAdminRoles').doc(uid).get();
-      return snapshot.exists?snapshot.data():null;
-    },
+    getAdminRole:createFirebaseRoleReader({firestore:db}),
     allowedOrigin
   });
   return new Promise((resolve,reject)=>server.once('error',reject).listen(port,'127.0.0.1',()=>resolve(server)));
