@@ -13,3 +13,10 @@ LandRight is hosted on GitHub Pages (static public frontend). SMT2 uses Google O
 
 ## Safe current UI
 The Settings page shows read-only readiness and explicit disabled capabilities. It does not implement user management, role assignment, Google Sheets writes, or server audit logs. These must not be simulated with localStorage or browser-only permissions.
+
+## Implementation increment: policy foundation
+`admin/authorization-policy.mjs` contains **server-only policy primitives** for deny-by-default action authorization, safe role-change validation, and minimal audit event construction. `tests/admin-authorization.test.mjs` covers anonymous, user, admin, disabled accounts, self-demotion, version checks and audit metadata. No backend is deployed or connected.
+
+**Critical trust boundary:** `normalizeServerPrincipal` only validates the shape of a principal; it does NOT authenticate anyone. Never pass client-provided identity/role values directly. The future backend must verify Google identity tokens (signature, issuer, audience, expiry), resolve the immutable subject to a role in server-controlled storage, enforce permissions on each request, atomically compare-and-swap versions, and persist audit events before returning success.
+
+Do not enable the privileged UI or ship credentials to GitHub Pages until backend choice, initial Admin bootstrap, storage, and operating costs are approved.
