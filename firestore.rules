@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // No direct browser access to privileged LandRight Admin records.
+    // The separately hosted trusted backend must enforce authorization,
+    // and use the Admin SDK with least-privilege service identity.
+    match /landrightAdminRoles/{document=**} {
+      allow read, write: if false;
+    }
+    match /landrightAdminAudit/{document=**} {
+      allow read, write: if false;
+    }
+    match /landrightAdminMetadata/{document=**} {
+      allow read, write: if false;
+    }
+    // Deny all other collections until explicitly designed and reviewed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
