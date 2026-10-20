@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createFirebaseRoleReader} from '../admin/firebase-role-store.mjs';
+const mock=(record,exists=true)=>({collection:name=>{assert.equal(name,'landrightAdminRoles');return {doc:uid=>{assert.equal(uid,'uid123');return {get:async()=>({exists,data:()=>record})};}}}});
+test('reads active admin by Firebase UID',async()=>assert.deepEqual(await createFirebaseRoleReader({firestore:mock({role:'admin',is_active:true})})('uid123'),{role:'admin',is_active:true}));
+test('does not grant user role',async()=>assert.equal(await createFirebaseRoleReader({firestore:mock({role:'user',is_active:true})})('uid123'),null));
+test('does not grant inactive admin',async()=>assert.equal(await createFirebaseRoleReader({firestore:mock({role:'admin',is_active:false})})('uid123'),null));
+test('does not grant missing role',async()=>assert.equal(await createFirebaseRoleReader({firestore:mock(null,false)})('uid123'),null));
+test('rejects malformed UID',async()=>await assert.rejects(createFirebaseRoleReader({firestore:mock({})})('a/b'),/Invalid/));
+test('rejects alternate role collections',()=>assert.throws(()=>createFirebaseRoleReader({firestore:mock({}),collection:'users'}),/Unexpected/));
