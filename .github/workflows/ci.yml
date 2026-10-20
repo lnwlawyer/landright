@@ -22,3 +22,29 @@ jobs:
       - run: node scripts/smt2-public-preflight.mjs
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+
+  firestore-emulator:
+    name: Firestore emulator integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      LANDRIGHT_FIRESTORE_EMULATOR_TEST: '1'
+      GOOGLE_CLOUD_PROJECT: demo-landright-test
+      GCLOUD_PROJECT: demo-landright-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Install emulator tooling without modifying lockfile
+        run: npm install --no-save --package-lock=false firebase-admin firebase-tools
+      - name: Run real Firestore emulator transaction tests
+        run: npx firebase emulators:exec --only firestore --project demo-landright-test --config tests/firebase.emulator.json "node --test tests/admin-firestore-emulator.integration.test.mjs"
