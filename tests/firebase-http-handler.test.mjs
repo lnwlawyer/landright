@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createFirebaseAdminHttpHandler} from '../admin/firebase-http-handler.mjs';
+const claims={uid:'uid-123',aud:'landright-admin',iss:'https://securetoken.google.com/landright-admin',firebase:{sign_in_provider:'google.com'}};
+const auth={verifyIdToken:async(_token,revoked)=>{assert.equal(revoked,true);return claims;}};
+const admin=()=>createFirebaseAdminHttpHandler({firebaseAuth:auth,getAdminRole:async()=>({role:'admin',is_active:true})});
+const request={method:'GET',path:'/api/admin/me',headers:{authorization:'Bearer '+'a'.repeat(30)}};
+test('authorized admin identity endpoint is read only and no-store',async()=>{const r=await admin()(request);assert.equal(r.status,200);assert.deepEqual(r.body,{uid:'uid-123',role:'admin'});assert.equal(r.headers['cache-control'],'no-store');});
+test('rejects missing auth',async()=>assert.equal((await admin()({...request,headers:{}})).status,401));
+test('rejects unauthorized role',async()=>{const handler=createFirebaseAdminHttpHandler({firebaseAuth:auth,getAdminRole:async()=>({role:'user',is_active:true})});assert.equal((await handler(request)).status,403);});
+test('does not allow role writes',async()=>assert.equal((await admin()({...request,method:'POST'})).status,405));
+test('unknown paths are not exposed',async()=>assert.equal((await admin()({...request,path:'/api/admin/roles/change'})).status,404));
+test('fails closed when role lookup fails',async()=>{const handler=createFirebaseAdminHttpHandler({firebaseAuth:auth,getAdminRole:async()=>{throw Error('offline')}});assert.equal((await handler(request)).status,503);});

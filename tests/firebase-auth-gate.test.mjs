@@ -1,0 +1,17 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {authorizeFirebaseAdmin} from '../admin/firebase-auth-gate.mjs';
+const token='a'.repeat(24);
+const valid={uid:'admin-uid',aud:'landright-admin',iss:'https://securetoken.google.com/landright-admin',firebase:{sign_in_provider:'google.com'}};
+const auth={verifyIdToken:async (_token,revoked)=>{assert.equal(revoked,true);return valid;}};
+const role=async()=>({role:'admin',is_active:true});
+const run=(overrides={})=>authorizeFirebaseAdmin({authorization:'Bearer '+token,firebaseAuth:auth,getAdminRole:role,...overrides});
+test('accepts verified Firebase ID token and server-owned admin role',async()=>assert.deepEqual(await run(),{ok:true,status:200,uid:'admin-uid'}));
+test('rejects missing bearer',async()=>assert.equal((await run({authorization:''})).status,401));
+test('rejects invalid token',async()=>assert.equal((await run({firebaseAuth:{verifyIdToken:async()=>{throw Error('bad');}}})).status,401));
+test('rejects Google OIDC token',async()=>assert.equal((await run({firebaseAuth:{verifyIdToken:async()=>({...valid,iss:'https://accounts.google.com'})}})).status,401));
+test('rejects wrong Firebase project',async()=>assert.equal((await run({firebaseAuth:{verifyIdToken:async()=>({...valid,aud:'other'})}})).status,401));
+test('rejects anonymous sign-in',async()=>assert.equal((await run({firebaseAuth:{verifyIdToken:async()=>({...valid,firebase:{sign_in_provider:'anonymous'}})}})).status,401));
+test('rejects non-admin',async()=>assert.equal((await run({getAdminRole:async()=>({role:'user',is_active:true})})).status,403));
+test('rejects disabled admin',async()=>assert.equal((await run({getAdminRole:async()=>({role:'admin',is_active:false})})).status,403));
+test('fails closed on role store error',async()=>assert.equal((await run({getAdminRole:async()=>{throw Error('offline');}})).status,503));
