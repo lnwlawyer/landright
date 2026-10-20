@@ -227,11 +227,52 @@
 
             <!-- Content Area -->
             <main class="flex-1 overflow-y-auto p-4 lg:p-6">
-                <!-- Overview Content -->
+                <!-- Overview Content: read-only navigation dashboard; never fabricate live totals. -->
                 <div id="overview-content" class="content-section">
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-4">ส่วนกำหนดสิทธิในที่ดินและควบคุมทะเบียนที่ดิน</h3>
-                        <p class="text-gray-600">ยินดีต้อนรับสู่ระบบจัดการข้อมูลที่ดิน กรุณาเลือกเมนูที่ต้องการจากแถบด้านซ้าย</p>
+                    <style>
+                      #overview-content .home-hero{background:linear-gradient(115deg,#0c4a6e,#1e3a8a);color:#fff;border-radius:16px;padding:24px}
+                      #overview-content .home-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+                      #overview-content .home-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px;min-width:0}
+                      #overview-content .home-link{display:block;text-decoration:none;color:inherit;cursor:pointer}
+                      #overview-content .home-link:hover,#overview-content .home-link:focus-visible{border-color:#0284c7;box-shadow:0 3px 12px #0c4a6e18;outline-offset:2px}
+                      #overview-content .home-eyebrow{font-size:12px;letter-spacing:.06em;color:#64748b}
+                      #overview-content .home-card h4{font-size:17px;font-weight:700;color:#0f172a;margin:8px 0}
+                      #overview-content .home-card p{font-size:13px;color:#475569;line-height:1.6}
+                      #overview-content .home-note{font-size:13px;color:#475569;line-height:1.7}
+                      @media(min-width:1100px){#overview-content .home-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+                      @media(max-width:520px){#overview-content .home-grid{grid-template-columns:1fr}#overview-content .home-hero{padding:18px}}
+                    </style>
+                    <div class="home-hero">
+                        <p style="font-size:12px;opacity:.85;letter-spacing:.08em">LANDRIGHT • OVERVIEW DASHBOARD</p>
+                        <h3 style="font-size:24px;font-weight:700;margin:8px 0">ส่วนกำหนดสิทธิในที่ดินและควบคุมทะเบียนที่ดิน</h3>
+                        <p style="font-size:14px;opacity:.9">ภาพรวมภารกิจและทางเข้าสู่ข้อมูลการปฏิบัติงาน</p>
+                    </div>
+                    <div style="margin:22px 0 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+                        <h3 style="font-size:19px;font-weight:700;color:#0f172a">ภาพรวมกลุ่มงาน</h3>
+                        <span class="home-eyebrow">เลือกหมวดเพื่อดูข้อมูลจริงในระบบ</span>
+                    </div>
+                    <div class="home-grid">
+                        <a href="#" onclick="showContent('foreigners',event)" class="home-card home-link" aria-label="เปิดหมวดคนต่างด้าว">
+                            <span class="home-eyebrow"><i class="fas fa-globe-asia" aria-hidden="true"></i> กำหนดสิทธิ</span>
+                            <h4>คนต่างด้าว</h4><p>การได้มาซึ่งที่ดิน การถือครอง และหลักเกณฑ์ที่เกี่ยวข้อง</p>
+                        </a>
+                        <a href="#" onclick="showContent('religious',event)" class="home-card home-link" aria-label="เปิดหมวดนิติบุคคลเพื่อการศาสนา">
+                            <span class="home-eyebrow"><i class="fas fa-landmark" aria-hidden="true"></i> กำหนดสิทธิ</span>
+                            <h4>นิติบุคคลเพื่อการศาสนา</h4><p>ข้อมูลและหลักเกณฑ์เกี่ยวกับที่ดินขององค์กรศาสนา</p>
+                        </a>
+                        <a href="#" onclick="showContent('abandoned',event)" class="home-card home-link" aria-label="เปิดหมวดที่ดินทอดทิ้ง">
+                            <span class="home-eyebrow"><i class="fas fa-map-marked-alt" aria-hidden="true"></i> กำหนดสิทธิ</span>
+                            <h4>ที่ดินทอดทิ้ง</h4><p>การติดตามและดำเนินการเกี่ยวกับที่ดินทอดทิ้ง</p>
+                        </a>
+                        <a href="#" onclick="showContent('users',event)" class="home-card home-link" aria-label="เปิดหมวดฝ่ายควบคุมทะเบียนที่ดิน">
+                            <span class="home-eyebrow"><i class="fas fa-folder-open" aria-hidden="true"></i> ควบคุมทะเบียน</span>
+                            <h4>ฝ่ายควบคุมทะเบียนที่ดิน</h4><p>ข้อมูลด้านการตรวจสอบและควบคุมทะเบียนที่ดิน</p>
+                        </a>
+                    </div>
+                    <div style="margin-top:20px" class="home-card">
+                        <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:10px"><i class="fas fa-chart-bar" aria-hidden="true"></i> ข้อมูลผลการดำเนินงาน</h3>
+                        <p class="home-note">สถิติและข้อมูลรายเรื่องแสดงจากแหล่งข้อมูลจริงในแต่ละหมวดเท่านั้น หน้าแรกนี้ยังไม่รวมยอดข้ามระบบ เพื่อป้องกันการแสดงตัวเลขคลาดเคลื่อนหรือเปิดเผยข้อมูลที่จำกัดสิทธิ์</p>
+                        <p class="home-note" style="margin-top:8px">เจ้าหน้าที่ที่ได้รับอนุญาตสามารถเปิดเมนู <strong>ข้อมูลงาน</strong> ทางด้านซ้าย เพื่อเข้าสู่ Executive Dashboard หลังเชื่อมต่อบัญชี Google ตามสิทธิ์</p>
                     </div>
                 </div>
 
