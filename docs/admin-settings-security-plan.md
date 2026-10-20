@@ -32,3 +32,8 @@ Do not enable the privileged UI or ship credentials to GitHub Pages until backen
 `admin/google-jwks-provider.mjs` provides a fixed Google HTTPS JWKS endpoint, disabled redirects, bounded response size, timeout, key schema checks, cache expiry and concurrent-request deduplication. Expired keys are not reused when refresh fails. `tests/admin-google-jwks-provider.test.mjs` covers error and cache paths.
 
 On an approved server, instantiate `createGoogleJwksProvider()` once and inject it as `getJwks` into `authorizeGoogleAdminRequest`. No production endpoint, role database, or privileged writes are enabled by this change.
+
+## Role mutation and audit transaction contract
+`admin/role-mutation-service.mjs` defines a **server-only** transactional workflow. It re-reads the actor and target from trusted storage, checks role and expected version, refuses self-role changes, guards the last enabled Admin, increments version and appends minimal audit metadata within one adapter transaction. The adapter's `transactRoleChange` implementation must ensure atomic commit/rollback and serialization of concurrent role updates, including `countEnabledAdmins`; the in-memory test adapter is **not** a production database. No persistent role store or Audit Log has been deployed.
+
+Before production, implement a real database adapter with serializable transactions, role bootstrap under verified identity, server-side authorization on every API route, durable audit retention, rate limiting, and idempotency controls. Do not expose this module or allow role changes from GitHub Pages alone.
