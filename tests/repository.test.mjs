@@ -399,3 +399,12 @@ test('all eleven legacy menu datasets use the private Sheets API source', () => 
   assert.ok(source.includes('Authorization'));
   assert.ok(!source.includes('docs.google.com/spreadsheets/'));
 });
+
+test('SMT2 Executive iframe remains invisible until live data and view are ready', () => {
+ const source=readFileSync(new URL('../smt2.js',import.meta.url),'utf8');
+ assert.ok(source.includes('background:white;visibility:hidden'));
+ const ready=source.indexOf('frame.contentWindow.setExecutiveView?.(selectedExecutiveView);');
+ const reveal=source.indexOf("frame.style.removeProperty('visibility');");
+ assert.ok(ready>=0 && reveal>ready);
+ assert.ok(source.includes("frame.contentWindow.setExecutiveRecords(records);"));
+});

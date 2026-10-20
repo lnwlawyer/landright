@@ -44,7 +44,7 @@ function showExecutiveView() {
   const frame = document.createElement('iframe');
   frame.title = 'Executive Dashboard ข้อมูลงาน';
   frame.src = EXECUTIVE_HTML;
-  frame.style.cssText = 'width:100%;height:max(760px,calc(100vh - 150px));min-height:760px;border:0;border-radius:12px;background:white';
+  frame.style.cssText = 'width:100%;height:max(760px,calc(100vh - 150px));min-height:760px;border:0;border-radius:12px;background:white;visibility:hidden';
   frame.referrerPolicy = 'same-origin';
   frame.addEventListener('load', () => {
     if (executiveFrame !== frame || !token || Date.now() >= expiresAt) return;
@@ -53,6 +53,8 @@ function showExecutiveView() {
       if (typeof frame.contentWindow.setExecutiveRecords !== 'function') throw new Error('missing live adapter');
       frame.contentWindow.setExecutiveRecords(records);
       frame.contentWindow.setExecutiveView?.(selectedExecutiveView);
+      // Reveal only after the live records and selected view have rendered.
+      frame.style.removeProperty('visibility');
       syncSMT2Submenu();
       $('smt2-data').hidden = true;
     } catch (err) {
