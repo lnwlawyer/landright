@@ -119,6 +119,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="smt2-config.example.js" defer></script>
     <script src="smt2.js" type="module"></script>
+    <script src="settings.js" defer></script>
 
 <style>
 /* SMT2 executive dashboard, scoped to avoid changing other LandRight menus. */
@@ -1532,11 +1533,55 @@
                     </div>
                 </div>
 
-                <!-- Settings Content -->
+                <!-- Settings: personal preferences and read-only diagnostics. -->
                 <div id="settings-content" class="content-section hidden">
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-4">ตั้งค่าระบบ</h3>
-                        <p class="text-gray-600">ส่วนนี้จะแสดงการตั้งค่าต่างๆ ของระบบ</p>
+                    <style>
+                      #settings-content .lr-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+                      #settings-content .lr-settings-panel{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px}
+                      #settings-content .lr-settings-panel h3{font-size:18px;font-weight:700;margin-bottom:8px}
+                      #settings-content .lr-settings-panel p{font-size:13px;color:#475569;line-height:1.7;margin-bottom:12px}
+                      #settings-content .lr-settings-field{display:flex;flex-direction:column;gap:6px;margin:12px 0;font-size:14px}
+                      #settings-content select,#settings-content button{border:1px solid #94a3b8;border-radius:8px;padding:9px 12px;background:#fff;color:#0f172a;min-height:42px}
+                      #settings-content button{cursor:pointer}
+                      #settings-content button:hover{background:#eff6ff}
+                      #settings-content .lr-settings-status{padding:10px;background:#f1f5f9;border-radius:8px;font-size:13px;line-height:1.7;white-space:pre-line;overflow-wrap:anywhere}
+                      body.lr-dark main{background:#0f172a;color:#e2e8f0}
+                      body.lr-dark main .content-section .bg-white,body.lr-dark #settings-content .lr-settings-panel,body.lr-dark #overview-content .home-card{background:#1e293b!important;border-color:#475569!important;color:#f1f5f9}
+                      body.lr-dark main .text-gray-900,body.lr-dark main .text-gray-800,body.lr-dark #overview-content .home-card h4,body.lr-dark #settings-content h3{color:#f8fafc!important}
+                      body.lr-dark main .text-gray-600,body.lr-dark main .text-gray-700,body.lr-dark #overview-content .home-card p,body.lr-dark #settings-content .lr-settings-panel p{color:#cbd5e1!important}
+                      body.lr-dark #settings-content .lr-settings-status{background:#334155;color:#f1f5f9}
+                      body.lr-dark #settings-content select,body.lr-dark #settings-content button{background:#334155;color:#f8fafc}
+                      body.lr-large-text main{font-size:110%}
+                      body.lr-large-text main p,body.lr-large-text main button,body.lr-large-text main a{font-size:1.05em}
+                      @media(max-width:760px){#settings-content .lr-settings-grid{grid-template-columns:1fr}}
+                    </style>
+                    <div style="margin-bottom:18px">
+                        <h2 style="font-size:23px;font-weight:700">ตั้งค่า LandRight</h2>
+                        <p style="font-size:13px;color:#64748b">การตั้งค่าส่วนบุคคลและการตรวจสอบระบบเบื้องต้น</p>
+                    </div>
+                    <div class="lr-settings-grid">
+                        <section class="lr-settings-panel" aria-labelledby="lr-preferences-title">
+                            <h3 id="lr-preferences-title">การแสดงผล</h3>
+                            <p>บันทึกการตั้งค่าเฉพาะเบราว์เซอร์นี้ ไม่ส่งข้อมูลไปยังเซิร์ฟเวอร์</p>
+                            <label class="lr-settings-field">ธีมหน้าจอ
+                                <select id="lr-theme"><option value="light">สว่าง</option><option value="dark">มืด</option></select>
+                            </label>
+                            <label class="lr-settings-field">ขนาดตัวอักษร
+                                <select id="lr-font-size"><option value="normal">ปกติ</option><option value="large">ใหญ่</option></select>
+                            </label>
+                            <label class="lr-settings-field">หน้าเริ่มต้น
+                                <select id="lr-start-page"><option value="overview">หน้าแรก Dashboard</option><option value="foreigners">คนต่างด้าว</option><option value="religious">นิติบุคคลเพื่อการศาสนา</option><option value="abandoned">ที่ดินทอดทิ้ง</option><option value="users">ฝ่ายควบคุมทะเบียนที่ดิน</option></select>
+                            </label>
+                            <button id="lr-reset-preferences" type="button">คืนค่าการแสดงผลเริ่มต้น</button>
+                            <div id="lr-settings-feedback" role="status" aria-live="polite" style="margin-top:10px;font-size:13px"></div>
+                        </section>
+                        <section class="lr-settings-panel" aria-labelledby="lr-diagnostics-title">
+                            <h3 id="lr-diagnostics-title">สถานะระบบ</h3>
+                            <p>ตรวจสอบความพร้อมของไฟล์แอปและสถานะการยืนยันตัวตนโดยไม่เปิดเผยข้อมูลบัญชีหรือข้อมูลรายบุคคล</p>
+                            <div id="lr-system-status" class="lr-settings-status" role="status" aria-live="polite">ยังไม่ได้ตรวจสอบ</div>
+                            <button id="lr-check-system" type="button" style="margin-top:12px">ตรวจสอบอีกครั้ง</button>
+                            <p style="margin-top:12px">สถานะ Google Sheets แสดงเฉพาะความพร้อมของการยืนยันตัวตน ไม่ใช่ผลยืนยันการอ่านข้อมูลจริง กรุณาเปิดเมนูข้อมูลที่เกี่ยวข้องเพื่อตรวจสอบข้อมูลตามสิทธิ์</p>
+                        </section>
                     </div>
                 </div>
             </main>
