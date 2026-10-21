@@ -28,6 +28,7 @@ export function createWorkersFirebaseAuth({fetchImpl=fetch,checkRevoked,now=()=>
     return cached;
   }
   return {async verifyIdToken(token,verifyRevoked){
+    try {
     if(verifyRevoked!==true)throw Error('Revocation verification required');
     if(typeof token!=='string'||token.length>16384)throw Error('Invalid token');
     const parts=token.split('.');
@@ -46,5 +47,20 @@ export function createWorkersFirebaseAuth({fetchImpl=fetch,checkRevoked,now=()=>
     const revoked=await checkRevoked(payload.sub,payload);
     if(revoked!==false)throw Error('Revoked or unverified Firebase user');
     return {...payload,uid:payload.sub};
+    } catch (error) {
+      const known=new Map([
+        ['Revocation verification required','revocation_required'],
+        ['Invalid token','token_shape'],['Invalid JWT','jwt_shape'],['Malformed JWT','jwt_shape'],
+        ['Invalid JWT header','jwt_header'],['Google JWKS unavailable','jwks_unavailable'],
+        ['Invalid Google JWKS','jwks_invalid'],['Unknown signing key','jwks_key_missing'],
+        ['Invalid signature','signature_invalid'],['Invalid Firebase claims','claims_invalid'],
+        ['Revoked or unverified Firebase user','revocation_denied'],
+        ['User not active','firebase_user_inactive'],
+        ['Cannot verify token revocation','revocation_indeterminate']
+      ]);
+      const stage=error?.code==='FIREBASE_AUTH_UPSTREAM_UNAVAILABLE'?'auth_upstream_unavailable':known.get(error?.message)||'verification_exception';
+      console.warn('landright_admin_firebase_token_verification_failed',{stage});
+      throw error;
+    }
   }};
 }
