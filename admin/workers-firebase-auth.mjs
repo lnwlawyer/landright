@@ -24,7 +24,8 @@ export function createWorkersFirebaseAuth({fetchImpl=fetch,checkRevoked,now=()=>
     let response;
     try { response=await fetchImpl(JWKS_URL,{method:'GET',redirect:'error'}); }
     catch (error) {
-      const category=error?.name==='TypeError'?'fetch_type_error':error?.name==='AbortError'?'fetch_aborted':'fetch_exception';
+      const message=String(error?.message||'').toLowerCase();
+      const category=error?.name==='TypeError'?(message.includes('fetch failed')?'fetch_failed':message.includes('redirect')?'redirect_rejected':message.includes('invalid url')||message.includes('invalid argument')?'invalid_request':message.includes('subrequest')?'subrequest_limit':message.includes('network')?'network_error':'fetch_type_error_other'):error?.name==='AbortError'?'fetch_aborted':'fetch_exception';
       console.warn('landright_admin_google_jwks_request_failed',{category});
       const upstream=new Error('Google JWKS request failed');upstream.code='FIREBASE_AUTH_UPSTREAM_UNAVAILABLE';throw upstream;
     }
