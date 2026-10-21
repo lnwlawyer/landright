@@ -54,8 +54,10 @@ export function createWorkersFirebaseServices({serviceAccountJson,googleAccessTo
   const googleToken=googleAccessToken||serviceAccountToken;
   async function checkRevoked(uid,claims){
     if(!/^[^/]{1,128}$/.test(uid))throw Error('Invalid uid');
-    const data=await post('https://identitytoolkit.googleapis.com/v1/projects/'+PROJECT+'/accounts:lookup',
-      {localId:[uid]},await googleToken(),fetchImpl);
+    let data;
+    try { data=await post('https://identitytoolkit.googleapis.com/v1/projects/'+PROJECT+'/accounts:lookup',
+      {localId:[uid]},await googleToken(),fetchImpl); }
+    catch { const error=new Error('Trusted Firebase Auth upstream unavailable');error.code='FIREBASE_AUTH_UPSTREAM_UNAVAILABLE';throw error; }
     const user=Array.isArray(data.users)&&data.users.length===1?data.users[0]:null;
     if(!user||user.localId!==uid||user.disabled===true)throw Error('User not active');
     const validSince=Number(user.validSince);

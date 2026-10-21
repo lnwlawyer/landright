@@ -11,7 +11,9 @@ export async function authorizeFirebaseAdmin({authorization, firebaseAuth, getAd
   if (!match) return {ok:false, status:401, reason:'missing_or_invalid_bearer'};
   let claims;
   try { claims = await firebaseAuth.verifyIdToken(match[1], checkRevoked); }
-  catch { return {ok:false, status:401, reason:'invalid_or_revoked_firebase_token'}; }
+  catch (error) { return error?.code==='FIREBASE_AUTH_UPSTREAM_UNAVAILABLE'
+    ? {ok:false,status:503,reason:'firebase_auth_upstream_unavailable'}
+    : {ok:false,status:401,reason:'invalid_or_revoked_firebase_token'}; }
   if (!claims || typeof claims.uid !== 'string' || !claims.uid || claims.aud !== 'landright-admin' ||
       claims.iss !== 'https://securetoken.google.com/landright-admin' ||
       claims.firebase?.sign_in_provider === 'anonymous') {
