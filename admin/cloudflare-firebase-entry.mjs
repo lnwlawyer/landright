@@ -20,15 +20,17 @@ const post=async(url,body,accessToken,fetchImpl)=>{
  * Trusted Google REST reader for Cloudflare Workers.
  * Credential is an encrypted Worker secret, never a browser config or GitHub file.
  */
-export function createWorkersFirebaseServices({serviceAccountJson,fetchImpl=fetch,now=()=>Date.now()}={}){
-  if(typeof serviceAccountJson!=='string'||!serviceAccountJson)throw Error('Missing Worker credential secret');
-  const credentials=JSON.parse(serviceAccountJson);
-  if(credentials.type!=='service_account'||credentials.project_id!==PROJECT||
+export function createWorkersFirebaseServices({serviceAccountJson,googleAccessToken,fetchImpl=fetch,now=()=>Date.now()}={}){
+  if(googleAccessToken!==undefined&&typeof googleAccessToken!=='function')throw Error('Invalid Google token provider');
+  if(googleAccessToken&&serviceAccountJson)throw Error('Ambiguous Google credential configuration');
+  if(!googleAccessToken&&(typeof serviceAccountJson!=='string'||!serviceAccountJson))throw Error('Missing Worker credential secret');
+  const credentials=googleAccessToken?null:JSON.parse(serviceAccountJson);
+  if(credentials&&(credentials.type!=='service_account'||credentials.project_id!==PROJECT||
     !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.gserviceaccount\.com$/.test(credentials.client_email||'')||
-    typeof credentials.private_key!=='string'||!credentials.private_key.includes('BEGIN PRIVATE KEY'))
+    typeof credentials.private_key!=='string'||!credentials.private_key.includes('BEGIN PRIVATE KEY')))
     throw Error('Invalid Firebase service identity');
   let accessToken='',expiresAt=0;
-  async function googleToken(){
+  async function serviceAccountToken(){
     if(accessToken&&now()+60000<expiresAt)return accessToken;
     const seconds=Math.floor(now()/1000);
     const header=b64url(encoder.encode(JSON.stringify({alg:'RS256',typ:'JWT'})));
@@ -49,6 +51,7 @@ export function createWorkersFirebaseServices({serviceAccountJson,fetchImpl=fetc
     accessToken=data.access_token;expiresAt=now()+Math.min(data.expires_in,3600)*1000;
     return accessToken;
   }
+  const googleToken=googleAccessToken||serviceAccountToken;
   async function checkRevoked(uid,claims){
     if(!/^[^/]{1,128}$/.test(uid))throw Error('Invalid uid');
     const data=await post('https://identitytoolkit.googleapis.com/v1/projects/'+PROJECT+'/accounts:lookup',
