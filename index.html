@@ -270,11 +270,33 @@
                             <h4>ฝ่ายควบคุมทะเบียนที่ดิน</h4><p>ข้อมูลด้านการตรวจสอบและควบคุมทะเบียนที่ดิน</p>
                         </a>
                     </div>
-                    <div style="margin-top:20px" class="home-card">
-                        <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:10px"><i class="fas fa-chart-bar" aria-hidden="true"></i> ข้อมูลผลการดำเนินงาน</h3>
-                        <p class="home-note">สถิติและข้อมูลรายเรื่องแสดงจากแหล่งข้อมูลจริงในแต่ละหมวดเท่านั้น หน้าแรกนี้ยังไม่รวมยอดข้ามระบบ เพื่อป้องกันการแสดงตัวเลขคลาดเคลื่อนหรือเปิดเผยข้อมูลที่จำกัดสิทธิ์</p>
-                        <p class="home-note" style="margin-top:8px">เจ้าหน้าที่ที่ได้รับอนุญาตสามารถเปิดเมนู <strong>ข้อมูลงาน</strong> ทางด้านซ้าย เพื่อเข้าสู่ Executive Dashboard หลังเชื่อมต่อบัญชี Google ตามสิทธิ์</p>
-                    </div>
+                    <section style="margin-top:20px" class="home-card" aria-labelledby="home-performance-title">
+                        <h3 id="home-performance-title" style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:10px"><i class="fas fa-chart-bar" aria-hidden="true"></i> ข้อมูลผลการดำเนินงาน</h3>
+                        <p class="home-note">เลือกดูข้อมูลตามหมวดงาน หรือเข้าสู่ Executive Dashboard เพื่อดูผลการดำเนินงานจาก Google Sheets ตามสิทธิ์ของบัญชี ไม่แสดงยอดรวมที่ยังไม่ผ่านการตรวจสอบ</p>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:16px">
+                            <a href="#" onclick="showContent('foreigners',event)" class="home-card home-link" aria-label="ดูข้อมูลหมวดคนต่างด้าว">
+                                <span class="home-eyebrow"><i class="fas fa-globe-asia" aria-hidden="true"></i> กำหนดสิทธิ</span>
+                                <h4>คนต่างด้าว</h4><p>เปิดข้อมูลและหลักเกณฑ์ในหมวดคนต่างด้าว</p>
+                            </a>
+                            <a href="#" onclick="showContent('religious',event)" class="home-card home-link" aria-label="ดูข้อมูลหมวดนิติบุคคลเพื่อการศาสนา">
+                                <span class="home-eyebrow"><i class="fas fa-landmark" aria-hidden="true"></i> กำหนดสิทธิ</span>
+                                <h4>นิติบุคคลเพื่อการศาสนา</h4><p>เปิดข้อมูลและหลักเกณฑ์ในหมวดองค์กรศาสนา</p>
+                            </a>
+                            <a href="#" onclick="showContent('abandoned',event)" class="home-card home-link" aria-label="ดูข้อมูลหมวดที่ดินทอดทิ้ง">
+                                <span class="home-eyebrow"><i class="fas fa-map-marked-alt" aria-hidden="true"></i> กำหนดสิทธิ</span>
+                                <h4>ที่ดินทอดทิ้ง</h4><p>เปิดข้อมูลการติดตามและดำเนินการ</p>
+                            </a>
+                            <a href="#" onclick="showContent('users',event)" class="home-card home-link" aria-label="ดูข้อมูลฝ่ายควบคุมทะเบียนที่ดิน">
+                                <span class="home-eyebrow"><i class="fas fa-folder-open" aria-hidden="true"></i> ควบคุมทะเบียน</span>
+                                <h4>ควบคุมทะเบียนที่ดิน</h4><p>เปิดข้อมูลการตรวจสอบและควบคุมทะเบียน</p>
+                            </a>
+                        </div>
+                        <div style="margin-top:14px;padding:14px;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc">
+                            <h4 style="font-size:16px;font-weight:700;color:#0f172a">Executive Dashboard — ข้อมูลงาน</h4>
+                            <p class="home-note" style="margin-top:6px">รายงานจาก Google Sheets แสดงหลังยืนยันตัวตนและตรวจสอบสิทธิ์เท่านั้น ไม่มีข้อมูลตัวอย่าง และยังไม่รวมยอดข้ามระบบ</p>
+                            <button type="button" onclick="showContent('smt2',event)" style="margin-top:12px;background:#1e3a8a;color:#fff;border:0;border-radius:8px;padding:9px 16px;cursor:pointer">เปิดเมนูข้อมูลงาน <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+                        </div>
+                    </section>
                 </div>
 
                 <div id="smt2-content" class="content-section hidden"></div>
