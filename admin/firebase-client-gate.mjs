@@ -15,7 +15,7 @@ export function createFirebaseAdminClient({auth,signInWithPopup,signOut,GoogleAu
     const response=await fetchImpl(new URL('/api/admin/me',apiBaseUrl),{
       method:'GET',headers:{Authorization:'Bearer '+token},cache:'no-store',credentials:'omit'
     });
-    if(!response.ok) return {authorized:false,reason:response.status===403?'not_admin':'verification_failed'};
+    if(!response.ok) return {authorized:false,uid:user.uid,reason:response.status===403?'not_admin':response.status===401?'invalid_token':response.status===503?'backend_unavailable':'verification_failed',httpStatus:response.status};
     const body=await response.json();
     if(body.role!=='admin'||body.uid!==user.uid) return {authorized:false,reason:'identity_mismatch'};
     current={uid:user.uid,role:'admin'};
