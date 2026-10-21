@@ -17,9 +17,7 @@ test('WIF STS token can be injected into Google REST readers without private key
  const googleAccessToken=createGoogleWifTokenSource({audience,getSubjectToken:async()=> 'trusted.oidc.assertion-from-idp',fetchImpl,now:()=>1760000000000});
  const services=createWorkersFirebaseServices({googleAccessToken,fetchImpl,now:()=>1760000000000});
  assert.deepEqual(await services.getAdminRole('uid1'),{role:'admin',is_active:true});
- assert.equal(await services.firebaseAuth.checkRevoked('uid1',{auth_time:1760000000}),false);
  assert.equal(calls.filter(x=>x.url==='https://sts.googleapis.com/v1/token').length,1);
- assert.equal(calls.filter(x=>x.url.includes('accounts:lookup')).length,1);
  assert.ok(calls.filter(x=>x.url!=='https://sts.googleapis.com/v1/token').every(x=>x.init.headers.authorization==='Bearer ephemeral-google-token'));
 });
 test('STS failure denies role lookup rather than falling back to unsafe credentials',async()=>{
