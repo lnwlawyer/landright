@@ -28,6 +28,7 @@ export function createWorkersFirebaseAuth({fetchImpl=fetch,checkRevoked,now=()=>
     return cached;
   }
   return {async verifyIdToken(token,verifyRevoked){
+    let phase='token_parse';
     try {
     if(verifyRevoked!==true)throw Error('Revocation verification required');
     if(typeof token!=='string'||token.length>16384)throw Error('Invalid token');
@@ -35,15 +36,19 @@ export function createWorkersFirebaseAuth({fetchImpl=fetch,checkRevoked,now=()=>
     if(parts.length!==3)throw Error('Invalid JWT');
     const header=parsePart(parts[0]),payload=parsePart(parts[1]);
     if(header.alg!=='RS256'||header.typ&&header.typ!=='JWT'||typeof header.kid!=='string'||!header.kid)throw Error('Invalid JWT header');
+    phase='jwks_fetch';
     const key=(await keys()).find(k=>k.kid===header.kid&&k.kty==='RSA'&&(!k.alg||k.alg==='RS256')&&(!k.use||k.use==='sig'));
     if(!key)throw Error('Unknown signing key');
+    phase='signature_crypto';
     const publicKey=await crypto.subtle.importKey('jwk',key,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
     const valid=await crypto.subtle.verify('RSASSA-PKCS1-v1_5',publicKey,decode64url(parts[2]),new TextEncoder().encode(parts[0]+'.'+parts[1]));
     if(!valid)throw Error('Invalid signature');
+    phase='claims_check';
     const seconds=Math.floor(now()/1000);
     if(payload.aud!==PROJECT||payload.iss!==ISSUER||typeof payload.sub!=='string'||!payload.sub||payload.sub.length>128||
       !Number.isInteger(payload.exp)||payload.exp<=seconds||!Number.isInteger(payload.iat)||payload.iat>seconds||
       !Number.isInteger(payload.auth_time)||payload.auth_time>seconds||payload.iat<=0)throw Error('Invalid Firebase claims');
+    phase='revocation_lookup';
     const revoked=await checkRevoked(payload.sub,payload);
     if(revoked!==false)throw Error('Revoked or unverified Firebase user');
     return {...payload,uid:payload.sub};
@@ -58,7 +63,7 @@ export function createWorkersFirebaseAuth({fetchImpl=fetch,checkRevoked,now=()=>
         ['User not active','firebase_user_inactive'],
         ['Cannot verify token revocation','revocation_indeterminate']
       ]);
-      const stage=error?.code==='FIREBASE_AUTH_UPSTREAM_UNAVAILABLE'?'auth_upstream_unavailable':known.get(error?.message)||'verification_exception';
+      const stage=error?.code==='FIREBASE_AUTH_UPSTREAM_UNAVAILABLE'?'auth_upstream_unavailable':known.get(error?.message)||('exception_at_'+phase);
       console.warn('landright_admin_firebase_token_verification_failed',{stage});
       throw error;
     }
