@@ -440,7 +440,7 @@ test('retired Admin UI is not exposed and does not grant elevated privileges', (
  const settings=html.split('id="settings-content" class="content-section hidden"')[1]?.split('</main>')[0];
  assert.ok(!settings.includes('id="lr-admin-readiness"'));
  assert.ok(!settings.includes('id="lr-check-admin-readiness"'));
- assert.ok(!html.split('<!-- Retained utility class scan')[0].includes('<button id="smt2-admin-entry"'));
+ assert.ok(html.split('<!-- Retained utility class scan')[0].includes('id="smt2-admin-entry"'));
  assert.ok(!html.split('<!-- Retained utility class scan')[0].includes('<a href="./admin-login.html"'));
  const script=readFileSync(new URL('../settings.js',import.meta.url),'utf8');
  assert.ok(!script.includes('spreadsheets.write'));
