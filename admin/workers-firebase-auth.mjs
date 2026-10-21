@@ -21,10 +21,21 @@ export function createWorkersFirebaseAuth({fetchImpl=fetch,checkRevoked,now=()=>
     if(cached&&now()<expiresAt)return cached;
     // Do not require AbortSignal.timeout: not uniformly available in Workers runtimes.
     // The platform controls outbound fetch lifecycle; authentication remains fail closed.
-    const response=await fetchImpl(JWKS_URL,{method:'GET',redirect:'error'});
-    if(!response.ok)throw Error('Google JWKS unavailable');
-    const body=await response.json();
-    if(!Array.isArray(body.keys)||body.keys.length<1||body.keys.length>20)throw Error('Invalid Google JWKS');
+    let response;
+    try { response=await fetchImpl(JWKS_URL,{method:'GET',redirect:'error'}); }
+    catch (error) {
+      const category=error?.name==='TypeError'?'fetch_type_error':error?.name==='AbortError'?'fetch_aborted':'fetch_exception';
+      console.warn('landright_admin_google_jwks_request_failed',{category});
+      const upstream=new Error('Google JWKS request failed');upstream.code='FIREBASE_AUTH_UPSTREAM_UNAVAILABLE';throw upstream;
+    }
+    if(!response.ok){
+      console.warn('landright_admin_google_jwks_request_failed',{category:'http_status',status:response.status});
+      const upstream=new Error('Google JWKS unavailable');upstream.code='FIREBASE_AUTH_UPSTREAM_UNAVAILABLE';throw upstream;
+    }
+    let body;
+    try {body=await response.json();}
+    catch {console.warn('landright_admin_google_jwks_request_failed',{category:'invalid_json'});const upstream=new Error('Google JWKS invalid response');upstream.code='FIREBASE_AUTH_UPSTREAM_UNAVAILABLE';throw upstream;}
+    if(!Array.isArray(body.keys)||body.keys.length<1||body.keys.length>20){console.warn('landright_admin_google_jwks_request_failed',{category:'invalid_keyset'});const upstream=new Error('Invalid Google JWKS');upstream.code='FIREBASE_AUTH_UPSTREAM_UNAVAILABLE';throw upstream;}
     const maxAge=/max-age=(\d+)/i.exec(response.headers.get('cache-control')||'');
     cached=body.keys;expiresAt=now()+Math.min(Number(maxAge?.[1]||300),3600)*1000;
     return cached;
