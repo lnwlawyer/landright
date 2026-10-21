@@ -19,7 +19,9 @@ export function createWorkersFirebaseAuth({fetchImpl=fetch,checkRevoked,now=()=>
   let cached=null,expiresAt=0;
   async function keys(){
     if(cached&&now()<expiresAt)return cached;
-    const response=await fetchImpl(JWKS_URL,{method:'GET',redirect:'error',signal:AbortSignal.timeout(5000)});
+    // Do not require AbortSignal.timeout: not uniformly available in Workers runtimes.
+    // The platform controls outbound fetch lifecycle; authentication remains fail closed.
+    const response=await fetchImpl(JWKS_URL,{method:'GET',redirect:'error'});
     if(!response.ok)throw Error('Google JWKS unavailable');
     const body=await response.json();
     if(!Array.isArray(body.keys)||body.keys.length<1||body.keys.length>20)throw Error('Invalid Google JWKS');
